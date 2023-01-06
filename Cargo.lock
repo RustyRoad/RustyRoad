@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "crabby-rail"
+name = "crabbyrail"
 version = "0.1.0"
