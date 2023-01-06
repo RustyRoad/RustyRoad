@@ -36,39 +36,42 @@
 
 ## 🧐 Problem Statement <a name = "problem_statement"></a>
 
-It is useful to design and follow a specific format when writing a problem statement. While there are several options
-for doing this, the following is a simple and straightforward template often used in Business Analysis to maintain
-focus on defining the problem.
+Rust Needs a Rails
 
-- IDEAL: This section is used to describe the desired or “to be” state of the process or product. At large, this section
-  should illustrate what the expected environment would look like once the solution is implemented.
-- REALITY: This section is used to describe the current or “as is” state of the process or product.
-- CONSEQUENCES: This section is used to describe the impacts on the business if the problem is not fixed or improved upon.
-  This includes costs associated with loss of money, time, productivity, competitive advantage, and so forth.
+I outlined this in a blog post here: https://rileyseaburg.com/posts/rust-needs-a-rails
 
-Following this format will result in a workable document that can be used to understand the problem and elicit
-requirements that will lead to a winning solution.
+- IDEAL: In a perfect world, Rust would have a framework that is as easy to use as Ruby on Rails. It would be
+  easy to learn, easy to use, and easy to maintain. It would be fast, secure, and reliable. It would be
+  extensible and customizable. It would be a joy to use.
+- REALITY: Rust is a powerful language, but it is not easy to use. It is not easy to learn, and it is not easy to
+  maintain. It is not fast, secure, or reliable. It is not extensible or customizable. It is not a joy to use even though it is the most loved programming language on [stack overflow](https://survey.stackoverflow.co/2022/#section-most-loved-dreaded-and-wanted-programming-scripting-and-markup-languages).
+- CONSEQUENCES: 
+    - Web servers are insecure, because most languages are not as secure as Rust. 
+    - Web servers are slow, because most languages are not as fast as Rust. 
+    - Web servers are unreliable, because most languages are not as reliable as Rust. 
+    - Web servers are not extensible or customizable, because most languages are not as extensible or customizable as Rust.
+    - Web servers are not a joy to use, because most languages are not as fun to use as Rust.
 
 ## 💡 Idea / Solution <a name = "idea"></a>
 
-This section is used to describe potential solutions.
-
-Once the ideal, reality, and consequences sections have been
-completed, and understood, it becomes easier to provide a solution for solving the problem.
+CrabbyRails is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
 
 ## ⛓️ Dependencies / Limitations <a name = "limitations"></a>
 
-- What are the dependencies of your project?
-- Describe each limitation in detailed but concise terms
-- Explain why each limitation exists
-- Provide the reasons why each limitation could not be overcome using the method(s) chosen to acquire.
-- Assess the impact of each limitation in relation to the overall findings and conclusions of your project, and if
-  appropriate, describe how these limitations could point to the need for further research.
+- Rust is a relatively new language, and it is not as mature as Ruby on Rails.
+- Rust is not as easy to use as Ruby on Rails.
+- Rust has a borrow checker, which can make it difficult to use.
 
 ## 🚀 Future Scope <a name = "future_scope"></a>
 
-Write about what you could not develop during the course of the Hackathon; and about what your project can achieve
-in the future.
+- Add support for more database adapters.
+- Add support for more template engines.
+- Add support for more asset pipelines.
+- Add support for more web servers.
+- Add support for more deployment platforms.
+- Add support for more testing frameworks.
+- Add support for more authentication frameworks.
+
 
 ## 🏁 Getting Started <a name = "getting_started"></a>
 
@@ -77,48 +80,74 @@ and testing purposes. See [deployment](#deployment) for notes on how to deploy t
 
 ### Prerequisites
 
-What things you need to install the software and how to install them.
+Rust is required to build and run CrabbyRails. You can install Rust using [rustup](https://rustup.rs/).
 
 ```
-Give examples
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
+
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running.
+Clone the repository and run the setup script.
 
-Say what the step will be
 
-```
-Give the example
-```
-
-And repeat
 
 ```
-until finished
+git clone https://github.com/RileySeaburg/CrabbyRails
 ```
+
+```
+cd CrabbyRails
+```
+
+```
+cargo run
+```
+
 
 ## 🎈 Usage <a name="usage"></a>
 
-Add notes about how to use the system.
+
+The cli will prompt you to create a new project. Enter the name of your project and the cli will create a new project in the current directory.
+
+```bash
+$ cargo run
+    Finished dev [unoptimized + debuginfo] target(s) in 0.01s
+     Running `target/debug/crabby_rails`
+Welcome to CrabbyRails!
+What would you like to do?
+1. Create a new project
+2. CLI help
+3. Exit
+Enter a number: 1
+Enter the name of your project: my_project
+Creating a new CrabbyRails project called my_project
+```
+
 
 ## ⛏️ Built With <a name = "tech_stack"></a>
 
-- [MongoDB](https://www.mongodb.com/) - Database
-- [Express](https://expressjs.com/) - Server Framework
-- [VueJs](https://vuejs.org/) - Web Framework
-- [NodeJs](https://nodejs.org/en/) - Server Environment
+- [Rust](https://www.rust-lang.org/) - Programming Language
+- [Rocket](https://rocket.rs/) - Web Framework
+- [Diesel](https://diesel.rs/) - ORM
+- [Handlebars](https://handlebarsjs.com/) - Template Engine
+- [Sass](https://sass-lang.com/) - CSS Preprocessor
+- [Webpack](https://webpack.js.org/) - Asset Pipeline
+- [PostgreSQL](https://www.postgresql.org/) - Database
+- [Nginx](https://www.nginx.com/) - Web Server
+- [Capistrano](https://capistranorb.com/) - Deployment
+- [RSpec](https://rspec.info/) - Testing
 
 ## ✍️ Authors <a name = "authors"></a>
 
-- [@kylelobo](https://github.com/kylelobo) - Idea & Initial work
+- [@rileyseaburg](https://github.com/RileySeaburg) - Idea & Initial work
 
 See also the list of [contributors](https://github.com/RileySeaburg/CrabbyRails/contributors)
 who participated in this project.
 
 ## 🎉 Acknowledgments <a name = "acknowledgments"></a>
 
-- Hat tip to anyone whose code was used
-- Inspiration
-- References
+- Creator of Ruby on Rails, David Heinemeier Hansson (DHH)
+- Creator of Rust, Graydon Hoare
+- Creator of Rocket, Sergio Benitez
