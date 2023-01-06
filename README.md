@@ -25,6 +25,7 @@
 
 - [Problem Statement](#problem_statement)
 - [Idea / Solution](#idea)
+- [What is CrabbyRails](#crabby_rails)
 - [Dependencies / Limitations](#limitations)
 - [Future Scope](#future_scope)
 - [Setting up a local environment](#getting_started)
@@ -55,6 +56,19 @@ I outlined this in a blog post here: https://rileyseaburg.com/posts/rust-needs-a
 ## 💡 Idea / Solution <a name = "idea"></a>
 
 CrabbyRails is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
+
+## 🦀 What is CrabbyRails <a name = "crabby_rails"></a>
+
+CrabbyRails is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
+
+CrabbyRails is intended to offer developers a powerful and reliable platform for building web applications using Rust, and its name incorporates a rust-themed crab pun in a playful and memorable way.
+
+### Understanding CrabbyRails
+
+Crabby Rails currently works with the Rocket web framework, the Diesel ORM, the Tera template engine, the SASS asset pipeline, and the PostgreSQL database. It also uses the dotenv crate to manage environment variables, and it uses the dotenv-linter crate to lint environment variables.
+
+Because Crabby Rails uses the Rocket web framework, the architecture is not exactly MVC
+
 
 ## ⛓️ Dependencies / Limitations <a name = "limitations"></a>
 
