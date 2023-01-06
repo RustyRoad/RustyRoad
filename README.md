@@ -1,6 +1,6 @@
 <p align="center">
   <a href="" rel="noopener">
- <img src="https://i.imgur.com/TFhgfXu.png" alt="Project logo"></a>
+ <img src="https://i.imgur.com/3HAr6Jm.png" alt="Project logo"></a>
 </p>
 <h3 align="center">Crabby Rails</h3>
 
