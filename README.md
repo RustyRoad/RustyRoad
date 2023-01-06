@@ -131,13 +131,9 @@ Creating a new CrabbyRails project called my_project
 - [Rust](https://www.rust-lang.org/) - Programming Language
 - [Rocket](https://rocket.rs/) - Web Framework
 - [Diesel](https://diesel.rs/) - ORM
-- [Handlebars](https://handlebarsjs.com/) - Template Engine
-- [Sass](https://sass-lang.com/) - CSS Preprocessor
-- [Webpack](https://webpack.js.org/) - Asset Pipeline
+- [Tera](https://tera.netlify.app/) - Template Engine
 - [PostgreSQL](https://www.postgresql.org/) - Database
-- [Nginx](https://www.nginx.com/) - Web Server
-- [Capistrano](https://capistranorb.com/) - Deployment
-- [RSpec](https://rspec.info/) - Testing
+- [Cucumber Rust](https://github.com/cucumber-rs) - Testing
 
 ## ✍️ Authors <a name = "authors"></a>
 
