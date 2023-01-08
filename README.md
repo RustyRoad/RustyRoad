@@ -8,8 +8,8 @@
 
 [![Hackathon](https://img.shields.io/badge/rust-gray.svg?&logo=rust&logoColor=orange)](https://www.rust-lang.org/)
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
-[![GitHub Issues](https://img.shields.io/github/issues/RileySeaburgRustyRoad.svg)](https://github.com/RileySeaburgRustyRoad/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/RileySeaburgRustyRoad.svg)](https://github.com/RileySeaburgRustyRoad/pulls)
+[![GitHub Issues](https://img.shields.io/github/issues/RileySeaburg/RustyRoad.svg)](https://github.com/RileySeaburg/RustyRoad/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/RileySeaburg/RustyRoad.svg)](https://github.com/RileySeaburg/RustyRoad/pulls)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 </div>
@@ -155,7 +155,7 @@ Creating a new Rusty Road project called my_project
 
 - [@rileyseaburg](https://github.com/RileySeaburg) - Idea & Initial work
 
-See also the list of [contributors](https://github.com/RileySeaburgRustyRoad/contributors)
+See also the list of [contributors](https://github.com/RileySeaburg/RustyRoad/contributors)
 who participated in this project.
 
 ## 🎉 Acknowledgments <a name = "acknowledgments"></a>
