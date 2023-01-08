@@ -40,6 +40,9 @@ impl Project {
     pub fn create_files(&self) -> Result<()> {
         std::fs::File::create(&self.cargo_toml).expect("Failed to create Cargo.toml");
         std::fs::File::create(&self.main_rs).expect("Failed to create main.rs");
+        // create package.json
+        std::fs::File::create(format!("{}/package.json", &self.name))
+            .expect("Failed to create package.json");
         Ok(())
     }
 
@@ -89,6 +92,41 @@ rocket = \"0.5.0-rc.1\"",
             .as_bytes(),
         )
         .expect("Failed to write to Cargo.toml");
+        Ok(())
+    }
+
+    fn write_to_package_json(&self) -> Result<()> {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(format!("{}/package.json", &self.name))
+            .expect("Failed to open package.json");
+
+        file.write_all(
+            format!(
+                "{{
+  \"name\": \"crabbyrails\",
+  \"version\": \"1.0.0\",
+  \"main\": \"index.js\",
+  \"repository\": \"https://github.com/Riley-Seaburg/crabbyrails.git\",
+  \"author\": \"Riley Seaburg <riley@rileyseaburg.com>\",
+  \"license\": \"MIT\",
+  \"scripts\": {{
+    \"server\": \"cargo run\",
+    \"tailwind:dev\": \"npx tailwindcss -i ./src/tailwind.css -o ./static/styles.css --watch\",
+    \"tailwind:build\": \"npx tailwindcss -i ./src/tailwind.css -o ./static/styles.css --minify\",
+    \"dev\": \"concurrently \\\"yarn tailwind:dev\\\" \\\" yarn server\\\"\"
+  }},
+  \"devDependencies\": {{
+    \"@tailwindcss/forms\": \"^0.5.3\",
+    \"concurrently\": \"^7.6.0\",
+    \"tailwindcss\": \"^3.2.4\"
+  }}
+}}"
+            )
+            .as_bytes(),
+        )
+        .expect("Failed to write to package.json");
         Ok(())
     }
 
