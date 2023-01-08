@@ -1,6 +1,6 @@
 <p align="center">
   <a href="" rel="noopener">
- <img src="https://i.imgur.com/ZoP982i.png" alt="Project logo"></a>
+ <img src="https://i.imgur.com/S2ZwTrA.png" alt="Project logo"></a>
 </p>
 <h3 align="center">Rusty Rocket</h3>
 
@@ -8,8 +8,8 @@
 
 [![Hackathon](https://img.shields.io/badge/rust-gray.svg?&logo=rust&logoColor=orange)](https://www.rust-lang.org/)
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
-[![GitHub Issues](https://img.shields.io/github/issues/RileySeaburg/Rusty Road.svg)](https://github.com/RileySeaburg/Rusty Road/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/RileySeaburg/Rusty Road.svg)](https://github.com/RileySeaburg/Rusty Road/pulls)
+[![GitHub Issues](https://img.shields.io/github/issues/RileySeaburgRustyRoad.svg)](https://github.com/RileySeaburgRustyRoad/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/RileySeaburgRustyRoad.svg)](https://github.com/RileySeaburgRustyRoad/pulls)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 </div>
@@ -155,7 +155,7 @@ Creating a new Rusty Road project called my_project
 
 - [@rileyseaburg](https://github.com/RileySeaburg) - Idea & Initial work
 
-See also the list of [contributors](https://github.com/RileySeaburg/Rusty Road/contributors)
+See also the list of [contributors](https://github.com/RileySeaburgRustyRoad/contributors)
 who participated in this project.
 
 ## 🎉 Acknowledgments <a name = "acknowledgments"></a>
