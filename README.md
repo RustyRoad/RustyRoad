@@ -59,7 +59,7 @@ I outlined this in a blog post here: https://rileyseaburg.com/posts/rust-needs-a
 
 Rusty Road is a framework written in Rust that is based on Ruby on Rocket. It is designed to provide the familiar conventions and ease of use of Ruby on Rocket, while also taking advantage of the performance and efficiency of Rust.
 
-## 🦀 What is Rusty Road <a name = "Rusty_Rocket"></a>
+## :dog: What is Rusty Road <a name = "Rusty_Rocket"></a>
 
 Rusty Road is a framework written in Rust that is based on Ruby on Rocket. It is designed to provide the familiar conventions and ease of use of Ruby on Rocket, while also taking advantage of the performance and efficiency of Rust.
 
