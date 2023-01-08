@@ -16,7 +16,7 @@
 
 ---
 
-<p align="center">Rusty Road is a framework written in Rust that is based on Ruby on Rocket. It is designed to provide the familiar conventions and ease of use of Ruby on Rocket, while also taking advantage of the performance and efficiency of Rust.
+<p align="center">Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
     <br> 
     Rusty Road is intended to offer developers a powerful and reliable platform for building web applications using Rust, and its name incorporates a rust-themed crab pun in a playful and memorable way.
 </p>
@@ -57,11 +57,11 @@ I outlined this in a blog post here: https://rileyseaburg.com/posts/rust-needs-a
 
 ## 💡 Idea / Solution <a name = "idea"></a>
 
-Rusty Road is a framework written in Rust that is based on Ruby on Rocket. It is designed to provide the familiar conventions and ease of use of Ruby on Rocket, while also taking advantage of the performance and efficiency of Rust.
+Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
 
 ## :dog: What is Rusty Road <a name = "Rusty_Rocket"></a>
 
-Rusty Road is a framework written in Rust that is based on Ruby on Rocket. It is designed to provide the familiar conventions and ease of use of Ruby on Rocket, while also taking advantage of the performance and efficiency of Rust.
+Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
 
 Rusty Road is intended to offer developers a powerful and reliable platform for building web applications using Rust, and its name incorporates a rust-themed crab pun in a playful and memorable way.
 
@@ -74,8 +74,8 @@ Because Rusty Road uses the Rocket web framework, the architecture is not exactl
 
 ## ⛓️ Dependencies / Limitations <a name = "limitations"></a>
 
-- Rust is a relatively new language, and it is not as mature as Ruby on Rocket.
-- Rust is not as easy to use as Ruby on Rocket.
+- Rust is a relatively new language, and it is not as mature as Ruby on Rails.
+- Rust is not as easy to use as Ruby on Rails.
 - Rust has a borrow checker, which can make it difficult to use.
 
 ## 🚀 Future Scope <a name = "future_scope"></a>
@@ -160,6 +160,6 @@ who participated in this project.
 
 ## 🎉 Acknowledgments <a name = "acknowledgments"></a>
 
-- Creator of Ruby on Rocket, David Heinemeier Hansson (DHH)
+- Creator of Ruby on Rails, David Heinemeier Hansson (DHH)
 - Creator of Rust, Graydon Hoare
 - Creator of Rocket, Sergio Benitez
