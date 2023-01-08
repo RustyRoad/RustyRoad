@@ -2,7 +2,7 @@
   <a href="" rel="noopener">
  <img src="https://i.imgur.com/S2ZwTrA.png" alt="Project logo"></a>
 </p>
-<h3 align="center">Rusty Rocket</h3>
+<h3 align="center">Rusty Road</h3>
 
 <div align="center">
 
@@ -16,9 +16,9 @@
 
 ---
 
-<p align="center">Rusty Rocket is a framework written in Rust that is based on Ruby on Rocket. It is designed to provide the familiar conventions and ease of use of Ruby on Rocket, while also taking advantage of the performance and efficiency of Rust.
+<p align="center">Rusty Road is a framework written in Rust that is based on Ruby on Rocket. It is designed to provide the familiar conventions and ease of use of Ruby on Rocket, while also taking advantage of the performance and efficiency of Rust.
     <br> 
-    Rusty Rocket is intended to offer developers a powerful and reliable platform for building web applications using Rust, and its name incorporates a rust-themed crab pun in a playful and memorable way.
+    Rusty Road is intended to offer developers a powerful and reliable platform for building web applications using Rust, and its name incorporates a rust-themed crab pun in a playful and memorable way.
 </p>
 
 ## 📝 Table of Contents
@@ -67,9 +67,9 @@ Rusty Road is intended to offer developers a powerful and reliable platform for 
 
 ### Understanding Rusty Road
 
-Rusty Rocket currently works with the Rocket web framework, the Diesel ORM, the Tera template engine, the SASS asset pipeline, and the PostgreSQL database. It also uses the dotenv crate to manage environment variables, and it uses the dotenv-linter crate to lint environment variables.
+Rusty Road currently works with the Rocket web framework, the Diesel ORM, the Tera template engine, the SASS asset pipeline, and the PostgreSQL database. It also uses the dotenv crate to manage environment variables, and it uses the dotenv-linter crate to lint environment variables.
 
-Because Rusty Rocket uses the Rocket web framework, the architecture is not exactly MVC
+Because Rusty Road uses the Rocket web framework, the architecture is not exactly MVC
 
 
 ## ⛓️ Dependencies / Limitations <a name = "limitations"></a>
