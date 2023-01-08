@@ -1,8 +1,8 @@
 // Libray Crate
 
-// CrabbyRails
+// RustyRocket
 
-// This is the main file for the CrabbyRails project.
+// This is the main file for the RustyRocket project.
 // It is the entry point for the program.
 
 use std::io::Write;
@@ -83,7 +83,7 @@ fn rocket() -> _ {
                 "[package]
 name = \"{}\"
 version = \"0.1.0\"
-authors = [\"CrabbyRails\"]
+authors = [\"RustyRocket\"]
 edition = \"2021\"
 [dependencies]
 rocket = \"0.5.0-rc.1\"",
@@ -105,10 +105,10 @@ rocket = \"0.5.0-rc.1\"",
         file.write_all(
             format!(
                 "{{
-  \"name\": \"crabbyrails\",
+  \"name\": \"RustyRocket\",
   \"version\": \"1.0.0\",
   \"main\": \"index.js\",
-  \"repository\": \"https://github.com/Riley-Seaburg/crabbyrails.git\",
+  \"repository\": \"https://github.com/Riley-Seaburg/RustyRocket.git\",
   \"author\": \"Riley Seaburg <riley@rileyseaburg.com>\",
   \"license\": \"MIT\",
   \"scripts\": {{

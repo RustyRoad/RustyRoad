@@ -1,31 +1,31 @@
 <p align="center">
   <a href="" rel="noopener">
- <img src="https://i.imgur.com/e6mRQFz.png" alt="Project logo"></a>
+ <img src="https://i.imgur.com/ZoP982i.png" alt="Project logo"></a>
 </p>
-<h3 align="center">Crabby Rails</h3>
+<h3 align="center">Rusty Rocket</h3>
 
 <div align="center">
 
 [![Hackathon](https://img.shields.io/badge/rust-gray.svg?&logo=rust&logoColor=orange)](https://www.rust-lang.org/)
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
-[![GitHub Issues](https://img.shields.io/github/issues/RileySeaburg/CrabbyRails.svg)](https://github.com/RileySeaburg/CrabbyRails/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/RileySeaburg/CrabbyRails.svg)](https://github.com/RileySeaburg/CrabbyRails/pulls)
+[![GitHub Issues](https://img.shields.io/github/issues/RileySeaburg/Rusty Road.svg)](https://github.com/RileySeaburg/Rusty Road/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/RileySeaburg/Rusty Road.svg)](https://github.com/RileySeaburg/Rusty Road/pulls)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 </div>
 
 ---
 
-<p align="center">CrabbyRails is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
+<p align="center">Rusty Rocket is a framework written in Rust that is based on Ruby on Rocket. It is designed to provide the familiar conventions and ease of use of Ruby on Rocket, while also taking advantage of the performance and efficiency of Rust.
     <br> 
-    CrabbyRails is intended to offer developers a powerful and reliable platform for building web applications using Rust, and its name incorporates a rust-themed crab pun in a playful and memorable way.
+    Rusty Rocket is intended to offer developers a powerful and reliable platform for building web applications using Rust, and its name incorporates a rust-themed crab pun in a playful and memorable way.
 </p>
 
 ## 📝 Table of Contents
 
 - [Problem Statement](#problem_statement)
 - [Idea / Solution](#idea)
-- [What is CrabbyRails](#crabby_rails)
+- [What is Rusty Road](#Rusty_Rocket)
 - [Dependencies / Limitations](#limitations)
 - [Future Scope](#future_scope)
 - [Setting up a local environment](#getting_started)
@@ -53,27 +53,29 @@ I outlined this in a blog post here: https://rileyseaburg.com/posts/rust-needs-a
     - Web servers are not extensible or customizable, because most languages are not as extensible or customizable as Rust.
     - Web servers are not a joy to use, because most languages are not as fun to use as Rust.
 
+
+
 ## 💡 Idea / Solution <a name = "idea"></a>
 
-CrabbyRails is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
+Rusty Road is a framework written in Rust that is based on Ruby on Rocket. It is designed to provide the familiar conventions and ease of use of Ruby on Rocket, while also taking advantage of the performance and efficiency of Rust.
 
-## 🦀 What is CrabbyRails <a name = "crabby_rails"></a>
+## 🦀 What is Rusty Road <a name = "Rusty_Rocket"></a>
 
-CrabbyRails is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
+Rusty Road is a framework written in Rust that is based on Ruby on Rocket. It is designed to provide the familiar conventions and ease of use of Ruby on Rocket, while also taking advantage of the performance and efficiency of Rust.
 
-CrabbyRails is intended to offer developers a powerful and reliable platform for building web applications using Rust, and its name incorporates a rust-themed crab pun in a playful and memorable way.
+Rusty Road is intended to offer developers a powerful and reliable platform for building web applications using Rust, and its name incorporates a rust-themed crab pun in a playful and memorable way.
 
-### Understanding CrabbyRails
+### Understanding Rusty Road
 
-Crabby Rails currently works with the Rocket web framework, the Diesel ORM, the Tera template engine, the SASS asset pipeline, and the PostgreSQL database. It also uses the dotenv crate to manage environment variables, and it uses the dotenv-linter crate to lint environment variables.
+Rusty Rocket currently works with the Rocket web framework, the Diesel ORM, the Tera template engine, the SASS asset pipeline, and the PostgreSQL database. It also uses the dotenv crate to manage environment variables, and it uses the dotenv-linter crate to lint environment variables.
 
-Because Crabby Rails uses the Rocket web framework, the architecture is not exactly MVC
+Because Rusty Rocket uses the Rocket web framework, the architecture is not exactly MVC
 
 
 ## ⛓️ Dependencies / Limitations <a name = "limitations"></a>
 
-- Rust is a relatively new language, and it is not as mature as Ruby on Rails.
-- Rust is not as easy to use as Ruby on Rails.
+- Rust is a relatively new language, and it is not as mature as Ruby on Rocket.
+- Rust is not as easy to use as Ruby on Rocket.
 - Rust has a borrow checker, which can make it difficult to use.
 
 ## 🚀 Future Scope <a name = "future_scope"></a>
@@ -94,7 +96,7 @@ and testing purposes. See [deployment](#deployment) for notes on how to deploy t
 
 ### Prerequisites
 
-Rust is required to build and run CrabbyRails. You can install Rust using [rustup](https://rustup.rs/).
+Rust is required to build and run Rusty Road. You can install Rust using [rustup](https://rustup.rs/).
 
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -108,11 +110,11 @@ Clone the repository and run the setup script.
 
 
 ```
-git clone https://github.com/RileySeaburg/CrabbyRails
+git clone https://github.com/RileySeaburg/RustyRoad
 ```
 
 ```
-cd CrabbyRails
+cd RustyRoad
 ```
 
 ```
@@ -128,15 +130,15 @@ The cli will prompt you to create a new project. Enter the name of your project 
 ```bash
 $ cargo run
     Finished dev [unoptimized + debuginfo] target(s) in 0.01s
-     Running `target/debug/crabby_rails`
-Welcome to CrabbyRails!
+     Running `target/debug/Rusty_Rocket`
+Welcome to Rusty Road!
 What would you like to do?
 1. Create a new project
 2. CLI help
 3. Exit
 Enter a number: 1
 Enter the name of your project: my_project
-Creating a new CrabbyRails project called my_project
+Creating a new Rusty Road project called my_project
 ```
 
 
@@ -153,11 +155,11 @@ Creating a new CrabbyRails project called my_project
 
 - [@rileyseaburg](https://github.com/RileySeaburg) - Idea & Initial work
 
-See also the list of [contributors](https://github.com/RileySeaburg/CrabbyRails/contributors)
+See also the list of [contributors](https://github.com/RileySeaburg/Rusty Road/contributors)
 who participated in this project.
 
 ## 🎉 Acknowledgments <a name = "acknowledgments"></a>
 
-- Creator of Ruby on Rails, David Heinemeier Hansson (DHH)
+- Creator of Ruby on Rocket, David Heinemeier Hansson (DHH)
 - Creator of Rust, Graydon Hoare
 - Creator of Rocket, Sergio Benitez
