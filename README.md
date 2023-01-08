@@ -16,10 +16,20 @@
 
 ---
 
-<p align="center">Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
-    <br> 
-    Rusty Road is intended to offer developers a powerful and reliable platform for building web applications using Rust, and its name incorporates a rust-themed crab pun in a playful and memorable way.
+<p align="center">
+  Rusty Road is a web framework for the Rust programming language that takes inspiration from Ruby on Rails. It combines the familiar conventions and ease of use of Rails with the performance and efficiency of Rust, making it a powerful and reliable platform for building web applications.
+  <br>
+  The name "Rusty Road" not only reflects the language that the framework is built on, but also the journey that developers will take as they build their applications.
 </p>
+<p align="center">
+  As a young programmer, Riley had always been drawn to the power and efficiency of the Rust programming language. He spent countless hours tinkering with code and dreaming of ways to harness Rust's potential to build truly great software. One day, while working on a particularly challenging project, Riley had a breakthrough. He realized that by combining Rust's low-level control with a high-level web framework, he could create a tool that was not only fast and reliable, but also easy to use and accessible to developers of all skill levels. And so, Rusty Road was born.
+</p>
+
+<p align="center">
+  In the future, Rusty Road will continue to push the boundaries of what is possible with Rust and web development. With its lightning-fast performance and powerful features, Rusty Road will help developers to build the most advanced and sophisticated web applications imaginable. And as it evolves and grows, Rusty Road will remain a beacon of hope for developers everywhere, empowering them to achieve their greatest goals and make the world a better place through the power of software. Together, we will build a brighter future for the good of all.
+</p>
+
+
 
 ## 📝 Table of Contents
 
