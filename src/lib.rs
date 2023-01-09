@@ -218,19 +218,37 @@ impl Project {
     pub fn create_directories(&self) -> Result<()> {
         std::fs::create_dir(&self.name).expect("Failed to create directory");
         std::fs::create_dir(&self.src_dir).expect("Failed to create src directory");
-        std::fs::create_dir(&self.templates).expect("Failed to create templates directory");
+std::fs::create_dir(&self.templates).expect("Failed to create templates directory");
         std::fs::create_dir(&self.static_dir).expect("Failed to create static directory");
         std::fs::create_dir(&self.template_components)
-            .expect("Failed to create components directory");
-        std::fs::create_dir(&self.template_layouts).expect("Failed to create layouts directory");
-        std::fs::create_dir(&self.template_pages).expect("Failed to create pages directory");
-        std::fs::create_dir(&self.static_css).expect("Failed to create css directory");
-        std::fs::create_dir(&self.static_js).expect("Failed to create js directory");
-        std::fs::create_dir(&self.static_images).expect("Failed to create images directory");
+            .expect("Failed to create template components directory");
+        std::fs::create_dir(&self.template_layouts)
+            .expect("Failed to create template layouts directory");
+        std::fs::create_dir(&self.template_pages)
+            .expect("Failed to create template pages directory");
+        std::fs::create_dir(&self.static_css).expect("Failed to create static css directory");
+        std::fs::create_dir(&self.static_js).expect("Failed to create static js directory");
+        std::fs::create_dir(&self.static_images)
+            .expect("Failed to create static images directory");
         std::fs::create_dir(&self.config).expect("Failed to create config directory");
-        std::fs::create_dir(&self.config_enviornments)
-            .expect("Failed to create environments directory");
-        std::fs::create_dir(&self.config_database).expect("Failed to create database directory");
+        std::fs::create_dir(&self.config_env).expect("Failed to create config environments directory");
+        std::fs::create_dir(&self.config_database)
+            .expect("Failed to create config database directory");
+        std::fs::create_dir(&self.routes).expect("Failed to create routes directory");
+        std::fs::create_dir(&self.controllers).expect("Failed to create controllers directory");
+        std::fs::create_dir(&self.models).expect("Failed to create models directory");
+        std::fs::create_dir(&self.migrations).expect("Failed to create migrations directory");
+        std::fs::create_dir(&self.seeders).expect("Failed to create seeders directory");
+        std::fs::create_dir(&self.tests).expect("Failed to create tests directory");
+        std::fs::create_dir(&self.config_initializers)
+            .expect("Failed to create config initializers directory");
+        std::fs::create_dir(&self.user_controller).expect("Failed to create user controller directory");
+        std::fs::create_dir(&self.user_model).expect("Failed to create user model directory");
+        std::fs::create_dir(&self.user_migration)
+            .expect("Failed to create user migration directory");
+        std::fs::create_dir(&self.user_seeder).expect("Failed to create user seeder directory");
+        std::fs::create_dir(&self.user_test).expect("Failed to create user test directory");
+        std::fs::create_dir(&self.user_routes).expect("Failed to create user routes directory");
         Ok(())
     }
 
@@ -240,13 +258,36 @@ impl Project {
         std::fs::File::create(&self.package_json).expect("Failed to create package.json");
         std::fs::File::create(&self.readme).expect("Failed to create README.md");
         std::fs::File::create(&self.gitignore).expect("Failed to create .gitignore");
-        std::fs::File::create(&self.indexjs).expect("Failed to create index.js");
+        std::fs::File::create(&self.index_html).expect("Failed to create index.html.tera");
+        std::fs::File::create(&self.styles_css).expect("Failed to create styles.css");
+        std::fs::File::create(&self.not_found_html).expect("Failed to create 404.html.tera");
+        std::fs::File::create(&self.server_error_html).expect("Failed to create 500.html.tera");
+        std::fs::File::create(&self.favicon_ico).expect("Failed to create favicon.ico");
+        std::fs::File::create(&self.robots_txt).expect("Failed to create robots.txt");
+        std::fs::File::create(&self.login_page_html).expect("Failed to create login.html.tera");
+        std::fs::File::create(&self.signup_page_html).expect("Failed to create signup.html.tera");
+        std::fs::File::create(&self.reset_password_page_html)
+            .expect("Failed to create reset_password.html.tera");
+        std::fs::File::create(&self.forgot_password_page_html)
+            .expect("Failed to create forgot_password.html.tera");
+        std::fs::File::create(&self.dashboard_page_html)
+            .expect("Failed to create dashboard.html.tera");
+        std::fs::File::create(&self.user_controller).expect("Failed to create user.rs");
+        std::fs::File::create(&self.user_model).expect("Failed to create user.rs");
+        std::fs::File::create(&self.user_migration).expect("Failed to create user.rs");
+        std::fs::File::create(&self.user_seeder).expect("Failed to create user.rs");
+        std::fs::File::create(&self.user_test).expect("Failed to create user.rs");
+        std::fs::File::create(&self.user_routes).expect("Failed to create user.rs");
         std::fs::File::create(&self.config_dev_env).expect("Failed to create dev.env");
         std::fs::File::create(&self.config_prod_env).expect("Failed to create prod.env");
         std::fs::File::create(&self.config_test_env).expect("Failed to create test.env");
-        std::fs::File::create(&self.config_default_env).expect("Failed to create default.env");
         std::fs::File::create(&self.config_dev_db).expect("Failed to create dev.db");
         std::fs::File::create(&self.config_prod_db).expect("Failed to create prod.db");
+        std::fs::File::create(&self.config_test_db).expect("Failed to create test.db");
+        std::fs::File::create(&self.config_initializers_db)
+            .expect("Failed to create db.rs");
+        std::fs::File::create(&self.config_initializers_routes)
+            .expect("Failed to create routes.rs");
         Ok(())
     }
 
