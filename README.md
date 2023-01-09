@@ -63,12 +63,12 @@ I outlined this in a blog post here: https://rileyseaburg.com/posts/rust-needs-a
   extensible and customizable. It would be a joy to use.
 - REALITY: Rust is a powerful language, but it is not easy to use. It is not easy to learn, and it is not easy to
   maintain. It is not fast, secure, or reliable. It is not extensible or customizable. It is not a joy to use even though it is the most loved programming language on [stack overflow](https://survey.stackoverflow.co/2022/#section-most-loved-dreaded-and-wanted-programming-scripting-and-markup-languages).
-- CONSEQUENCES: 
-    - Web servers are insecure, because most languages are not as secure as Rust. 
-    - Web servers are slow, because most languages are not as fast as Rust. 
-    - Web servers are unreliable, because most languages are not as reliable as Rust. 
-    - Web servers are not extensible or customizable, because most languages are not as extensible or customizable as Rust.
-    - Web servers are not a joy to use, because most languages are not as fun to use as Rust.
+- CONSEQUENCES:
+  - Web servers are insecure, because most languages are not as secure as Rust.
+  - Web servers are slow, because most languages are not as fast as Rust.
+  - Web servers are unreliable, because most languages are not as reliable as Rust.
+  - Web servers are not extensible or customizable, because most languages are not as extensible or customizable as Rust.
+  - Web servers are not a joy to use, because most languages are not as fun to use as Rust.
 
 
 
@@ -105,7 +105,6 @@ Because Rusty Road uses the Rocket web framework, the architecture is not exactl
 - Add support for more testing frameworks.
 - Add support for more authentication frameworks.
 
-
 ## 🏁 Getting Started <a name = "getting_started"></a>
 
 These instructions will get you a copy of the project up and running on your local machine for development
@@ -113,7 +112,7 @@ and testing purposes. See [deployment](#deployment) for notes on how to deploy t
 
 ### Prerequisites
 
-Rust is required to build and run Rusty Road. You can install Rust using [rustup](https://rustup.rs/).
+Rust is required to build and run Rusty Road. You can install Rust using rustup. rustup is a tool that helps manage Rust installations, it allows for installing multiple versions of Rust and switching between them easily.
 
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -122,9 +121,37 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ### Installing
 
+![Rusty Road Logo](https://raw.githubusercontent.com/rileyseaburg/rustyroad/master/logo.png)
+
+
+
+#### Crates.io
+Rusty Road is available on [crates.io](https://crates.io/crates/rustyroad). You can install it using cargo:
+
+```
+cargo install rustyroad
+```
+
+Bonus Step #1 (optional): Add the following to your .bashrc or .zshrc file to make the rustyroad command available in your terminal:
+
+```
+export PATH="$HOME/.cargo/bin:$PATH"
+```
+
+Bonus Step #2 (optional): Create a symbolic link to the rustyroad command in your ~/.cargo/bin directory.
+This will create a symlink from rustyroad to rr inside ~/.cargo/bin/ directory.
+Now you can invoke `rr` command which is just a symlink to rustyroad.
+
+```
+sudo ln -s ~/.cargo/bin/rustyroad /usr/local/bin/rr
+```
+
+(Windows users can download the executable from the [releases page](https://github.com/RileySeaburg/Rusty-Road/releases) and add it to their PATH.)
+
+
+#### Installing from source
+
 Clone the repository and run the setup script.
-
-
 
 ```
 git clone https://github.com/RileySeaburg/RustyRoad
