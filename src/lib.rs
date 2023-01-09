@@ -21,8 +21,6 @@
 //! Notice that other functions are called on the `Project` struct.  These functions are used to create a new web app.
 //! These are the functions that ship with the cli tool and are not publicly available.
 
-
-
 use std::io::Write;
 
 type Result<T, E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
@@ -89,7 +87,7 @@ pub struct Project {
     user_migration: String,
     user_seeder: String,
     user_test: String,
-    user_routes: String
+    user_routes: String,
 }
 
 /// # RustyRocket Project Builder
@@ -101,12 +99,12 @@ pub struct Project {
 /// ```rust
 /// use rustyroad::Project;
 ///
-/// let project = Project::new("MyProject");
+/// let project = Project::new("MyProject".to_string());
 /// ```
 ///
 ///
 impl Project {
-    pub fn new(name: &str) -> Project {
+    pub fn new(name: String) -> Project {
         let name = name.trim().to_string();
         let src_dir = format!("{}/src", name);
         let cargo_toml = format!("{}/Cargo.toml", name);
@@ -121,7 +119,7 @@ impl Project {
         let template_pages = format!("{}/templates/pages", name);
         let static_css = format!("{}/static/css", name);
         let static_js = format!("{}/static/js", name);
-        let indexjs = format!("{}/static/js/index.js", name);
+        let index_js = format!("{}/static/js/index.js", name);
         let static_images = format!("{}/static/images", name);
         let config = format!("{}/config", name);
         let config_env = format!("{}/config/environments", name);
@@ -132,6 +130,34 @@ impl Project {
         let config_database = format!("{}/config/database", name);
         let config_dev_db = format!("{}/config/database/dev.db", name);
         let config_prod_db = format!("{}/config/database/prod.db", name);
+        let routes = format!("{}/routes", name);
+        let controllers = format!("{}/controllers", name);
+        let models = format!("{}/models", name);
+        let migrations = format!("{}/migrations", name);
+        let seeders = format!("{}/seeders", name);
+        let tests = format!("{}/tests", name);
+        let config_initializers = format!("{}/config/initializers", name);
+        let config_initializers_assets = format!("{}/config/initializers/assets.rs", name);
+        let config_initializers_db = format!("{}/config/initializers/db.rs", name);
+        let config_initializers_default = format!("{}/config/initializers/default.rs", name);
+        let index_html = format!("{}/templates/pages/index.html.tera", name);
+        let styles_css = format!("{}/static/css/styles.css", name);
+        let not_found_html = format!("{}/templates/pages/404.html.tera", name);
+        let server_error_html = format!("{}/templates/pages/500.html.tera", name);
+        let favicon_ico = format!("{}/static/images/favicon.ico", name);
+        let robots_txt = format!("{}/static/robots.txt", name);
+        let login_page_html = format!("{}/templates/pages/login.html.tera", name);
+        let signup_page_html = format!("{}/templates/pages/signup.html.tera", name);
+        let reset_password_page_html = format!("{}/templates/pages/reset_password.html.tera", name);
+        let forgot_password_page_html =
+            format!("{}/templates/pages/forgot_password.html.tera", name);
+        let dashboard_page_html = format!("{}/templates/pages/dashboard.html.tera", name);
+        let user_controller = format!("{}/controllers/user.rs", name);
+        let user_model = format!("{}/models/user.rs", name);
+        let user_migration = format!("{}/migrations/00000000000000_create_users_table.rs", name);
+        let user_seeder = format!("{}/seeders/00000000000000_create_users_table.rs", name);
+        let user_test = format!("{}/tests/user.rs", name);
+        let user_routes = format!("{}/routes/user.rs", name);
 
         Project {
             name,
@@ -159,6 +185,33 @@ impl Project {
             config_database,
             config_dev_db,
             config_prod_db,
+            routes,
+            controllers,
+            models,
+            migrations,
+            seeders,
+            tests,
+            config_initializers,
+            config_initializers_assets,
+            config_initializers_db,
+            config_initializers_default,
+            index_html,
+            styles_css,
+            not_found_html,
+            server_error_html,
+            favicon_ico,
+            robots_txt,
+            login_page_html,
+            signup_page_html,
+            reset_password_page_html,
+            forgot_password_page_html,
+            dashboard_page_html,
+            user_controller,
+            user_model,
+            user_migration,
+            user_seeder,
+            user_test,
+            user_routes,
         }
     }
 
@@ -218,7 +271,7 @@ fn rocket() -> _ {
     rocket::build().mount(\"/\", routes![index])
 }",
         )
-            .expect("Failed to write to main.rs");
+        .expect("Failed to write to main.rs");
         Ok(())
     }
 
@@ -240,9 +293,9 @@ edition = \"2021\"
 rocket = \"0.5.0-rc.1\"",
                 self.name
             )
-                .as_bytes(),
+            .as_bytes(),
         )
-            .expect("Failed to write to Cargo.toml");
+        .expect("Failed to write to Cargo.toml");
         Ok(())
     }
 
@@ -275,9 +328,9 @@ rocket = \"0.5.0-rc.1\"",
   }}
 }}"
             )
-                .as_bytes(),
+            .as_bytes(),
         )
-            .expect("Failed to write to package.json");
+        .expect("Failed to write to package.json");
         Ok(())
     }
 
@@ -338,7 +391,7 @@ node_modules/
 static/styles.css
 ",
         )
-            .expect("Failed to write to .gitignore");
+        .expect("Failed to write to .gitignore");
 
         Ok(())
     }
@@ -366,16 +419,15 @@ function greet() {{
 const rustyroadster = new RustyRoadster();
 
 rustyroadster.greet();
-"
-                , self.name, self.name
+",
+                self.name, self.name
             )
-                .as_bytes(),
+            .as_bytes(),
         )
-            .expect("Failed to write to index.js");
+        .expect("Failed to write to index.js");
 
         Ok(())
     }
-
 
     // Write to dev.env
     fn write_to_dev_dot_env(&self) -> Result<()> {
@@ -397,7 +449,7 @@ rustyroadster.greet();
             ROCKET_TLS_CERTS=
 ",
         )
-            .expect("Failed to write to dev.env");
+        .expect("Failed to write to dev.env");
 
         Ok(())
     }
@@ -422,7 +474,7 @@ rustyroadster.greet();
             ROCKET_TLS_CERTS=
 ",
         )
-            .expect("Failed to write to prod.env");
+        .expect("Failed to write to prod.env");
 
         Ok(())
     }
@@ -499,5 +551,3 @@ rustyroadster.greet();
         std::process::exit(0);
     }
 }
-
-
