@@ -442,7 +442,7 @@ static/styles.css
         let mut file = std::fs::OpenOptions::new()
             .write(true)
             .append(true)
-            .open(format!("{}/index.js", &self.indexjs))
+            .open(format!("{}/index.js", &self.index_js))
             .expect("Failed to open index.js");
 
         file.write_all(
