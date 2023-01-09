@@ -61,6 +61,7 @@ pub struct Project {
     config_database: String,
     config_dev_db: String,
     config_prod_db: String,
+    config_test_db: String,
     routes: String,
     controllers: String,
     models: String,
@@ -71,6 +72,8 @@ pub struct Project {
     config_initializers_assets: String,
     config_initializers_db: String,
     config_initializers_default: String,
+    config_initializers_middleware: String,
+    config_initializers_routes: String,
     index_html: String,
     styles_css: String,
     not_found_html: String,
@@ -130,6 +133,7 @@ impl Project {
         let config_database = format!("{}/config/database", name);
         let config_dev_db = format!("{}/config/database/dev.db", name);
         let config_prod_db = format!("{}/config/database/prod.db", name);
+        let config_test_db = format!("{}/config/database/test.db", name);
         let routes = format!("{}/routes", name);
         let controllers = format!("{}/controllers", name);
         let models = format!("{}/models", name);
@@ -140,6 +144,8 @@ impl Project {
         let config_initializers_assets = format!("{}/config/initializers/assets.rs", name);
         let config_initializers_db = format!("{}/config/initializers/db.rs", name);
         let config_initializers_default = format!("{}/config/initializers/default.rs", name);
+        let config_initializers_middleware = format!("{}/config/initializers/middleware.rs", name);
+        let config_initializers_routes = format!("{}/config/initializers/routes.rs", name);
         let index_html = format!("{}/templates/pages/index.html.tera", name);
         let styles_css = format!("{}/static/css/styles.css", name);
         let not_found_html = format!("{}/templates/pages/404.html.tera", name);
@@ -185,6 +191,7 @@ impl Project {
             config_database,
             config_dev_db,
             config_prod_db,
+            config_test_db,
             routes,
             controllers,
             models,
@@ -195,6 +202,8 @@ impl Project {
             config_initializers_assets,
             config_initializers_db,
             config_initializers_default,
+            config_initializers_middleware,
+            config_initializers_routes,
             index_html,
             styles_css,
             not_found_html,
