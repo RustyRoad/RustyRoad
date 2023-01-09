@@ -5,6 +5,11 @@ edition = "2021"
 license = "MIT"
 description = "Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust."
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+repository = "https://github.com/RileySeaburg/RustyRoad"
+readme = "README.md"
+keywords = ["web", "framework", "rust"]
+categories = ["web-programming::frameworks"]
+documentation = "https://docs.rs/rustyroad"
 
 [dependencies]
 clap = "4.0.32"
