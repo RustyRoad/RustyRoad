@@ -1,48 +1,199 @@
-// Libray Crate
+//! # Rusty Road
+//! Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
+//! Below you will find a struct that represents a project.  It is used to create a new project.
+//! ## Description
+//! Rusty Road is a CLI tool that is used to create and manage your rust web apps.
+//! You can use this package as a part of your project and this documentation will help you understand how to use it, however, it is not intended to be used as a standalone package.
+//! ## Example
+//! ```
+//! use rustyroad::Project;
+//!
+//! fn main() {
+//!    Project::initial_prompt().expect("Failed to create project");
+//! }
+//! ```
+//!
+//! ### Code Explanation
+//! The code above is the main function for the RustyRoad project.  It is the entry point for the program.
+//! The project is created by calling the `initial_prompt` function on the `Project` struct.
+//! The initial prompt function will ask the user a series of questions and then create a new project based on the answers.
+//! From there, the user can use the project to create a new web app.
+//! Notice that other functions are called on the `Project` struct.  These functions are used to create a new web app.
+//! These are the functions that ship with the cli tool and are not publicly available.
 
-// RustyRocket
 
-// This is the main file for the RustyRocket project.
-// It is the entry point for the program.
 
 use std::io::Write;
 
 type Result<T, E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
+
+/** Fast and easy queue abstraction. **/
+
+/** Provides an abstraction over a queue.  When the abstraction is used
+ there are these advantages:
+- Fast
+ - [`Easy`]
+
+ [`Easy`]: http://thatwaseasy.example.com
+**/
 
 pub struct Project {
     name: String,
     src_dir: String,
     cargo_toml: String,
     main_rs: String,
+    package_json: String,
+    readme: String,
+    gitignore: String,
+    templates: String,
+    static_dir: String,
+    template_components: String,
+    template_layouts: String,
+    template_pages: String,
+    static_css: String,
+    static_js: String,
+    index_js: String,
+    static_images: String,
+    config: String,
+    config_env: String,
+    config_dev_env: String,
+    config_prod_env: String,
+    config_test_env: String,
+    config_default_env: String,
+    config_database: String,
+    config_dev_db: String,
+    config_prod_db: String,
+    routes: String,
+    controllers: String,
+    models: String,
+    migrations: String,
+    seeders: String,
+    tests: String,
+    config_initializers: String,
+    config_initializers_assets: String,
+    config_initializers_db: String,
+    config_initializers_default: String,
+    index_html: String,
+    styles_css: String,
+    not_found_html: String,
+    server_error_html: String,
+    favicon_ico: String,
+    robots_txt: String,
+    login_page_html: String,
+    signup_page_html: String,
+    reset_password_page_html: String,
+    forgot_password_page_html: String,
+    dashboard_page_html: String,
+    user_controller: String,
+    user_model: String,
+    user_migration: String,
+    user_seeder: String,
+    user_test: String,
+    user_routes: String
 }
 
+/// # RustyRocket Project Builder
+/// Description: This is the main file for the RustyRocket project.
+/// It is the entry point for the program.
+///
+/// ## Usage
+///
+/// ```rust
+/// use rustyroad::Project;
+///
+/// let project = Project::new("MyProject");
+/// ```
+///
+///
 impl Project {
-    pub fn new(name: String) -> Project {
+    pub fn new(name: &str) -> Project {
         let name = name.trim().to_string();
         let src_dir = format!("{}/src", name);
         let cargo_toml = format!("{}/Cargo.toml", name);
         let main_rs = format!("{}/src/main.rs", name);
+        let package_json = format!("{}/package.json", name);
+        let readme = format!("{}/README.md", name);
+        let gitignore = format!("{}/.gitignore", name);
+        let templates = format!("{}/templates", name);
+        let static_dir = format!("{}/static", name);
+        let template_components = format!("{}/templates/components", name);
+        let template_layouts = format!("{}/templates/layouts", name);
+        let template_pages = format!("{}/templates/pages", name);
+        let static_css = format!("{}/static/css", name);
+        let static_js = format!("{}/static/js", name);
+        let indexjs = format!("{}/static/js/index.js", name);
+        let static_images = format!("{}/static/images", name);
+        let config = format!("{}/config", name);
+        let config_env = format!("{}/config/environments", name);
+        let config_dev_env = format!("{}/config/environments/dev.env", name);
+        let config_prod_env = format!("{}/config/environments/prod.env", name);
+        let config_test_env = format!("{}/config/environments/test.env", name);
+        let config_default_env = format!("{}/config/environments/default.env", name);
+        let config_database = format!("{}/config/database", name);
+        let config_dev_db = format!("{}/config/database/dev.db", name);
+        let config_prod_db = format!("{}/config/database/prod.db", name);
 
         Project {
             name,
             src_dir,
             cargo_toml,
             main_rs,
+            package_json,
+            readme,
+            gitignore,
+            templates,
+            static_dir,
+            template_components,
+            template_layouts,
+            template_pages,
+            static_css,
+            static_js,
+            index_js,
+            static_images,
+            config,
+            config_env,
+            config_dev_env,
+            config_prod_env,
+            config_test_env,
+            config_default_env,
+            config_database,
+            config_dev_db,
+            config_prod_db,
         }
     }
 
     pub fn create_directories(&self) -> Result<()> {
         std::fs::create_dir(&self.name).expect("Failed to create directory");
         std::fs::create_dir(&self.src_dir).expect("Failed to create src directory");
+        std::fs::create_dir(&self.templates).expect("Failed to create templates directory");
+        std::fs::create_dir(&self.static_dir).expect("Failed to create static directory");
+        std::fs::create_dir(&self.template_components)
+            .expect("Failed to create components directory");
+        std::fs::create_dir(&self.template_layouts).expect("Failed to create layouts directory");
+        std::fs::create_dir(&self.template_pages).expect("Failed to create pages directory");
+        std::fs::create_dir(&self.static_css).expect("Failed to create css directory");
+        std::fs::create_dir(&self.static_js).expect("Failed to create js directory");
+        std::fs::create_dir(&self.static_images).expect("Failed to create images directory");
+        std::fs::create_dir(&self.config).expect("Failed to create config directory");
+        std::fs::create_dir(&self.config_enviornments)
+            .expect("Failed to create environments directory");
+        std::fs::create_dir(&self.config_database).expect("Failed to create database directory");
         Ok(())
     }
 
     pub fn create_files(&self) -> Result<()> {
         std::fs::File::create(&self.cargo_toml).expect("Failed to create Cargo.toml");
         std::fs::File::create(&self.main_rs).expect("Failed to create main.rs");
-        // create package.json
-        std::fs::File::create(format!("{}/package.json", &self.name))
-            .expect("Failed to create package.json");
+        std::fs::File::create(&self.package_json).expect("Failed to create package.json");
+        std::fs::File::create(&self.readme).expect("Failed to create README.md");
+        std::fs::File::create(&self.gitignore).expect("Failed to create .gitignore");
+        std::fs::File::create(&self.indexjs).expect("Failed to create index.js");
+        std::fs::File::create(&self.config_dev_env).expect("Failed to create dev.env");
+        std::fs::File::create(&self.config_prod_env).expect("Failed to create prod.env");
+        std::fs::File::create(&self.config_test_env).expect("Failed to create test.env");
+        std::fs::File::create(&self.config_default_env).expect("Failed to create default.env");
+        std::fs::File::create(&self.config_dev_db).expect("Failed to create dev.db");
+        std::fs::File::create(&self.config_prod_db).expect("Failed to create prod.db");
         Ok(())
     }
 
@@ -67,7 +218,7 @@ fn rocket() -> _ {
     rocket::build().mount(\"/\", routes![index])
 }",
         )
-        .expect("Failed to write to main.rs");
+            .expect("Failed to write to main.rs");
         Ok(())
     }
 
@@ -89,9 +240,9 @@ edition = \"2021\"
 rocket = \"0.5.0-rc.1\"",
                 self.name
             )
-            .as_bytes(),
+                .as_bytes(),
         )
-        .expect("Failed to write to Cargo.toml");
+            .expect("Failed to write to Cargo.toml");
         Ok(())
     }
 
@@ -99,13 +250,13 @@ rocket = \"0.5.0-rc.1\"",
         let mut file = std::fs::OpenOptions::new()
             .write(true)
             .append(true)
-            .open(format!("{}/package.json", &self.name))
+            .open(format!("{}/package.json", &self.package_json))
             .expect("Failed to open package.json");
 
         file.write_all(
             format!(
                 "{{
-  \"name\": \"RustyRocket\",
+  \"name\": \"rustyrocket\",
   \"version\": \"1.0.0\",
   \"main\": \"index.js\",
   \"repository\": \"https://github.com/Riley-Seaburg/RustyRocket.git\",
@@ -124,9 +275,155 @@ rocket = \"0.5.0-rc.1\"",
   }}
 }}"
             )
-            .as_bytes(),
+                .as_bytes(),
         )
-        .expect("Failed to write to package.json");
+            .expect("Failed to write to package.json");
+        Ok(())
+    }
+
+    // Write to README.md
+    fn write_to_readme(&self) -> Result<()> {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(format!("{}/README.md", &self.readme))
+            .expect("Failed to open README.md");
+
+        file.write_all(
+            format!(
+                "# {}
+This project was created using Rusty Roadster. Rusty Roadster is Rails for Rust. It is a CLI tool that allows you to create a new Rust project with a few commands. It also comes with TailwindCSS and Rocket pre-installed.
+
+## Getting Started
+
+### Configure TailwindCSS
+
+```bash
+npx tailwindcss init -p
+```
+
+To get started, run `yarn dev` to start the server and watch for changes to your TailwindCSS files.
+
+## Contributing
+
+If you would like to contribute to this project, please fork the repository and submit a pull request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details."
+                , self.name
+            )
+                .as_bytes(),
+        )
+            .expect("Failed to write to README.md");
+
+        Ok(())
+    }
+
+    // Write to .gitignore
+    fn write_to_gitignore(&self) -> Result<()> {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(format!("{}/.gitignore", &self.gitignore))
+            .expect("Failed to open .gitignore");
+
+        file.write_all(
+            b"target/
+Cargo.lock
+.DS_Store
+.env
+.db
+node_modules/
+static/styles.css
+",
+        )
+            .expect("Failed to write to .gitignore");
+
+        Ok(())
+    }
+
+    // Write to index.js
+    fn write_to_indexjs(&self) -> Result<()> {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(format!("{}/index.js", &self.indexjs))
+            .expect("Failed to open index.js");
+
+        file.write_all(
+            format!(
+                "// Rusty Roadster
+class RustyRoadster {{
+    constructor() {{
+        this.name = \"{}\";
+function greet() {{
+    console.log(\"Welcome to {} powered by Rusty Roadster\");
+}}
+    }}
+}}
+
+const rustyroadster = new RustyRoadster();
+
+rustyroadster.greet();
+"
+                , self.name, self.name
+            )
+                .as_bytes(),
+        )
+            .expect("Failed to write to index.js");
+
+        Ok(())
+    }
+
+
+    // Write to dev.env
+    fn write_to_dev_dot_env(&self) -> Result<()> {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(format!("{}/dev.env", &self.config_dev_env))
+            .expect("Failed to open dev.env");
+        file.write_all(
+            b"ROCKET_ENV=dev
+            ROCKET_ADDRESS=
+            ROCKET_PORT=8000
+            ROCKET_LOG=normal
+            ROCKET_WORKERS=1
+            ROCKET_SECRET_KEY=
+            ROCKET_TEMPLATES=
+            ROCKET_DATABASES=
+            ROCKET_TLS=
+            ROCKET_TLS_CERTS=
+",
+        )
+            .expect("Failed to write to dev.env");
+
+        Ok(())
+    }
+
+    // Write to prod.env
+    fn write_to_prod_dot_env(&self) -> Result<()> {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(format!("{}/prod.env", &self.config_prod_env))
+            .expect("Failed to open prod.env");
+        file.write_all(
+            b"ROCKET_ENV=prod
+            ROCKET_ADDRESS=
+            ROCKET_PORT=8000
+            ROCKET_LOG=normal
+            ROCKET_WORKERS=1
+            ROCKET_SECRET_KEY=
+            ROCKET_TEMPLATES=
+            ROCKET_DATABASES=
+            ROCKET_TLS=
+            ROCKET_TLS_CERTS=
+",
+        )
+            .expect("Failed to write to prod.env");
+
         Ok(())
     }
 
@@ -153,8 +450,14 @@ rocket = \"0.5.0-rc.1\"",
         // Write to the cargo.toml file
         Self::write_to_toml(&project).expect("Failed to write to Cargo.toml");
 
-        // Create a main.rs file
+        // Write to main.rs file
         Self::write_to_main_rs(&project).expect("Failed to write to main.rs");
+
+        // Write to package.json file
+        Self::write_to_package_json(&project).expect("Failed to write to package.json");
+
+        // Write to README.md file
+        Self::write_to_readme(&project).expect("Failed to write to README.md");
 
         println!("Project {} created!", &project.name);
     }
@@ -196,3 +499,5 @@ rocket = \"0.5.0-rc.1\"",
         std::process::exit(0);
     }
 }
+
+
