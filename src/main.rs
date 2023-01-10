@@ -1,5 +1,5 @@
-use rustyroad::Project;
-
+use rustyroad::{Project, RustyRoadArgs};
+use clap::Parser;
 pub fn main() {
-    Project::initial_prompt().expect("Failed to create project");
+   let args = RustyRoadArgs::parse();
 }

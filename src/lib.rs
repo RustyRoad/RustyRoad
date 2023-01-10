@@ -22,6 +22,7 @@
 //! These are the functions that ship with the cli tool and are not publicly available.
 
 use std::io::Write;
+use clap::{Arg, ArgAction, Args, Parser, Subcommand};
 
 type Result<T, E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
 
@@ -601,3 +602,58 @@ rustyroadster.greet();
         std::process::exit(0);
     }
 }
+
+#[clap(subcommand)]
+pub struct RustyRoadArgs {
+    #[clap(subcommand)]
+    command_type: CommandType,
+}
+
+pub enum CommandType {
+    /// Create a new project
+    Project(ProjectCommand),
+    /// Create a new route
+    Route(RouteCommand),
+    /// CLI help
+    Help(HelpCommand),
+    /// Exit
+    Exit(ExitCommand),
+}
+
+#[derive(Debug, Args)]
+pub struct ProjectCommand {
+    /// The name of the project
+    #[clap(short, long)]
+    name: String,
+
+    /// The path to the project
+    /// Defaults to the current directory
+    /// If the path does not exist, it will be created
+    /// If the path does exist, the project will be created in the path
+    /// If the path is not a directory, an error will be thrown
+    /// If the path is a directory, the project will be created in the path
+    /// If the path is a directory and the directory is not empty, an error will be thrown
+    ///
+    /// Example: rustyroad project --name myproject --path /home/user/projects
+    #[clap(short, long)]
+    path: Option<String>,
+
+
+
+}
+
+#[derive(Debug, Args)]
+pub struct RouteArgs {
+    /// The name of the route
+    #[clap(short, long)]
+    name: String,
+
+
+}
+
+#[derive(Debug, Args)]
+pub struct HelpArgs {}
+
+#[derive(Debug, Args)]
+pub struct ExitArgs {}
+
