@@ -21,6 +21,7 @@
 //! Notice that other functions are called on the `Project` struct.  These functions are used to create a new web app.
 //! These are the functions that ship with the cli tool and are not publicly available.
 
+use clap::{arg, Arg, ArgAction, Args, Command, Parser, Subcommand};
 use std::io::Write;
 use clap::{Arg, ArgAction, Args, Parser, Subcommand};
 
@@ -600,6 +601,32 @@ rustyroadster.greet();
     pub fn exit_program() {
         println!("Exiting...");
         std::process::exit(0);
+    }
+
+    pub fn cli() -> Command {
+        Command::new("RustyRoad")
+            .about("CLI for Rusty Road")
+            .subcommand_required(true)
+            .arg_required_else_help(true)
+            .allow_external_subcommands(true)
+            .subcommand(
+                Command::new("new_project")
+                    .about("Creates a new project")
+                    .arg(arg!(<name> "The name of the project"))
+                    .arg_required_else_help(true),
+            )
+    }
+
+    pub fn run() {
+        let matches = Self::cli().get_matches();
+
+        match matches.subcommand() {
+            Some(("new_project", matches)) => {
+                let name = matches.get_one::<String>("name").unwrap().to_string();
+                Self::new(name);
+            }
+            _ => unreachable!(),
+        }
     }
 }
 

@@ -1,5 +1,5 @@
-use rustyroad::{Project, RustyRoadArgs};
 use clap::Parser;
+use rustyroad::Project;
 pub fn main() {
-   let args = RustyRoadArgs::parse();
+   Project::run();
 }
