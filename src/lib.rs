@@ -597,9 +597,7 @@ rustyroadster.greet();
         };
 
         match project_name {
-            1 => Ok(Self::create_new_project(
-                String::from("rustyroad"),
-            )?),
+            1 => Ok(Self::create_new_project(String::from("rustyroad"))?),
             2 => Ok(Self::create_new_route()),
             3 => Ok(println!("Helping you...")),
             // print exit message then exit the program
