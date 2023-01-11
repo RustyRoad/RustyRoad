@@ -21,6 +21,7 @@
 //! Notice that other functions are called on the `Project` struct.  These functions are used to create a new web app.
 //! These are the functions that ship with the cli tool and are not publicly available.
 
+use clap::builder::Str;
 use clap::{arg, Arg, ArgAction, Args, Command, Parser, Subcommand};
 use std::io::Write;
 
@@ -108,8 +109,14 @@ pub struct Project {
 ///
 ///
 impl Project {
+    /// # Create a new project
+    /// This function creates a new project.
+    /// It is called from within the CreateProject function.
+    /// Takes a name and a path as arguments.
+    /// The {name} is the name of the project.
+    /// The {path} is the path to the directory where the project will be created.
+    /// If a path is not provided, the project will be created in the current directory.
     pub fn new(name: String) -> Project {
-        let name = name.trim().to_string();
         let src_dir = format!("{}/src", name);
         let cargo_toml = format!("{}/Cargo.toml", name);
         let main_rs = format!("{}/src/main.rs", name);
@@ -530,19 +537,19 @@ rustyroadster.greet();
         Ok(())
     }
 
-    fn create_new_project() {
-        println!("What would you like to name your project?");
+    /// Creates a new project
+    /// Takes an optional name <String> as a parameter
+    /// If no name is provided, it will default to "rustyroad"
+    /// If a name is provided, it will create a new directory with that name
+    /// and create a new project in that directory
+    /// If a directory with the same name already exists, it will return an error
+    /// and ask the user to choose a different name
+    pub fn create_new_project(name: String) -> Result<()> {
+        // If name is provided, create a new directory with that name
+        // If no name is provided, run the rest of the code in the function
 
-        let mut project_name_user_input = String::new();
-
-        // Get user input and assign it to project_name_user_input
-        std::io::stdin()
-            .read_line(&mut project_name_user_input)
-            .expect("Failed to read line");
-        // Place the user input as a value into the new() function
-        let project = Self::new(project_name_user_input);
-
-        writeln!(std::io::stdout(), "Creating project {}", project.name).unwrap();
+        // Create new project with name
+        let project = Self::new(name);
 
         // Create the project directory
         Self::create_directories(&project).expect("Failed to create directories");
@@ -563,7 +570,9 @@ rustyroadster.greet();
         Self::write_to_readme(&project).expect("Failed to write to README.md");
 
         println!("Project {} created!", &project.name);
-    }
+
+        Ok(())
+    } // End of create_new_project function
 
     fn create_new_route() {
         println!("What would you like to name your route?");
@@ -588,7 +597,9 @@ rustyroadster.greet();
         };
 
         match project_name {
-            1 => Ok(Self::create_new_project()),
+            1 => Ok(Self::create_new_project(
+                String::from("rustyroad"),
+            )?),
             2 => Ok(Self::create_new_route()),
             3 => Ok(println!("Helping you...")),
             // print exit message then exit the program
@@ -609,20 +620,36 @@ rustyroadster.greet();
             .arg_required_else_help(true)
             .allow_external_subcommands(true)
             .subcommand(
-                Command::new("new_project")
+                Command::new("new")
                     .about("Creates a new project")
                     .arg(arg!(<name> "The name of the project"))
                     .arg_required_else_help(true),
             )
+            .subcommand(
+                Command::new("push")
+                    .args_conflicts_with_subcommands(true)
+                    .args(Self::push_args())
+                    .subcommand(Command::new("push").args(Self::push_args()))
+                    .subcommand(Command::new("pop").arg(arg!([STASH])))
+                    .subcommand(Command::new("apply").arg(arg!([STASH]))),
+            )
+    }
+
+    pub fn push_args() -> Vec<Arg> {
+        vec![arg!(-m --message <MESSAGE>)]
     }
 
     pub fn run() {
         let matches = Self::cli().get_matches();
 
         match matches.subcommand() {
-            Some(("new_project", matches)) => {
+            Some(("new", matches)) => {
                 let name = matches.get_one::<String>("name").unwrap().to_string();
-                Self::new(name);
+                Self::create_new_project(name).unwrap();
+            }
+            Some(("push", matches)) => {
+                let message = matches.get_one::<String>("message").unwrap().to_string();
+                Self::create_new_route()
             }
             _ => unreachable!(),
         }
