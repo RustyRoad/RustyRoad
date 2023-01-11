@@ -105,7 +105,6 @@ Because Rusty Road uses the Rocket web framework, the architecture is not exactl
 - Add support for more testing frameworks.
 - Add support for more authentication frameworks.
 
-
 ## 🏁 Getting Started <a name = "getting_started"></a>
 
 These instructions will get you a copy of the project up and running on your local machine for development
