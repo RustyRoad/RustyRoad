@@ -21,18 +21,15 @@
 //! Notice that other functions are called on the `Project` struct.  These functions are used to create a new web app.
 //! These are the functions that ship with the cli tool and are not publicly available.
 
-use clap::builder::Str;
-use clap::{arg, Arg, ArgAction, Args, Command, Parser, Subcommand};
+use clap::{arg, Arg, Command, Parser};
 use std::io::Error;
-use std::path::Path;
-use std::{
-    fs::{create_dir, File},
-    io::Write,
-};
+use std::{fs::OpenOptions, io::Write};
 
 pub(crate) mod generators;
-use generators::directory::create_directory;
-type Result<T, E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
+pub(crate) mod writers;
+use crate::generators::create_directory;
+use crate::generators::create_file;
+use crate::writers::write_to_file;
 
 /** Fast and easy queue abstraction. **/
 
@@ -43,7 +40,7 @@ type Result<T, E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
 
  [`Easy`]: http://thatwaseasy.example.com
 **/
-
+#[derive(Parser, Debug)]
 pub struct Project {
     name: String,
     src_dir: String,
@@ -72,6 +69,7 @@ pub struct Project {
     config_prod_db: String,
     config_test_db: String,
     routes: String,
+    routes_module: String,
     controllers: String,
     models: String,
     models_module: String,
@@ -86,7 +84,9 @@ pub struct Project {
     config_initializers_routes: String,
     index_html: String,
     base_html: String,
-    styles_css: String,
+    tailwind_css: String,
+    tailwind_config: String,
+    postcss_config: String,
     not_found_html: String,
     server_error_html: String,
     favicon_ico: String,
@@ -107,7 +107,13 @@ pub struct Project {
     user_migration_module: String,
     user_seeder: String,
     user_test: String,
-    user_routes: String,
+    user_route: String,
+    index_route: String,
+    login_route: String,
+    signup_route: String,
+    reset_password_route: String,
+    forgot_password_route: String,
+    dashboard_route: String,
 }
 
 /// # RustyRocket Project Builder
@@ -158,6 +164,7 @@ impl Project {
         let config_prod_db = format!("{}/prod.db", config_database);
         let config_test_db = format!("{}/test.db", config_database);
         let routes = format!("{}/routes", name);
+        let routes_module = format!("{}/mod.rs", routes);
         let controllers = format!("{}/controllers", name);
         let models = format!("{}/models", name);
         let models_module = format!("{}/mod.rs", models);
@@ -172,7 +179,9 @@ impl Project {
         let config_initializers_routes = format!("{}/routes.rs", config_initializers);
         let index_html = format!("{}/index.html.tera", template_pages);
         let base_html = format!("{}/base.html.tera", templates);
-        let styles_css = format!("{}/styles.css", static_css);
+        let tailwind_css = format!("{}/tailwind.css", src_dir);
+        let tailwind_config = format!("{}/tailwind.config.js", name);
+        let postcss_config = format!("{}/postcss.config.js", name);
         let not_found_html = format!("{}/404.html.tera", template_pages);
         let server_error_html = format!("{}/500.html.tera", template_pages);
         let favicon_ico = format!("{}/favicon.ico", static_images);
@@ -196,7 +205,13 @@ impl Project {
         let user_migration_module = format!("{}/mod.rs", user_migration_directory);
         let user_seeder = format!("{}/seeders/00000000000000_create_users_table.rs", name);
         let user_test = format!("{}/tests/user.rs", name);
-        let user_routes = format!("{}/routes/user.rs", name);
+        let user_route = format!("{}/user.rs", routes);
+        let index_route = format!("{}/index.rs", routes);
+        let login_route = format!("{}/login.rs", routes);
+        let signup_route = format!("{}/signup.rs", routes);
+        let reset_password_route = format!("{}/reset_password.rs", routes);
+        let forgot_password_route = format!("{}/forgot_password.rs", routes);
+        let dashboard_route = format!("{}/dashboard.rs", routes);
 
         Project {
             name,
@@ -226,6 +241,7 @@ impl Project {
             config_prod_db,
             config_test_db,
             routes,
+            routes_module,
             controllers,
             models,
             models_module,
@@ -240,7 +256,9 @@ impl Project {
             config_initializers_routes,
             index_html,
             base_html,
-            styles_css,
+            tailwind_css,
+            tailwind_config,
+            postcss_config,
             not_found_html,
             server_error_html,
             favicon_ico,
@@ -261,7 +279,13 @@ impl Project {
             user_migration_module,
             user_seeder,
             user_test,
-            user_routes,
+            user_route,
+            index_route,
+            login_route,
+            signup_route,
+            reset_password_route,
+            forgot_password_route,
+            dashboard_route,
         }
     }
 
@@ -299,96 +323,125 @@ impl Project {
         Ok(())
     }
 
-    pub fn create_files(&self) -> Result<()> {
-        File::create(&self.cargo_toml).expect("Failed to create Cargo.toml");
-        File::create(&self.main_rs).expect("Failed to create main.rs");
-        File::create(&self.package_json).expect("Failed to create package.json");
-        File::create(&self.readme).expect("Failed to create README.md");
-        File::create(&self.gitignore).expect("Failed to create .gitignore");
-        File::create(&self.index_js)?;
-        File::create(&self.models_module)?;
-        File::create(&self.index_html).expect("Failed to create index.html.tera");
-        File::create(&self.base_html).expect("Failed to create base.html.tera");
-        File::create(&self.styles_css).expect("Failed to create styles.css");
-        File::create(&self.not_found_html).expect("Failed to create 404.html.tera");
-        File::create(&self.server_error_html).expect("Failed to create 500.html.tera");
-        File::create(&self.favicon_ico).expect("Failed to create favicon.ico");
-        File::create(&self.robots_txt).expect("Failed to create robots.txt");
-        File::create(&self.login_page_html).expect("Failed to create login.html.tera");
-        File::create(&self.signup_page_html).expect("Failed to create signup.html.tera");
-        File::create(&self.reset_password_page_html)
-            .expect("Failed to create reset_password.html.tera");
-        File::create(&self.forgot_password_page_html)
-            .expect("Failed to create forgot_password.html.tera");
-        File::create(&self.dashboard_page_html).expect("Failed to create dashboard.html.tera");
-        File::create(&self.user_controller).expect("Failed to create user.rs");
-        File::create(&self.user_controller_module).expect("Failed to create user.rs");
-        File::create(&self.user_model).expect("Failed to create user.rs");
-        File::create(&self.user_model_module).expect("Failed to create user.rs");
-        File::create(&self.user_migration).expect("Failed to create user.rs");
-        File::create(&self.user_migration_module).expect("Failed to create user.rs");
-        File::create(&self.user_seeder).expect("Failed to create user.rs");
-        File::create(&self.user_test).expect("Failed to create user.rs");
-        File::create(&self.user_routes).expect("Failed to create user.rs");
-        File::create(&self.config_dev_env).expect("Failed to create dev.env");
-        File::create(&self.config_prod_env).expect("Failed to create prod.env");
-        File::create(&self.config_test_env).expect("Failed to create test.env");
-        File::create(&self.config_dev_db).expect("Failed to create dev.db");
-        File::create(&self.config_prod_db).expect("Failed to create prod.db");
-        File::create(&self.config_test_db).expect("Failed to create test.db");
-        File::create(&self.config_initializers_db).expect("Failed to create db.rs");
-        File::create(&self.config_initializers_routes).expect("Failed to create routes.rs");
+    pub fn create_files(&self) -> Result<(), Error> {
+        let files = vec![
+            &self.cargo_toml,
+            &self.main_rs,
+            &self.package_json,
+            &self.readme,
+            &self.gitignore,
+            &self.config_dev_env,
+            &self.config_prod_env,
+            &self.config_test_env,
+            &self.config_default_env,
+            &self.config_dev_db,
+            &self.config_prod_db,
+            &self.config_test_db,
+            &self.routes_module,
+            &self.models_module,
+            &self.user_controller_module,
+            &self.user_model_module,
+            &self.user_migration_module,
+            &self.index_html,
+            &self.base_html,
+            &self.tailwind_css,
+            &self.tailwind_config,
+            &self.postcss_config,
+            &self.not_found_html,
+            &self.server_error_html,
+            &self.favicon_ico,
+            &self.robots_txt,
+            &self.login_page_html,
+            &self.signup_page_html,
+            &self.reset_password_page_html,
+            &self.forgot_password_page_html,
+            &self.dashboard_page_html,
+            &self.user_controller,
+            &self.user_model,
+            &self.user_migration,
+            &self.user_seeder,
+            &self.user_test,
+            &self.user_route,
+            &self.index_route,
+            &self.login_route,
+            &self.signup_route,
+            &self.reset_password_route,
+            &self.forgot_password_route,
+            &self.dashboard_route,
+            &self.index_js,
+        ];
+
+        for file in files {
+            create_file(file)?;
+        }
+
         Ok(())
     }
 
     // Write to cargo_toml
-    fn write_to_cargo_toml(&self) -> Result<()> {
-        let mut file = std::fs::OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open(&self.cargo_toml)
-            .expect("Failed to open Cargo.toml");
-
-        file.write_all(
-            format!(
-                "[package]
+    fn write_to_cargo_toml(&self) -> Result<(), Error> {
+        let config = format!(
+            "[package]
 name = \"{}\"
 version = \"0.1.0\"
 authors = [\"RustyRocket\"]
 edition = \"2021\"
 [dependencies]
-rocket = \"0.5.0-rc.1\"",
-                self.name
-            )
-            .as_bytes(),
-        )
-        .expect("Failed to write to Cargo.toml");
+rocket = \"0.5.0-rc.2\"
+tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
+serde = {{ version = \"1.0\", features = [\"derive\"] }}
+serde_json = \"1.0.82\"
+random-string = \"1.0.0\"
+env_logger = \"0.10.0\"
+local-ip-address = \"0.5.0\"
+futures = \"0.3.23\"
+tera = \"1.17.1\"
+reqwest = \"0.11\"
+rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
+
+
+[dependencies.sqlx]
+version = \"0.5\"
+default-features = false
+features = [\"macros\", \"offline\", \"migrate\"]
+
+[dependencies.rocket_db_pools]
+version = \"0.1.0-rc.2\"
+features = [\"sqlx_sqlite\"]",
+            &self.name,
+        );
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(&self.cargo_toml)?;
+
+        file.write_all(config.as_bytes())?;
         Ok(())
     }
     // Write to main.rs
     fn write_to_main_rs(&self) -> Result<(), Error> {
-        let mut file = std::fs::OpenOptions::new()
+        let mut file = OpenOptions::new()
             .write(true)
             .create(true)
             .open(&self.main_rs)?;
         file.write_all(
             b"
+pub(crate) mod models;
+pub(crate) mod routes;
 #[macro_use]
 extern crate rocket;
-mod models;
-mod routes;
 use rocket::fs::{relative, FileServer};
 use rocket_dyn_templates::Template;
 use routes::{
-    index::index,
-    login::{get_login, post_login},
-    welcome::welcome, contact::get_contact_page,
+    index::index
 };
 
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount(\"/\", routes![index, get_login, post_login, welcome, get_contact_page])
+        .mount(\"/\", routes![index])
         .mount(\"/\", FileServer::from(relative!(\"static\")))
         .attach(Template::fairing())
 }
@@ -397,8 +450,8 @@ fn rocket() -> _ {
         Ok(())
     }
     // Write to package.json
-    fn write_to_package_json(&self) -> Result<()> {
-        let mut file = std::fs::OpenOptions::new()
+    fn write_to_package_json(&self) -> Result<(), Error> {
+        let mut file = OpenOptions::new()
             .write(true)
             .append(true)
             .open(&self.package_json)
@@ -432,8 +485,8 @@ fn rocket() -> _ {
         Ok(())
     }
     // Write to README.md
-    fn write_to_readme(&self) -> Result<()> {
-        let mut file = std::fs::OpenOptions::new()
+    fn write_to_readme(&self) -> Result<(), Error> {
+        let mut file = OpenOptions::new()
             .write(true)
             .append(true)
             .open(&self.readme)
@@ -470,8 +523,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
         Ok(())
     }
     // Write to .gitignore
-    fn write_to_gitignore(&self) -> Result<()> {
-        let mut file = std::fs::OpenOptions::new()
+    fn write_to_gitignore(&self) -> Result<(), Error> {
+        let mut file = OpenOptions::new()
             .write(true)
             .append(true)
             .open(&self.gitignore)
@@ -493,7 +546,7 @@ static/styles.css
     }
     // Write to index.html.tera
     fn write_to_index_html(&self) -> Result<(), Error> {
-        let mut file = std::fs::OpenOptions::new()
+        let mut file = OpenOptions::new()
             .write(true)
             .append(true)
             .open(&self.index_html)
@@ -917,23 +970,47 @@ static/styles.css
 {% endblock content %}",)?;
         Ok(())
     }
-    // Write to models/mod.rs
-    fn write_models_mod_rs(&self) -> Result<(), Error> {
-        let mut file = std::fs::OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open("src/models/mod.rs")?;
-        file.write_all(
-            b"pub mod users;
-pub use users::*;
-",
-        )?;
+    // Write to routes/mod.rs
+    fn write_to_routes_module(&self) -> Result<(), Error> {
+        let contents = format!(
+            "pub mod health_check;
+pub mod index;
+pub mod user;
+
+pub use index::*;
+pub use user::*;"
+        );
+
+        write_to_file(&self.routes_module, contents.as_bytes()).unwrap_or_else(|why| {
+            panic!(
+                "couldn't write to {}: {}",
+                &self.routes_module,
+                why.to_string()
+            )
+        });
+
         Ok(())
     }
 
+    // Write to models/mod.rs
+    fn write_models_mod_rs(&self) -> Result<(), Error> {
+        let contents = format!(
+            "pub mod users;
+        pub use users::*;"
+        );
+
+        write_to_file(&self.models_module, &contents.as_bytes()).unwrap_or_else(|why| {
+            panic!(
+                "couldn't create {}: {}",
+                self.models_module,
+                why.to_string()
+            )
+        });
+        Ok(())
+    }
     // Write to models/users.rs
     fn write_models_users_rs(&self) -> Result<(), Error> {
-        let mut file = std::fs::OpenOptions::new()
+        let mut file = OpenOptions::new()
             .write(true)
             .append(true)
             .open("src/models/users.rs")?;
@@ -981,10 +1058,9 @@ impl UserLogin {
 
         Ok(())
     }
-
     // Write to base.html.tera
     fn write_to_base_html(&self) -> Result<(), Error> {
-        let mut file = std::fs::OpenOptions::new()
+        let mut file = OpenOptions::new()
             .write(true)
             .append(true)
             .open(&self.base_html)
@@ -1013,43 +1089,33 @@ impl UserLogin {
         )?;
         Ok(())
     }
-
     // Write to index.js
-    fn write_to_indexjs(&self) -> Result<(), Error> {
-        let mut file = std::fs::OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open(&self.index_js)
-            .expect("Failed to open index.js");
+    fn write_to_index_js(&self) -> Result<(), Error> {
+        let contents = format!(
+            "// Rusty Road
+        class RustyRoad {{
+            constructor() {{
+                this.name = \"{}\";
+        function greet() {{
+            console.log(\"Welcome to {} powered by Rusty Road\");
+        }}
+            }}
+        }}
+        
+        const rustyroad = new RustyRoad();
+        
+        rustyroad.greet();
+        ",
+            self.name, self.name
+        );
 
-        file.write_all(
-            format!(
-                "// Rusty Road
-class RustyRoad {{
-    constructor() {{
-        this.name = \"{}\";
-function greet() {{
-    console.log(\"Welcome to {} powered by Rusty Road\");
-}}
-    }}
-}}
-
-const rustyroad = new RustyRoad();
-
-rustyroad.greet();
-",
-                self.name, self.name
-            )
-            .as_bytes(),
-        )
-        .expect("Failed to write to index.js");
+        write_to_file(&self.index_js, contents.as_bytes())?;
 
         Ok(())
     }
-
     // Write to dev.env
-    fn write_to_dev_dot_env(&self) -> Result<()> {
-        let mut file = std::fs::OpenOptions::new()
+    fn write_to_dev_dot_env(&self) -> Result<(), Error> {
+        let mut file = OpenOptions::new()
             .write(true)
             .append(true)
             .open(&self.config_dev_env)
@@ -1071,10 +1137,9 @@ rustyroad.greet();
 
         Ok(())
     }
-
     // Write to prod.env
-    fn write_to_prod_dot_env(&self) -> Result<()> {
-        let mut file = std::fs::OpenOptions::new()
+    fn write_to_prod_dot_env(&self) -> Result<(), Error> {
+        let mut file = OpenOptions::new()
             .write(true)
             .append(true)
             .open(&self.config_prod_env)
@@ -1094,6 +1159,92 @@ rustyroad.greet();
         )
         .expect("Failed to write to prod.env");
 
+        Ok(())
+    }
+    // Write to index route
+    fn write_to_index_route(&self) -> Result<(), Error> {
+        let contents = format!(
+            "use rocket::fs::{{relative, FileServer}};
+use rocket_dyn_templates::{{context, Template}};
+
+#[get('/')]
+pub fn index() -> Template {{
+    Template::render(
+        \"index\",
+        context! {{
+            foo: 123,
+        }},
+    )
+}}"
+        );
+
+        write_to_file(&self.index_route.to_string(), contents.as_bytes()).unwrap_or_else(|why| {
+            println!(
+                "Couldn't write to {}: {}",
+                self.index_route.to_string(),
+                why.to_string()
+            );
+        });
+        Ok(())
+    }
+    // Write to tailwind.css
+    fn write_to_tailwind_css(&self) -> Result<(), Error> {
+        let contents = "@tailwind base;
+@tailwind components;
+@tailwind utilities;";
+
+        write_to_file(&self.tailwind_css.to_string(), contents.as_bytes()).unwrap_or_else(|why| {
+            println!(
+                "Couldn't write to {}: {}",
+                self.tailwind_css.to_string(),
+                why.to_string()
+            );
+        });
+        Ok(())
+    }
+    // Write to tailwind.config.js
+    fn write_to_tailwind_config(&self) -> Result<(), Error> {
+        let contents = "module.exports = {{
+        darkMode: 'media',
+        content: ['./templates/**/*.{html.tera,js}'],
+        theme: {{
+            extend: {{
+            }},
+        }},
+        plugins: [
+            require('@tailwindcss/forms'),
+        ],
+        }};";
+
+        write_to_file(&self.tailwind_config.to_string(), contents.as_bytes()).unwrap_or_else(
+            |why| {
+                println!(
+                    "Couldn't write to {}: {}",
+                    self.tailwind_config.to_string(),
+                    why.to_string()
+                );
+            },
+        );
+        Ok(())
+    }
+    // Write to postcss.config.js
+    fn write_to_postcss_config(&self) -> Result<(), Error> {
+        let contents = "module.exports = {{
+            plugins: [
+                require('tailwindcss'),
+                require('autoprefixer'),
+            ],
+        }};";
+
+        write_to_file(&self.postcss_config.to_string(), contents.as_bytes()).unwrap_or_else(
+            |why| {
+                println!(
+                    "Couldn't write to {}: {}",
+                    self.postcss_config,
+                    why.to_string()
+                );
+            },
+        );
         Ok(())
     }
 
@@ -1130,7 +1281,7 @@ rustyroad.greet();
         Self::write_to_readme(&project).expect("Failed to write to README.md");
 
         // Write to index.js file
-        Self::write_to_indexjs(&project).unwrap_or_else(|why| {
+        Self::write_to_index_js(&project).unwrap_or_else(|why| {
             println!("Failed to write to index.js: {:?}", why.kind());
         });
         // Write to index.html.tera file
@@ -1142,6 +1293,40 @@ rustyroad.greet();
             println!("Failed to write to base.html.tera: {:?}", why.kind());
         });
 
+        // Write to dev.env file
+        Self::write_to_dev_dot_env(&project).unwrap_or_else(|why| {
+            println!("Failed to write to dev.env: {:?}", why.kind());
+        });
+
+        // Write to prod.env file
+        Self::write_to_prod_dot_env(&project).unwrap_or_else(|why| {
+            println!("Failed to write to prod.env: {:?}", why.kind());
+        });
+
+        // Write to tailwind.css file
+        Self::write_to_tailwind_css(&project).unwrap_or_else(|why| {
+            println!("Failed to write to tailwind.css: {:?}", why.kind());
+        });
+        // need to create the function
+        // Write to tailwind.config.js file
+        Self::write_to_tailwind_config(&project).unwrap_or_else(|why| {
+            println!("Failed to write to tailwind.config.js: {:?}", why.kind());
+        });
+
+        // Write to postcss.config.js file
+        Self::write_to_postcss_config(&project).unwrap_or_else(|why| {
+            println!("Failed to write to postcss.config.js: {:?}", why.kind());
+        });
+
+        // Write to index.html route
+        Self::write_to_index_route(&project).unwrap_or_else(|why| {
+            println!("Failed to write to index.html: {:?}", why.kind());
+        });
+        // Write to routes module
+        Self::write_to_routes_module(&project).unwrap_or_else(|why| {
+            println!("Failed to write to routes/mod.rs: {:?}", why.kind());
+        });
+
         println!("Project {} created!", &project.name);
 
         Ok(())
@@ -1151,7 +1336,7 @@ rustyroad.greet();
         println!("What would you like to name your route?");
     }
 
-    pub fn initial_prompt() -> Result<(), Box<dyn std::error::Error>> {
+    pub fn initial_prompt() -> Result<(), Box<Error>> {
         println!("What would you like to do?");
         println!("1. Create a new project");
         println!("2. Create a route");
