@@ -29,7 +29,8 @@ pub(crate) mod generators;
 pub(crate) mod writers;
 use crate::generators::create_directory;
 use crate::generators::create_file;
-use crate::writers::write_to_file;
+use crate::writers::templates::navbar::write_to_navbar;
+use crate::writers::{write_to_file, write_to_main_rs};
 
 /** Fast and easy queue abstraction. **/
 
@@ -64,7 +65,7 @@ pub struct Project {
     config_prod_env: String,
     config_test_env: String,
     config_default_env: String,
-    config_database: String,
+    db: String,
     config_dev_db: String,
     config_prod_db: String,
     config_test_db: String,
@@ -114,6 +115,7 @@ pub struct Project {
     reset_password_route: String,
     forgot_password_route: String,
     dashboard_route: String,
+    navbar_component: String,
 }
 
 /// # RustyRocket Project Builder
@@ -140,7 +142,7 @@ impl Project {
     pub fn new(name: String) -> Project {
         let src_dir = format!("{}/src", name);
         let cargo_toml = format!("{}/Cargo.toml", name);
-        let main_rs = format!("{}/src/main.rs", name);
+        let main_rs = format!("{}/main.rs", src_dir);
         let package_json = format!("{}/package.json", name);
         let readme = format!("{}/README.md", name);
         let gitignore = format!("{}/.gitignore", name);
@@ -159,16 +161,16 @@ impl Project {
         let config_prod_env = format!("{}/prod.env", config_env);
         let config_test_env = format!("{}/test.env", config_env);
         let config_default_env = format!("{}/default.env", config_env);
-        let config_database = format!("{}/database", config);
-        let config_dev_db = format!("{}/dev.db", config_database);
-        let config_prod_db = format!("{}/prod.db", config_database);
-        let config_test_db = format!("{}/test.db", config_database);
-        let routes = format!("{}/routes", name);
-        let routes_module = format!("{}/mod.rs", routes);
-        let controllers = format!("{}/controllers", name);
-        let models = format!("{}/models", name);
-        let models_module = format!("{}/mod.rs", models);
-        let migrations = format!("{}/migrations", name);
+        let db = format!("{}/database", config);
+        let config_dev_db = format!("{}/dev.db", db);
+        let config_prod_db = format!("{}/prod.db", db);
+        let config_test_db = format!("{}/test.db", db);
+        let routes = format!("{}/routes", src_dir);
+        let routes_module = format!("{}/components", routes);
+        let controllers = format!("{}/controllers", src_dir);
+        let models = format!("{}/models", src_dir);
+        let models_module = format!("{}/components", models);
+        let migrations = format!("{}/migrations", db);
         let seeders = format!("{}/seeders", name);
         let tests = format!("{}/tests", name);
         let config_initializers = format!("{}/initializers", config);
@@ -193,16 +195,16 @@ impl Project {
         let dashboard_page_html = format!("{}/dashboard.html.tera", template_pages);
         let user_controller_directory = format!("{}/user", controllers);
         let user_controller = format!("{}/user.rs", user_controller_directory);
-        let user_controller_module = format!("{}/mod.rs", user_controller_directory);
+        let user_controller_module = format!("{}/components", user_controller_directory);
         let user_model_directory = format!("{}/user", models);
         let user_model = format!("{}/user.rs", user_model_directory);
-        let user_model_module = format!("{}/mod.rs", user_model_directory);
+        let user_model_module = format!("{}/components", user_model_directory);
         let user_migration_directory = format!("{}/user", migrations);
         let user_migration = format!(
             "{}/00000000000000_create_users_table.rs",
             user_migration_directory
         );
-        let user_migration_module = format!("{}/mod.rs", user_migration_directory);
+        let user_migration_module = format!("{}/components", user_migration_directory);
         let user_seeder = format!("{}/seeders/00000000000000_create_users_table.rs", name);
         let user_test = format!("{}/tests/user.rs", name);
         let user_route = format!("{}/user.rs", routes);
@@ -212,6 +214,7 @@ impl Project {
         let reset_password_route = format!("{}/reset_password.rs", routes);
         let forgot_password_route = format!("{}/forgot_password.rs", routes);
         let dashboard_route = format!("{}/dashboard.rs", routes);
+        let navbar_component = format!("{}/navbar.html.tera", template_components);
 
         Project {
             name,
@@ -236,7 +239,7 @@ impl Project {
             config_prod_env,
             config_test_env,
             config_default_env,
-            config_database,
+            db,
             config_dev_db,
             config_prod_db,
             config_test_db,
@@ -286,41 +289,8 @@ impl Project {
             reset_password_route,
             forgot_password_route,
             dashboard_route,
+            navbar_component,
         }
-    }
-
-    pub fn create_directories(&self) -> Result<(), Error> {
-        let directories = vec![
-            &self.name,
-            &self.src_dir,
-            &self.config,
-            &self.config_env,
-            &self.config_database,
-            &self.routes,
-            &self.controllers,
-            &self.models,
-            &self.migrations,
-            &self.seeders,
-            &self.tests,
-            &self.config_initializers,
-            &self.templates,
-            &self.static_dir,
-            &self.template_components,
-            &self.template_layouts,
-            &self.template_pages,
-            &self.static_css,
-            &self.static_js,
-            &self.static_images,
-            &self.user_controller_directory,
-            &self.user_model_directory,
-            &self.user_migration_directory,
-        ];
-
-        for directory in directories {
-            create_directory(directory)?;
-        }
-
-        Ok(())
     }
 
     pub fn create_files(&self) -> Result<(), Error> {
@@ -377,7 +347,6 @@ impl Project {
 
         Ok(())
     }
-
     // Write to cargo_toml
     fn write_to_cargo_toml(&self) -> Result<(), Error> {
         let config = format!(
@@ -418,35 +387,6 @@ features = [\"sqlx_sqlite\"]",
             .open(&self.cargo_toml)?;
 
         file.write_all(config.as_bytes())?;
-        Ok(())
-    }
-    // Write to main.rs
-    fn write_to_main_rs(&self) -> Result<(), Error> {
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(&self.main_rs)?;
-        file.write_all(
-            b"
-pub(crate) mod models;
-pub(crate) mod routes;
-#[macro_use]
-extern crate rocket;
-use rocket::fs::{relative, FileServer};
-use rocket_dyn_templates::Template;
-use routes::{
-    index::index
-};
-
-#[launch]
-fn rocket() -> _ {
-    rocket::build()
-        .mount(\"/\", routes![index])
-        .mount(\"/\", FileServer::from(relative!(\"static\")))
-        .attach(Template::fairing())
-}
-",
-        )?;
         Ok(())
     }
     // Write to package.json
@@ -970,11 +910,10 @@ static/styles.css
 {% endblock content %}",)?;
         Ok(())
     }
-    // Write to routes/mod.rs
+    // Write to routes/components
     fn write_to_routes_module(&self) -> Result<(), Error> {
         let contents = format!(
-            "pub mod health_check;
-pub mod index;
+            "pub mod index;
 pub mod user;
 
 pub use index::*;
@@ -991,8 +930,7 @@ pub use user::*;"
 
         Ok(())
     }
-
-    // Write to models/mod.rs
+    // Write to models/components
     fn write_models_mod_rs(&self) -> Result<(), Error> {
         let contents = format!(
             "pub mod users;
@@ -1102,9 +1040,9 @@ impl UserLogin {
             }}
         }}
         
-        const rustyroad = new RustyRoad();
+        const rusty-road = new RustyRoad();
         
-        rustyroad.greet();
+        rusty-road.greet();
         ",
             self.name, self.name
         );
@@ -1164,18 +1102,18 @@ impl UserLogin {
     // Write to index route
     fn write_to_index_route(&self) -> Result<(), Error> {
         let contents = format!(
-            "use rocket::fs::{{relative, FileServer}};
+            r#"use rocket::fs::{{relative, FileServer}};
 use rocket_dyn_templates::{{context, Template}};
 
-#[get('/')]
+#[get("/")]
 pub fn index() -> Template {{
     Template::render(
-        \"index\",
+        "pages/index",
         context! {{
             foo: 123,
         }},
     )
-}}"
+}}"#
         );
 
         write_to_file(&self.index_route.to_string(), contents.as_bytes()).unwrap_or_else(|why| {
@@ -1204,17 +1142,17 @@ pub fn index() -> Template {{
     }
     // Write to tailwind.config.js
     fn write_to_tailwind_config(&self) -> Result<(), Error> {
-        let contents = "module.exports = {{
+        let contents = "module.exports = {
         darkMode: 'media',
         content: ['./templates/**/*.{html.tera,js}'],
-        theme: {{
-            extend: {{
-            }},
-        }},
+        theme: {
+            extend: {
+            },
+        },
         plugins: [
             require('@tailwindcss/forms'),
         ],
-        }};";
+        };";
 
         write_to_file(&self.tailwind_config.to_string(), contents.as_bytes()).unwrap_or_else(
             |why| {
@@ -1263,7 +1201,9 @@ pub fn index() -> Template {{
         let project = Self::new(name);
 
         // Create the project directory
-        Self::create_directories(&project)?;
+        create_directory(&project).unwrap_or_else(|why| {
+            println!("Couldn't create directory: {:?}", why.kind());
+        });
 
         // Create the files
         Self::create_files(&project).expect("Failed to create files");
@@ -1272,7 +1212,7 @@ pub fn index() -> Template {{
         Self::write_to_cargo_toml(&project).expect("Failed to write to Cargo.toml");
 
         // Write to main.rs file
-        Self::write_to_main_rs(&project).expect("Failed to write to main.rs");
+        write_to_main_rs(&project).expect("Failed to write to main.rs");
 
         // Write to package.json file
         Self::write_to_package_json(&project).expect("Failed to write to package.json");
@@ -1324,7 +1264,12 @@ pub fn index() -> Template {{
         });
         // Write to routes module
         Self::write_to_routes_module(&project).unwrap_or_else(|why| {
-            println!("Failed to write to routes/mod.rs: {:?}", why.kind());
+            println!("Failed to write to routes/components: {:?}", why.kind());
+        });
+
+        // write to navbar
+        write_to_navbar(&project).unwrap_or_else(|why| {
+            println!("Failed to write to navbar: {:?}", why.kind());
         });
 
         println!("Project {} created!", &project.name);
