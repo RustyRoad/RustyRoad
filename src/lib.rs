@@ -339,6 +339,7 @@ impl Project {
             &self.forgot_password_route,
             &self.dashboard_route,
             &self.index_js,
+            &self.navbar_component,
         ];
 
         for file in files {

@@ -104,5 +104,6 @@ pub fn write_to_navbar(project: &Project) -> Result<(), Error> {
         </div>
     </div>
 </header>"#;
+    println!("{}", &project.navbar_component);
     write_to_file(&project.navbar_component, contents.as_bytes())
 }

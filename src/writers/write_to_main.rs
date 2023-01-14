@@ -19,9 +19,10 @@ use routes::{
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount(\"/\", routes![index])
-        .mount(\"/\", FileServer::from(relative!(\"static\")))
+        .mount("/", routes![index])
+        .mount("/", FileServer::from(relative!("static")))
         .attach(Template::fairing())
 }"#;
     write_to_file(&project.main_rs, contents.as_bytes())
 }
+// need to create route module
