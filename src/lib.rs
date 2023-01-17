@@ -569,7 +569,8 @@ static/styles.css
 
 <main>
   <!-- Feature section with screenshot -->
-  {% include 'sections/feature-section-w-screenshot' %}
+  <!-- Ignore if not present -->
+  {% include 'sections/feature-section-w-screenshot'  ignore missing %}
 
   <!-- Feature section with grid -->
   <div class='relative bg-white py-16 sm:py-24 lg:py-32'>
