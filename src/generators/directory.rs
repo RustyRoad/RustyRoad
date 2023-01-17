@@ -1,7 +1,6 @@
 use crate::Project;
 use std::fs::create_dir;
 use std::io::Error;
-use std::path::Path;
 
 /// # Name: create_directory
 /// # Description: Creates a directory
@@ -24,6 +23,7 @@ pub fn create_directory(project: &Project) -> Result<(), Error> {
         &project.templates,
         &project.static_dir,
         &project.template_components,
+        &project.template_sections,
         &project.template_layouts,
         &project.template_pages,
         &project.static_css,

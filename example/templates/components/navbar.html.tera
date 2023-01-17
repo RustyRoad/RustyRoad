@@ -1,9 +1,4 @@
-use crate::writers::write_to_file;
-use crate::Project;
-use std::io::Error;
-
-pub fn write_to_navbar(project: &Project) -> Result<(), Error> {
-    let contents = r#"<header class='relative'>
+<header class='relative'>
     <div class='bg-gray-900 pt-6'>
         <nav class='relative mx-auto flex max-w-7xl items-center justify-between px-6' aria-label='Global'>
             <div class='flex flex-1 items-center'>
@@ -103,6 +98,4 @@ pub fn write_to_navbar(project: &Project) -> Result<(), Error> {
             </div>
         </div>
     </div>
-</header>"#;
-    write_to_file(&project.navbar_component, contents.as_bytes())
-}
+</header>

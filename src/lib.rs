@@ -30,7 +30,8 @@ pub(crate) mod writers;
 use crate::generators::create_directory;
 use crate::generators::create_file;
 use crate::writers::templates::navbar::write_to_navbar;
-use crate::writers::{write_to_file, write_to_main_rs};
+use crate::writers::templates::{write_to_base_html, write_to_header};
+use crate::writers::{write_to_file, write_to_main_rs, write_to_routes_mod};
 
 /** Fast and easy queue abstraction. **/
 
@@ -53,6 +54,7 @@ pub struct Project {
     templates: String,
     static_dir: String,
     template_components: String,
+    template_sections: String,
     template_layouts: String,
     template_pages: String,
     static_css: String,
@@ -116,6 +118,7 @@ pub struct Project {
     forgot_password_route: String,
     dashboard_route: String,
     navbar_component: String,
+    header_section: String,
 }
 
 /// # RustyRocket Project Builder
@@ -135,7 +138,7 @@ impl Project {
     /// # Create a new project
     /// This function creates a new project.
     /// It is called from within the CreateProject function.
-    /// Takes a name and a path as arguments.
+    /// Takes a name and a path as arguments
     /// The {name} is the name of the project.
     /// The {path} is the path to the directory where the project will be created.
     /// If a path is not provided, the project will be created in the current directory.
@@ -149,6 +152,7 @@ impl Project {
         let templates = format!("{}/templates", name);
         let static_dir = format!("{}/static", name);
         let template_components = format!("{}/components", templates);
+        let template_sections = format!("{}/sections", templates);
         let template_layouts = format!("{}/layouts", templates);
         let template_pages = format!("{}/pages", templates);
         let static_css = format!("{}/css", static_dir);
@@ -166,7 +170,7 @@ impl Project {
         let config_prod_db = format!("{}/prod.db", db);
         let config_test_db = format!("{}/test.db", db);
         let routes = format!("{}/routes", src_dir);
-        let routes_module = format!("{}/components", routes);
+        let routes_module = format!("{}/mod.rs", routes);
         let controllers = format!("{}/controllers", src_dir);
         let models = format!("{}/models", src_dir);
         let models_module = format!("{}/components", models);
@@ -215,6 +219,7 @@ impl Project {
         let forgot_password_route = format!("{}/forgot_password.rs", routes);
         let dashboard_route = format!("{}/dashboard.rs", routes);
         let navbar_component = format!("{}/navbar.html.tera", template_components);
+        let header_section = format!("{}/header.html.tera", template_sections);
 
         Project {
             name,
@@ -227,6 +232,7 @@ impl Project {
             templates,
             static_dir,
             template_components,
+            template_sections,
             template_layouts,
             template_pages,
             static_css,
@@ -290,6 +296,7 @@ impl Project {
             forgot_password_route,
             dashboard_route,
             navbar_component,
+            header_section,
         }
     }
 
@@ -340,6 +347,7 @@ impl Project {
             &self.dashboard_route,
             &self.index_js,
             &self.navbar_component,
+            &self.header_section,
         ];
 
         for file in files {
@@ -911,48 +919,13 @@ static/styles.css
 {% endblock content %}",)?;
         Ok(())
     }
-    // Write to routes/components
-    fn write_to_routes_module(&self) -> Result<(), Error> {
-        let contents = format!(
-            "pub mod index;
-pub mod user;
 
-pub use index::*;
-pub use user::*;"
-        );
-
-        write_to_file(&self.routes_module, contents.as_bytes()).unwrap_or_else(|why| {
-            panic!(
-                "couldn't write to {}: {}",
-                &self.routes_module,
-                why.to_string()
-            )
-        });
-
-        Ok(())
-    }
-    // Write to models/components
-    fn write_models_mod_rs(&self) -> Result<(), Error> {
-        let contents = format!(
-            "pub mod users;
-        pub use users::*;"
-        );
-
-        write_to_file(&self.models_module, &contents.as_bytes()).unwrap_or_else(|why| {
-            panic!(
-                "couldn't create {}: {}",
-                self.models_module,
-                why.to_string()
-            )
-        });
-        Ok(())
-    }
     // Write to models/users.rs
-    fn write_models_users_rs(&self) -> Result<(), Error> {
+    fn write_to_user_models(&self) -> Result<(), Error> {
         let mut file = OpenOptions::new()
             .write(true)
             .append(true)
-            .open("src/models/users.rs")?;
+            .open(&self.user_model)?;
         file.write_all(
             b"use rocket::http::{Cookie, CookieJar};
 use rocket::response::{Flash, Redirect};
@@ -997,37 +970,7 @@ impl UserLogin {
 
         Ok(())
     }
-    // Write to base.html.tera
-    fn write_to_base_html(&self) -> Result<(), Error> {
-        let mut file = OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open(&self.base_html)
-            .expect("Failed to open index.html");
-        file.write_all(
-            b"<!DOCTYPE html>
-<html class='bg-gray-50 h-full' lang='en'>
 
-  <head>
-    {% block head %}
-    {% include 'sections/header' ignore missing %}
-    {% endblock head %}
-  </head>
-
-  <body id='app' class='h-full'>
-    {% include 'sections/components/navbar'%}
-    <div id='content'>{% block content %}{% endblock content %}</div>
-    <div id='footer'>
-      {% block footer %}
-      {% include 'sections/footer' ignore missing %}
-      {% endblock footer %}
-    </div>
-  </body>
-  <script src='/js/index.js'></script>
-</html>",
-        )?;
-        Ok(())
-    }
     // Write to index.js
     fn write_to_index_js(&self) -> Result<(), Error> {
         let contents = format!(
@@ -1230,8 +1173,8 @@ pub fn index() -> Template {{
             println!("Failed to write to index.html: {:?}", why.kind());
         });
         // Write to base.html.tera file
-        Self::write_to_base_html(&project).unwrap_or_else(|why| {
-            println!("Failed to write to base.html.tera: {:?}", why.kind());
+        write_to_base_html(&project.base_html).unwrap_or_else(|why| {
+            println!("Failed to write to base.html: {:?}", why.kind());
         });
 
         // Write to dev.env file
@@ -1263,9 +1206,22 @@ pub fn index() -> Template {{
         Self::write_to_index_route(&project).unwrap_or_else(|why| {
             println!("Failed to write to index.html: {:?}", why.kind());
         });
-        // Write to routes module
-        Self::write_to_routes_module(&project).unwrap_or_else(|why| {
-            println!("Failed to write to routes/components: {:?}", why.kind());
+
+        // Write to gitignore file
+        Self::write_to_gitignore(&project).unwrap_or_else(|why| {
+            println!("Failed to write to .gitignore: {:?}", why.kind());
+        });
+
+        // Write to user models file
+        Self::write_to_user_models(&project).unwrap_or_else(|why| {
+            println!("Failed to write to user_models.rs: {:?}", why.kind());
+        });
+        write_to_routes_mod(&project.routes_module).unwrap_or_else(|why| {
+            println!("Failed to write to routes/mod: {:?}", why.kind());
+        });
+        // Write to Header
+        write_to_header(&project.header_section).unwrap_or_else(|why| {
+            println!("Failed to write to header: {:?}", why.kind());
         });
 
         // write to navbar
@@ -1352,8 +1308,8 @@ pub fn index() -> Template {{
                     Err(e) => println!("Error: {}", e),
                 }
             }
-            Some(("push", matches)) => {
-                let message = matches.get_one::<String>("message").unwrap().to_string();
+            Some(("push", _matches)) => {
+                //  let message = matches.get_one::<String>("message").unwrap().to_string();
                 Self::create_new_route()
             }
             _ => unreachable!(),
