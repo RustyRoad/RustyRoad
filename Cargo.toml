@@ -12,4 +12,4 @@ categories = ["web-programming::frameworks"]
 documentation = "https://docs.rs/rustyroad"
 
 [dependencies]
-clap = "4.0.32"
+clap = { version = "4.0.32", features = ["derive"] }

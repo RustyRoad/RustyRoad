@@ -105,7 +105,6 @@ Because Rusty Road uses the Rocket web framework, the architecture is not exactl
 - Add support for more testing frameworks.
 - Add support for more authentication frameworks.
 
-
 ## 🏁 Getting Started <a name = "getting_started"></a>
 
 These instructions will get you a copy of the project up and running on your local machine for development
@@ -113,7 +112,7 @@ and testing purposes. See [deployment](#deployment) for notes on how to deploy t
 
 ### Prerequisites
 
-Rust is required to build and run Rusty Road. You can install Rust using [rustup](https://rustup.rs/).
+Rust is required to build and run Rusty Road. You can install Rust using rustup. rustup is a tool that helps manage Rust installations, it allows for installing multiple versions of Rust and switching between them easily.
 
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -122,9 +121,37 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ### Installing
 
+![Rusty Road Logo](https://raw.githubusercontent.com/rileyseaburg/rustyroad/master/logo.png)
+
+
+
+#### Crates.io
+Rusty Road is available on [crates.io](https://crates.io/crates/rustyroad). You can install it using cargo:
+
+```
+cargo install rustyroad
+```
+
+Bonus Step #1 (optional): Add the following to your .bashrc or .zshrc file to make the rustyroad command available in your terminal:
+
+```
+export PATH="$HOME/.cargo/bin:$PATH"
+```
+
+Bonus Step #2 (optional): Create a symbolic link to the rustyroad command in your ~/.cargo/bin directory.
+This will create a symlink from rustyroad to rr inside ~/.cargo/bin/ directory. 
+Now you can invoke `rr` command which is just a symlink to rustyroad.
+
+```
+ln -s ~/.cargo/bin/rustyroad rr
+```
+
+
+
+
+#### Installing from source
+
 Clone the repository and run the setup script.
-
-
 
 ```
 git clone https://github.com/RileySeaburg/RustyRoad
