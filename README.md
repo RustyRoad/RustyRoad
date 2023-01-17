@@ -143,10 +143,10 @@ This will create a symlink from rustyroad to rr inside ~/.cargo/bin/ directory.
 Now you can invoke `rr` command which is just a symlink to rustyroad.
 
 ```
-ln -s ~/.cargo/bin/rustyroad rr
+sudo ln -s ~/.cargo/bin/rustyroad /usr/local/bin/rr
 ```
 
-
+(Windows users can download the executable from the [releases page](https://github.com/RileySeaburg/Rusty-Road/releases) and add it to their PATH.)
 
 
 #### Installing from source
