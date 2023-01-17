@@ -460,8 +460,8 @@ static/styles.css
 class RustyRoadster {{
     constructor() {{
         this.name = \"{}\";
-function greet() {{
-    console.log(\"Welcome to {} powered by Rusty Roadster\");
+this.greet = function() {{
+    console.log(`Welcome to ${{this.name}} powered by Rusty Road`);
 }}
     }}
 }}
@@ -470,7 +470,7 @@ const rustyroadster = new RustyRoadster();
 
 rustyroadster.greet();
 ",
-                self.name, self.name
+                self.name
             )
             .as_bytes(),
         )
