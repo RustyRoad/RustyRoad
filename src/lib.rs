@@ -377,7 +377,7 @@ futures = \"0.3.23\"
 tera = \"1.17.1\"
 reqwest = \"0.11\"
 rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
-
+rustyroad = \"0.1.2\"
 
 [dependencies.sqlx]
 version = \"0.5\"
@@ -445,7 +445,7 @@ features = [\"sqlx_sqlite\"]",
         file.write_all(
             format!(
                 "# {}
-This project was created using Rusty Roadster. Rusty Roadster is Rails for Rust. It is a CLI tool that allows you to create a new Rust project with a few commands. It also comes with TailwindCSS and Rocket pre-installed.
+This project was created using Rusty Road. Rusty Road is Rails for Rust. It is a CLI tool that allows you to create a new Rust project with a few commands. It also comes with TailwindCSS and Rocket pre-installed.
 
 ## Getting Started
 
