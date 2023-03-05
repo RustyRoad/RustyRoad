@@ -21,14 +21,34 @@
 //! Notice that other functions are called on the `Project` struct.  These functions are used to create a new web app.
 //! These are the functions that ship with the cli tool and are not publicly available.
 
+#![deny(warnings)]
+#![allow(dead_code)]
+
+use serde::Deserialize;
+
 use clap::{arg, Arg, Command, Parser};
+use std::fs;
+use std::fs::create_dir;
 use std::io::Error;
-use std::string;
 use std::{fs::OpenOptions, io::Write};
+use toml;
 
 pub(crate) mod generators;
 pub(crate) mod writers;
 use crate::generators::create_directory;
+
+/**
+ * # Struct RustyRoad
+ * ## Description
+ * This struct is used to configure the project.
+ * This is specfically used to read the rustyroad.toml file and
+ * and decode the toml into a struct.
+ */
+#[derive(Debug, Deserialize)]
+pub struct RustyRoad {
+    name: String,
+}
+
 use crate::generators::create_file;
 use crate::writers::templates::navbar::write_to_navbar;
 use crate::writers::templates::{write_to_base_html, write_to_header};
@@ -46,6 +66,7 @@ use crate::writers::{write_to_file, write_to_main_rs, write_to_routes_mod};
 #[derive(Parser, Debug)]
 pub struct Project {
     name: String,
+    rustyroad_toml: String,
     src_dir: String,
     cargo_toml: String,
     main_rs: String,
@@ -145,6 +166,7 @@ impl Project {
     /// If a path is not provided, the project will be created in the current directory.
     pub fn new(name: String) -> Project {
         let src_dir = format!("{}/src", name);
+        let rustyroad_toml = format!("{}/rustyroad.toml", name);
         let cargo_toml = format!("{}/Cargo.toml", name);
         let main_rs = format!("{}/main.rs", src_dir);
         let package_json = format!("{}/package.json", name);
@@ -225,6 +247,7 @@ impl Project {
         Project {
             name,
             src_dir,
+            rustyroad_toml,
             cargo_toml,
             main_rs,
             package_json,
@@ -303,6 +326,7 @@ impl Project {
 
     pub fn create_files(&self) -> Result<(), Error> {
         let files = vec![
+            &self.rustyroad_toml,
             &self.cargo_toml,
             &self.main_rs,
             &self.package_json,
@@ -357,6 +381,19 @@ impl Project {
 
         Ok(())
     }
+    // Write to rustyroad_toml
+    fn write_to_rustyroad_toml(&self) -> Result<(), Error> {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(&self.rustyroad_toml)?;
+
+        let config = format!("name = \"{}\"", self.name);
+
+        file.write_all(config.as_bytes())?;
+        Ok(())
+    }
     // Write to cargo_toml
     fn write_to_cargo_toml(&self) -> Result<(), Error> {
         let config = format!(
@@ -378,12 +415,10 @@ tera = \"1.17.1\"
 reqwest = \"0.11\"
 rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
 rustyroad = \"0.1.2\"
-
 [dependencies.sqlx]
 version = \"0.5\"
 default-features = false
 features = [\"macros\", \"offline\", \"migrate\"]
-
 [dependencies.rocket_db_pools]
 version = \"0.1.0-rc.2\"
 features = [\"sqlx_sqlite\"]",
@@ -399,6 +434,7 @@ features = [\"sqlx_sqlite\"]",
         file.write_all(config.as_bytes())?;
         Ok(())
     }
+
     // Write to package.json
     fn write_to_package_json(&self) -> Result<(), Error> {
         let mut file = OpenOptions::new()
@@ -1154,8 +1190,11 @@ pub fn index() -> Template {{
         // Create the files
         Self::create_files(&project).expect("Failed to create files");
 
+        // Write to rustyroad.toml file
+        Self::write_to_rustyroad_toml(&project).expect("Failed to write to rustyroad.toml");
+
         // Write to the cargo.toml file
-        Self::write_to_cargo_toml(&project).expect("Failed to write to Cargo.toml");
+        Self::write_to_readme(&project).expect("Failed to write to Cargo.toml");
 
         // Write to main.rs file
         write_to_main_rs(&project).expect("Failed to write to main.rs");
@@ -1236,8 +1275,74 @@ pub fn index() -> Template {{
         Ok(())
     } // End of create_new_project function
 
-    fn create_new_route(routeName: String) -> Result<(), Error> {
-        println!("What would you like to name your route?");
+    pub fn create_new_route(route_name: String) -> Result<(), Error> {
+        // the route will need to check the current directory to see if it is a rustyroad project
+        // if it is not, it will return an error and ask the user to run the command in a rustyroad project
+        // if it is a rustyroad project, it will create a new directory with the routeName
+        // it will create a new file with the routeName.rs
+
+        // check if the current directory is a rustyroad project
+        let current_dir = fs::read_dir(".").unwrap();
+        let mut has_rustyroad_toml = false;
+
+        for entry in current_dir {
+            let entry = entry.unwrap();
+            let file_name = entry.file_name();
+            let file_name = file_name.to_str().unwrap();
+            if file_name == "rustyroad.toml" {
+                has_rustyroad_toml = true;
+            }
+        }
+
+        if !has_rustyroad_toml {
+            println!(
+                "This is not a rustyroad project. Please run this command in a rustyroad project."
+            );
+            // end the function
+            return Ok(());
+        }
+        // check if the current directory has a rustyroad.toml file
+        // rustyroad.toml file will be used to store the project name and other project information
+        // if the current directory does not have a rustyroad.toml file, it will return an error
+
+        // load the rustyroad.toml file
+        let toml_file = fs::read_to_string("rustyroad.toml").unwrap();
+        // get the project name from the rustyroad.toml file
+        let project_name = toml::from_str::<RustyRoad>(&toml_file).unwrap().name;
+
+        println!("Project name: {}", project_name);
+
+        // Create a new directory with the routeName
+        create_dir(format!("./src/routes/{}", &route_name)).unwrap_or_else(|why| {
+            println!("Failed to create directory: {:?}", why.kind());
+        });
+        // Create a new route using the routeName
+        // Update the routes/mod.rs file
+        let full_file_name = format!("./src/routes/mod.rs");
+        write_to_routes_mod(&full_file_name).unwrap_or_else(|why| {
+            println!("Failed to write to routes/mod: {:?}", why.kind());
+        });
+
+        // create the routes/mod.rs file
+        create_file(&format!("./src/routes/{}/mod.rs", route_name)).unwrap_or_else(|why| {
+            println!("Failed to create file: {:?}", why.kind());
+        });
+
+        let mut components = Vec::new();
+        // Create a vector and push the routeName to the vector
+        components.push(route_name.clone().to_string());
+
+        // Write to mod.rs file
+        writers::write_to_module(&format!("./src/routes/{}/mod.rs", &route_name), components)
+            .unwrap_or_else(|why| {
+                println!("Failed to write to mod.rs: {:?}", why.kind());
+            });
+
+        // Create a new file with the routeName.rs
+        // Create a new file with the routeName.html.tera
+        // Create a new file with the routeName.css
+        // Create a new file with the routeName.js
+        // Create a new file with the routeName.test.js
         Ok(())
     }
 
@@ -1328,7 +1433,8 @@ pub fn index() -> Template {{
                 Some(("route", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
                     match Self::create_new_route(name) {
-                        Ok(_) => println!("Route created!"),
+                        // This is always going to be okay becase the error will be handled in the console
+                        Ok(_) => return,
                         Err(e) => println!("Error: {}", e),
                     }
                 }
@@ -1346,8 +1452,10 @@ pub fn index() -> Template {{
                         Err(e) => println!("Error: {}", e),
                     }
                 }
+
                 _ => unreachable!(),
             },
+
             _ => unreachable!(),
         }
     }
