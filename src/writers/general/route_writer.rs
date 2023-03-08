@@ -39,16 +39,18 @@ pub fn write_to_route_name_rs(route_name: String) -> Result<(), Error> {
         r#"use rocket::fs::{{relative, FileServer}};
 use rocket_dyn_templates::{{context, Template}};
 
-#[get("/")]
+#[get("/{}")]
 pub fn index() -> Template {{
     Template::render(
         "pages/{}",
         context! {{
-            route_name: {},
+            route_name: "{}",
         }},
     )
 }}"#,
-        route_name, route_name.to_ascii_uppercase()
+        route_name,
+        route_name,
+        route_name
     );
 
     write_to_file(

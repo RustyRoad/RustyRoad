@@ -1,2 +1,3 @@
-pub mod example/src/routes/mod.rs;
-pub use example/src/routes/mod.rs::*;
+pub mod index;
+pub use index::*;pub mod new_route;
+pub use new_route::*;

@@ -52,7 +52,10 @@ pub struct RustyRoad {
 use crate::generators::create_file;
 use crate::writers::templates::navbar::write_to_navbar;
 use crate::writers::templates::{write_to_base_html, write_to_header};
-use crate::writers::{write_to_file, write_to_main_rs, write_to_routes_mod};
+use crate::writers::{
+    add_new_route_to_main_rs, write_to_file, write_to_main_rs, write_to_route_name_html,
+    write_to_route_name_rs, write_to_routes_mod,
+};
 
 /** Fast and easy queue abstraction. **/
 
@@ -1194,7 +1197,7 @@ pub fn index() -> Template {{
         Self::write_to_rustyroad_toml(&project).expect("Failed to write to rustyroad.toml");
 
         // Write to the cargo.toml file
-        Self::write_to_readme(&project).expect("Failed to write to Cargo.toml");
+        Self::write_to_cargo_toml(&project).expect("Failed to write to cargo.toml");
 
         // Write to main.rs file
         write_to_main_rs(&project).expect("Failed to write to main.rs");
@@ -1257,7 +1260,7 @@ pub fn index() -> Template {{
         Self::write_to_user_models(&project).unwrap_or_else(|why| {
             println!("Failed to write to user_models.rs: {:?}", why.kind());
         });
-        write_to_routes_mod(&project.routes_module).unwrap_or_else(|why| {
+        write_to_routes_mod(&project.routes_module, "index".to_string()).unwrap_or_else(|why| {
             println!("Failed to write to routes/mod: {:?}", why.kind());
         });
         // Write to Header
@@ -1312,6 +1315,8 @@ pub fn index() -> Template {{
 
         println!("Project name: {}", project_name);
 
+   
+
         // Create a new directory with the routeName
         create_dir(format!("./src/routes/{}", &route_name)).unwrap_or_else(|why| {
             println!("Failed to create directory: {:?}", why.kind());
@@ -1319,7 +1324,7 @@ pub fn index() -> Template {{
         // Create a new route using the routeName
         // Update the routes/mod.rs file
         let full_file_name = format!("./src/routes/mod.rs");
-        write_to_routes_mod(&full_file_name).unwrap_or_else(|why| {
+        write_to_routes_mod(&full_file_name, route_name.clone()).unwrap_or_else(|why| {
             println!("Failed to write to routes/mod: {:?}", why.kind());
         });
 
@@ -1339,7 +1344,27 @@ pub fn index() -> Template {{
             });
 
         // Create a new file with the routeName.rs
+        create_file(&format!("./src/routes/{}/{}.rs", route_name, route_name)).unwrap_or_else(
+            |why| {
+                println!("Failed to create file: {:?}", why.kind());
+            },
+        );
+        // Write to routeName.rs file
+        write_to_route_name_rs(route_name.clone()).unwrap_or_else(|why| {
+            println!("Failed to write to routeName.rs: {:?}", why.kind());
+        });
+
         // Create a new file with the routeName.html.tera
+        create_file(&format!("./templates/pages/{}.html.tera", route_name)).unwrap_or_else(|why| {
+            println!("Failed to create file: {:?}", why.kind());
+        });
+        // Write to routeName.html.tera file
+        write_to_route_name_html(route_name.clone()).unwrap_or_else(|why| {
+            println!("Failed to write to routeName.html.tera: {:?}", why.kind());
+        });
+
+        // update main.rs file
+        add_new_route_to_main_rs( &route_name)?;
         // Create a new file with the routeName.css
         // Create a new file with the routeName.js
         // Create a new file with the routeName.test.js
