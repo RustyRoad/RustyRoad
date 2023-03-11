@@ -1360,34 +1360,6 @@ pub fn index() -> Template {{
         Ok(())
     }
 
-    // pub fn initial_prompt() -> Result<(), Box<Error>> {
-    //     println!("What would you like to do?");
-    //     println!("1. Create a new project");
-    //     println!("2. Create a route");
-    //     println!("3. CLI help");
-    //     println!("4. Exit");
-
-    //     let mut project_name = String::new();
-
-    //     std::io::stdin()
-    //         .read_line(&mut project_name)
-    //         .expect("Failed to read line");
-
-    //     let project_name: u32 = match project_name.trim().parse() {
-    //         Ok(num) => num,
-    //         Err(_) => 0,
-    //     };
-
-    //     match project_name {
-    //         1 => Ok(Self::create_new_project(String::from("rustyroad"))?),
-    //         2 => Ok(Self::create_new_route()),
-    //         3 => Ok(println!("Helping you...")),
-    //         // print exit message then exit the program
-    //         4 => Ok(Self::exit_program()),
-    //         _ => Ok(println!("Invalid project_name")),
-    //     }
-    // }
-
     pub fn exit_program() {
         println!("Exiting...");
         std::process::exit(0);
