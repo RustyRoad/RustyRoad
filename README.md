@@ -139,7 +139,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
 Bonus Step #2 (optional): Create a symbolic link to the rustyroad command in your ~/.cargo/bin directory.
-This will create a symlink from rustyroad to rr inside ~/.cargo/bin/ directory.
+This will create a symlink from rustyroad to rr inside ~/.cargo/bin/ directory. 
 Now you can invoke `rr` command which is just a symlink to rustyroad.
 
 ```
