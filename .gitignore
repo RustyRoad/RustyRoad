@@ -3,4 +3,5 @@
 /new_project
 ruby-output.md
 /.idea/
-example_2
+/example/node_modules/
+/example/target/

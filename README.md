@@ -63,12 +63,12 @@ I outlined this in a blog post here: https://rileyseaburg.com/posts/rust-needs-a
   extensible and customizable. It would be a joy to use.
 - REALITY: Rust is a powerful language, but it is not easy to use. It is not easy to learn, and it is not easy to
   maintain. It is not fast, secure, or reliable. It is not extensible or customizable. It is not a joy to use even though it is the most loved programming language on [stack overflow](https://survey.stackoverflow.co/2022/#section-most-loved-dreaded-and-wanted-programming-scripting-and-markup-languages).
-- CONSEQUENCES: 
-    - Web servers are insecure, because most languages are not as secure as Rust. 
-    - Web servers are slow, because most languages are not as fast as Rust. 
-    - Web servers are unreliable, because most languages are not as reliable as Rust. 
-    - Web servers are not extensible or customizable, because most languages are not as extensible or customizable as Rust.
-    - Web servers are not a joy to use, because most languages are not as fun to use as Rust.
+- CONSEQUENCES:
+  - Web servers are insecure, because most languages are not as secure as Rust.
+  - Web servers are slow, because most languages are not as fast as Rust.
+  - Web servers are unreliable, because most languages are not as reliable as Rust.
+  - Web servers are not extensible or customizable, because most languages are not as extensible or customizable as Rust.
+  - Web servers are not a joy to use, because most languages are not as fun to use as Rust.
 
 
 
