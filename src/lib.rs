@@ -31,7 +31,6 @@ use std::fs;
 use std::fs::create_dir;
 use std::io::Error;
 use std::{fs::OpenOptions, io::Write};
-use toml;
 
 pub(crate) mod generators;
 pub(crate) mod writers;
@@ -1288,6 +1287,7 @@ pub fn index() -> Template {{
         let current_dir = fs::read_dir(".").unwrap();
         let mut has_rustyroad_toml = false;
 
+        // check if the current directory has a rustyroad.toml file
         for entry in current_dir {
             let entry = entry.unwrap();
             let file_name = entry.file_name();
@@ -1296,7 +1296,8 @@ pub fn index() -> Template {{
                 has_rustyroad_toml = true;
             }
         }
-
+        // rustyroad.toml file will be used to store the project name and other project information
+        // if the current directory does not have a rustyroad.toml file, it will return an error
         if !has_rustyroad_toml {
             println!(
                 "This is not a rustyroad project. Please run this command in a rustyroad project."
@@ -1304,18 +1305,6 @@ pub fn index() -> Template {{
             // end the function
             return Ok(());
         }
-        // check if the current directory has a rustyroad.toml file
-        // rustyroad.toml file will be used to store the project name and other project information
-        // if the current directory does not have a rustyroad.toml file, it will return an error
-
-        // load the rustyroad.toml file
-        let toml_file = fs::read_to_string("rustyroad.toml").unwrap();
-        // get the project name from the rustyroad.toml file
-        let project_name = toml::from_str::<RustyRoad>(&toml_file).unwrap().name;
-
-        println!("Project name: {}", project_name);
-
-   
 
         // Create a new directory with the routeName
         create_dir(format!("./src/routes/{}", &route_name)).unwrap_or_else(|why| {
@@ -1364,7 +1353,7 @@ pub fn index() -> Template {{
         });
 
         // update main.rs file
-        add_new_route_to_main_rs( &route_name)?;
+        add_new_route_to_main_rs(&route_name)?;
         // Create a new file with the routeName.css
         // Create a new file with the routeName.js
         // Create a new file with the routeName.test.js
@@ -1451,7 +1440,7 @@ pub fn index() -> Template {{
                 let name = matches.get_one::<String>("name").unwrap().to_string();
                 match Self::create_new_project(name) {
                     Ok(_) => println!("Project created!"),
-                    Err(e) => println!("Error: {}", e),
+                    Err(e) => println!("Error creating new project: {}", e),
                 }
             }
             Some(("generate", matches)) => match matches.subcommand() {
@@ -1460,24 +1449,23 @@ pub fn index() -> Template {{
                     match Self::create_new_route(name) {
                         // This is always going to be okay becase the error will be handled in the console
                         Ok(_) => return,
-                        Err(e) => println!("Error: {}", e),
+                        Err(e) => println!("Error generating route: {}", e.kind()),
                     }
                 }
                 Some(("model", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
                     match Self::create_new_route(name) {
                         Ok(_) => println!("Model created!"),
-                        Err(e) => println!("Error: {}", e),
+                        Err(e) => println!("Error creating model: {}", e),
                     }
                 }
                 Some(("controller", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
                     match Self::create_new_route(name) {
                         Ok(_) => println!("Controller created!"),
-                        Err(e) => println!("Error: {}", e),
+                        Err(e) => println!("Error creating controller: {}", e),
                     }
                 }
-
                 _ => unreachable!(),
             },
 
