@@ -56,22 +56,36 @@ use crate::writers::{
     write_to_route_name_rs, write_to_routes_mod,
 };
 
-/** Fast and easy queue abstraction. **/
-
-/** Provides an abstraction over a queue.  When the abstraction is used
- there are these advantages:
-- Fast
- - [`Easy`]
-
- [`Easy`]: http://thatwaseasy.example.com
-**/
+/// # Name: Project
+/// ## Type: Struct
+/// ## Description
+/// This struct is used to configure the project.
+/// This is specfically used to read the rustyroad.toml file and
+/// and decode the toml into a struct.
+/// ## Example
+/// ```
+/// use rustyroad::Project;
+///
+/// fn main() {
+///   Project::run();
+/// }
+///
+/// ```
+/// ### Code Explanation
+/// The code above is the main function for the RustyRoad project.  It is the entry point for the program.
+/// The project is created by calling the `initial_prompt` function on the `Project` struct.
+/// The initial prompt function will ask the user a series of questions and then create a new project based on the answers.
+/// From there, the user can use the project to create a new web app.
+/// Notice that other functions are called on the `Project` struct.  These functions are used to create a new web app.
+/// These are the functions that ship with the cli tool and are not publicly available.
 #[derive(Parser, Debug)]
 pub struct Project {
     name: String,
+    rocket_toml: String,
     rustyroad_toml: String,
     src_dir: String,
-    cargo_toml: String,
     main_rs: String,
+    cargo_toml: String,
     package_json: String,
     readme: String,
     gitignore: String,
@@ -168,6 +182,7 @@ impl Project {
     /// If a path is not provided, the project will be created in the current directory.
     pub fn new(name: String) -> Project {
         let src_dir = format!("{}/src", name);
+        let rocket_toml = format!("{}/Rocket.toml", name);
         let rustyroad_toml = format!("{}/rustyroad.toml", name);
         let cargo_toml = format!("{}/Cargo.toml", name);
         let main_rs = format!("{}/main.rs", src_dir);
@@ -249,6 +264,7 @@ impl Project {
         Project {
             name,
             src_dir,
+            rocket_toml,
             rustyroad_toml,
             cargo_toml,
             main_rs,
@@ -329,6 +345,7 @@ impl Project {
     pub fn create_files(&self) -> Result<(), Error> {
         let files = vec![
             &self.rustyroad_toml,
+            &self.rocket_toml,
             &self.cargo_toml,
             &self.main_rs,
             &self.package_json,
@@ -432,6 +449,25 @@ features = [\"sqlx_sqlite\"]",
             .create(true)
             .truncate(true)
             .open(&self.cargo_toml)?;
+
+        file.write_all(config.as_bytes())?;
+        Ok(())
+    }
+    // Write to rocket_toml
+    fn write_to_rocket_toml(&self) -> Result<(), Error> {
+        let config = format!(
+            "[global.databases]
+        default = {{ url = \"sqlite:./db/{}.db\" }}
+        temp_dir = \"./src/
+        ",
+            &self.name
+        );
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(&self.rocket_toml)?;
 
         file.write_all(config.as_bytes())?;
         Ok(())
