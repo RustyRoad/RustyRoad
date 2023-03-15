@@ -48,6 +48,39 @@ pub struct RustyRoad {
     name: String,
 }
 
+pub struct Database {
+    name: String,
+    username: String,
+    password: String,
+    host: String,
+    port: String,
+    database_type: String,
+}
+/// # Name: Database
+/// ## Type: Struct
+/// ## Description
+/// This struct is used to configure the database.
+/// This is used when creating a new project and the u
+impl Database {
+    pub fn new(
+        name: String,
+        username: String,
+        password: String,
+        host: String,
+        port: String,
+        database_type: String,
+    ) -> Database {
+        Database {
+            name,
+            username,
+            password,
+            host,
+            port,
+            database_type,
+        }
+    }
+}
+
 use crate::generators::create_file;
 use crate::writers::templates::navbar::write_to_navbar;
 use crate::writers::templates::{write_to_base_html, write_to_header};
@@ -401,15 +434,29 @@ impl Project {
         Ok(())
     }
     // Write to rustyroad_toml
-    fn write_to_rustyroad_toml(&self) -> Result<(), Error> {
+    fn write_to_rustyroad_toml(&self, database_data: Database) -> Result<(), Error> {
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
             .open(&self.rustyroad_toml)?;
 
-        let config = format!("name = \"{}\"", self.name);
-
+        let config = format!(
+            "name = \"{}\"
+            database_name = \"{}\"
+            database_user = \"{}\"
+            database_password = \"{}\"
+            database_host = \"{}\"
+            database_port = \"{}\"
+            database_type = \"{}\"",
+            self.name,
+            database_data.name,
+            database_data.username,
+            database_data.password,
+            database_data.host,
+            database_data.port,
+            database_data.database_type
+        );
         file.write_all(config.as_bytes())?;
         Ok(())
     }
@@ -1207,15 +1254,22 @@ pub fn index() -> Template {{
     }
 
     /// Creates a new project
-    /// Takes an optional name <String> as a parameter
+    /// Takes an optional name <String> and db_type <String>
     /// If no name is provided, it will default to "rustyroad"
     /// If a name is provided, it will create a new directory with that name
     /// and create a new project in that directory
     /// If a directory with the same name already exists, it will return an error
     /// and ask the user to choose a different name
-    pub fn create_new_project(name: String) -> Result<(), Error> {
+    /// If a db_type is provided, it will create a new database with that type
+    /// If no db_type is provided, it will default to "sqlite"
+    /// If a db_type is provided that is not supported, it will return an error
+    /// and ask the user to choose a different db_type
+    /// Allow unused variables because the db_type is not used yet
+    #[allow(unused_variables)]
+    pub fn create_new_project(name: String, database_data: Database) -> Result<(), Error> {
         // If name is provided, create a new directory with that name
         // If no name is provided, run the rest of the code in the function
+        // write the database data to the rustyroad.toml file
 
         // Create new project with name
         let project = Self::new(name);
@@ -1229,7 +1283,8 @@ pub fn index() -> Template {{
         Self::create_files(&project).expect("Failed to create files");
 
         // Write to rustyroad.toml file
-        Self::write_to_rustyroad_toml(&project).expect("Failed to write to rustyroad.toml");
+        Self::write_to_rustyroad_toml(&project, database_data)
+            .expect("Failed to write to rustyroad.toml");
 
         // Write to the cargo.toml file
         Self::write_to_cargo_toml(&project).expect("Failed to write to cargo.toml");
@@ -1310,6 +1365,7 @@ pub fn index() -> Template {{
 
         println!("Project {} created!", &project.name);
 
+        // Create the database
         Ok(())
     } // End of create_new_project function
 
@@ -1446,38 +1502,163 @@ pub fn index() -> Template {{
         match matches.subcommand() {
             Some(("new", matches)) => {
                 let name = matches.get_one::<String>("name").unwrap().to_string();
-                match Self::create_new_project(name) {
-                    Ok(_) => println!("Project created!"),
-                    Err(e) => println!("Error creating new project: {}", e),
-                }
-            }
-            Some(("generate", matches)) => match matches.subcommand() {
-                Some(("route", matches)) => {
-                    let name = matches.get_one::<String>("name").unwrap().to_string();
-                    match Self::create_new_route(name) {
-                        // This is always going to be okay becase the error will be handled in the console
-                        Ok(_) => return,
-                        Err(e) => println!("Error generating route: {}", e.kind()),
-                    }
-                }
-                Some(("model", matches)) => {
-                    let name = matches.get_one::<String>("name").unwrap().to_string();
-                    match Self::create_new_route(name) {
-                        Ok(_) => println!("Model created!"),
-                        Err(e) => println!("Error creating model: {}", e),
-                    }
-                }
-                Some(("controller", matches)) => {
-                    let name = matches.get_one::<String>("name").unwrap().to_string();
-                    match Self::create_new_route(name) {
-                        Ok(_) => println!("Controller created!"),
-                        Err(e) => println!("Error creating controller: {}", e),
-                    }
-                }
-                _ => unreachable!(),
-            },
+                // ask what database they would like to use "postgres, mysql, sqlite, or none"
+                // print a selection menu for the database
+                // if they select postgres, mysql, or sqlite, ask for the database name, username, and password
+                // if they select none, continue
+                // create a new project with the name and database information
 
-            _ => unreachable!(),
+                // ask what database they would like to use "postgres, mysql, sqlite, or none"
+                // print a selection menu for the database
+                println!("What database would you like to use?");
+                println!("1. Postgres");
+                println!("2. MySQL");
+                println!("3. SQLite");
+                println!("4. None");
+                let mut database_choice = String::new();
+                std::io::stdin()
+                    .read_line(&mut database_choice)
+                    .expect("Failed to read line");
+                let database_choice = database_choice.trim().parse::<u32>().unwrap();
+
+                // match the database choice
+                match database_choice {
+                    1 => {
+                        // ask for the database name, username, and password
+                        println!("What is the database name?");
+                        let mut database_name = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_name)
+                            .expect("Failed to read line");
+                        let database_name = database_name.trim().to_string();
+                        println!("What is the database username?");
+                        let mut database_username = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_username)
+                            .expect("Failed to read line");
+                        let database_username = database_username.trim().to_string();
+                        println!("What is the database password?");
+                        let mut database_password = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_password)
+                            .expect("Failed to read line");
+                        let database_password = database_password.trim().to_string();
+                        println!("What is the database port?");
+                        let mut database_port = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_port)
+                            .expect("Failed to read line");
+                        let database_port = database_port.trim().parse::<u32>().unwrap();
+                        println!("What is the database host?");
+                        let mut database_host = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_host)
+                            .expect("Failed to read line");
+                        let database_host = database_host.trim().to_string();
+
+                        // create a new project with the name and database information
+                        let database: Database = Database::new(
+                            database_choice.to_string(),
+                            database_name,
+                            database_username,
+                            database_password,
+                            database_port.to_string(),
+                            database_host,
+                        );
+                        Self::create_new_project(name, database).unwrap_or_else(|why| {
+                            println!("Failed to create new project: {:?}", why.kind());
+                        })
+                    }
+                    2 => {
+                        // ask for the database name, username, and password
+                        println!("What is the database name?");
+                        let mut database_name = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_name)
+                            .expect("Failed to read line");
+                        let database_name = database_name.trim().to_string();
+                        println!("What is the database username?");
+                        let mut database_username = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_username)
+                            .expect("Failed to read line");
+                        let database_username = database_username.trim().to_string();
+                        println!("What is the database password?");
+                        let mut database_password = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_password)
+                            .expect("Failed to read line");
+                        let database_password = database_password.trim().to_string();
+                        println!("What is the database port?");
+                        let mut database_port = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_port)
+                            .expect("Failed to read line");
+                        let database_port = database_port.trim().parse::<u32>().unwrap();
+                        println!("What is the database host?");
+                        let mut database_host = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_host)
+                            .expect("Failed to read line");
+                        let database_host = database_host.trim().to_string();
+
+                        // create a new project with the name and database information
+                        let database: Database = Database::new(
+                            database_choice.to_string(),
+                            database_name,
+                            database_username,
+                            database_password,
+                            database_port.to_string(),
+                            database_host,
+                        );
+                        Self::create_new_project(name, database).unwrap_or_else(|why| {
+                            println!("Failed to create new project: {:?}", why.kind());
+                        })
+                    }
+                    3 => {
+                        // ask for the database name, username, and password
+                        println!("What is the database name?");
+                        let mut database_name = String::new();
+                        std::io::stdin()
+                            .read_line(&mut database_name)
+                            .expect("Failed to read line");
+                        let database_name = database_name.trim().to_string();
+
+                        // create a new project with the name and database information
+                        let database: Database = Database::new(
+                            database_choice.to_string(),
+                            database_name,
+                            "".to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                        );
+                        Self::create_new_project(name, database).unwrap_or_else(|why| {
+                            println!("Failed to create new project: {:?}", why.kind());
+                        })
+                    }
+                    4 => {
+                        // create a new project with the name and database information
+                        let database: Database = Database::new(
+                            database_choice.to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                        );
+                        Self::create_new_project(name, database).unwrap_or_else(|why| {
+                            println!("Failed to create new project: {:?}", why.kind());
+                        })
+                    }
+                    _ => {
+                        println!("Invalid database choice");
+                    }
+                };
+            }
+            _ => {
+                println!("Invalid project choice");
+            }
         }
     }
 }

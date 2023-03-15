@@ -1,6 +1,6 @@
 [package]
 name = "rustyroad"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 license = "MIT"
 description = "Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust."
@@ -15,3 +15,6 @@ documentation = "https://docs.rs/rustyroad"
 clap = { version = "4.0.32", features = ["derive"] }
 serde = {version = "1.0.152", features = ["derive"] }
 toml = "0.7.2"
+rusqlite = {version = "0.28.0", features = ["bundled"], optional = true}
+pkg-config = {version = "0.3.26", optional = true}
+
