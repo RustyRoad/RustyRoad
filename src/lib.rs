@@ -32,7 +32,9 @@ use std::fs::create_dir;
 use std::io::Error;
 use std::{fs::OpenOptions, io::Write};
 
+pub(crate) mod database;
 pub(crate) mod generators;
+use database::{Database, DatabaseType};
 pub(crate) mod writers;
 use crate::generators::create_directory;
 
@@ -47,40 +49,6 @@ use crate::generators::create_directory;
 pub struct RustyRoad {
     name: String,
 }
-
-pub struct Database {
-    name: String,
-    username: String,
-    password: String,
-    host: String,
-    port: String,
-    database_type: String,
-}
-/// # Name: Database
-/// ## Type: Struct
-/// ## Description
-/// This struct is used to configure the database.
-/// This is used when creating a new project and the u
-impl Database {
-    pub fn new(
-        name: String,
-        username: String,
-        password: String,
-        host: String,
-        port: String,
-        database_type: String,
-    ) -> Database {
-        Database {
-            name,
-            username,
-            password,
-            host,
-            port,
-            database_type,
-        }
-    }
-}
-
 use crate::generators::create_file;
 use crate::writers::templates::navbar::write_to_navbar;
 use crate::writers::templates::{write_to_base_html, write_to_header};
@@ -434,7 +402,7 @@ impl Project {
         Ok(())
     }
     // Write to rustyroad_toml
-    fn write_to_rustyroad_toml(&self, database_data: Database) -> Result<(), Error> {
+    fn write_to_rustyroad_toml(&self, database_data: &Database) -> Result<(), Error> {
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
@@ -448,7 +416,7 @@ impl Project {
             database_password = \"{}\"
             database_host = \"{}\"
             database_port = \"{}\"
-            database_type = \"{}\"",
+            database_type = \"{:?}\"",
             self.name,
             database_data.name,
             database_data.username,
@@ -461,44 +429,167 @@ impl Project {
         Ok(())
     }
     // Write to cargo_toml
-    fn write_to_cargo_toml(&self) -> Result<(), Error> {
-        let config = format!(
-            "[package]
-name = \"{}\"
-version = \"0.1.0\"
-authors = [\"RustyRocket\"]
-edition = \"2021\"
-[dependencies]
-rocket = \"0.5.0-rc.2\"
-tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
-serde = {{ version = \"1.0\", features = [\"derive\"] }}
-serde_json = \"1.0.82\"
-random-string = \"1.0.0\"
-env_logger = \"0.10.0\"
-local-ip-address = \"0.5.0\"
-futures = \"0.3.23\"
-tera = \"1.17.1\"
-reqwest = \"0.11\"
-rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
-rustyroad = \"0.1.2\"
-[dependencies.sqlx]
-version = \"0.5\"
-default-features = false
-features = [\"macros\", \"offline\", \"migrate\"]
-[dependencies.rocket_db_pools]
-version = \"0.1.0-rc.2\"
-features = [\"sqlx_sqlite\"]",
-            &self.name,
-        );
+    // if the database is postgres, add the postgres crate to the dependencies
+    // if the database is mysql, add the mysql crate to the dependencies
+    // if the database is sqlite, add the rusqlite crate to the dependencies
+    fn write_to_cargo_toml(&self, database_data: Database) -> Result<(), Error> {
+        match database_data.database_type {
+            DatabaseType::Postgres => {
+                let config = format!(
+                    "[package]
+                    name = \"{}\"
+                    version = \"0.1.0\"
+                    authors = [\"RustyRocket\"]
+                    edition = \"2021\"
+                    [dependencies]
+                    rocket = \"0.5.0-rc.2\"
+                    tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
+                    serde = {{ version = \"1.0\", features = [\"derive\"] }}
+                    serde_json = \"1.0.82\"
+                    random-string = \"1.0.0\"
+                    env_logger = \"0.10.0\"
+                    local-ip-address = \"0.5.0\"
+                    futures = \"0.3.23\"
+                    tera = \"1.17.1\"
+                    reqwest = \"0.11\"
+                    rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
+                    rustyroad = \"0.1.2\"
+                    [dependencies.sqlx]
+                    version = \"0.6.2\"
 
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(&self.cargo_toml)?;
+                    [dependencies.sqlx]
+                    features = [\"postgres\", \"macros\", \"chrono\", \"json\", \"uuid\", \"offline\"]
+                    version = \"0.6.2\"",
+                    &self.name
+                );
+                let mut file = OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .truncate(true)
+                    .open(&self.cargo_toml)?;
 
-        file.write_all(config.as_bytes())?;
-        Ok(())
+                file.write_all(config.as_bytes())?;
+
+                return Ok(());
+            }
+
+            DatabaseType::Mysql => {
+                let config = format!(
+                    "[package]
+                    name = \"{}\"
+                    version = \"0.1.0\"
+                    authors = [\"RustyRocket\"]
+                    edition = \"2021\"
+                    [dependencies]
+                    rocket = \"0.5.0-rc.2\"
+                    tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
+                    serde = {{ version = \"1.0\", features = [\"derive\"] }}
+                    serde_json = \"1.0.82\"
+                    random-string = \"1.0.0\"
+                    env_logger = \"0.10.0\"
+                    local-ip-address = \"0.5.0\"
+                    futures = \"0.3.23\"
+                    tera = \"1.17.1\"
+                    reqwest = \"0.11\"
+                    rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
+                    rustyroad = \"0.1.2\"
+                    [dependencies.sqlx]
+                    version = \"0.6.2\"
+
+                    [dependencies.sqlx]
+                    features = [\"mysql\", \"macros\", \"chrono\", \"json\", \"uuid\", \"offline\"]
+                    version = \"0.6.2\"",
+                    &self.name
+                );
+                let mut file = OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .truncate(true)
+                    .open(&self.cargo_toml)?;
+
+                file.write_all(config.as_bytes())?;
+
+                return Ok(());
+            }
+
+            DatabaseType::Sqlite => {
+                let config = format!(
+                    "[package]
+                    name = \"{}\"
+                    version = \"0.1.0\"
+                    authors = [\"RustyRocket\"]
+                    edition = \"2021\"
+                    [dependencies]
+                    rocket = \"0.5.0-rc.2\"
+                    tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
+                    serde = {{ version = \"1.0\", features = [\"derive\"] }}
+                    serde_json = \"1.0.82\"
+                    random-string = \"1.0.0\"
+                    env_logger = \"0.10.0\"
+                    local-ip-address = \"0.5.0\"
+                    futures = \"0.3.23\"
+                    tera = \"1.17.1\"
+                    reqwest = \"0.11\"
+                    rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
+                    rustyroad = \"0.1.2\"
+                    [dependencies.sqlx]
+                    version = \"0.6.2\"
+
+                    [dependencies.sqlx]
+                    features = [\"sqlite\", \"macros\", \"chrono\", \"json\", \"uuid\", \"offline\"]
+                    version = \"0.6.2\"",
+                    &self.name
+                );
+                let mut file = OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .truncate(true)
+                    .open(&self.cargo_toml)?;
+
+                file.write_all(config.as_bytes())?;
+
+                return Ok(());
+            }
+
+            DatabaseType::Mongo => {
+                let config = format!(
+                    "[package]
+                    name = \"{}\"
+                    version = \"0.1.0\"
+                    authors = [\"RustyRocket\"]
+                    edition = \"2021\"
+                    [dependencies]
+                    rocket = \"0.5.0-rc.2\"
+                    tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
+                    serde = {{ version = \"1.0\", features = [\"derive\"] }}
+                    serde_json = \"1.0.82\"
+                    random-string = \"1.0.0\"
+                    env_logger = \"0.10.0\"
+                    local-ip-address = \"0.5.0\"
+                    futures = \"0.3.23\"
+                    tera = \"1.17.1\"
+                    reqwest = \"0.11\"
+                    rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
+                    rustyroad = \"0.1.2\"
+                    [dependencies.sqlx]
+                    version = \"0.6.2\"
+
+                    [dependencies.sqlx]
+                    features = [\"mongodb\", \"macros\", \"chrono\", \"json\", \"uuid\", \"offline\"]
+                    version = \"0.6.2\"",
+                    &self.name
+                );
+                let mut file = OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .truncate(true)
+                    .open(&self.cargo_toml)?;
+
+                file.write_all(config.as_bytes())?;
+
+                return Ok(());
+            }
+        }
     }
     // Write to rocket_toml
     fn write_to_rocket_toml(&self) -> Result<(), Error> {
@@ -1283,11 +1374,11 @@ pub fn index() -> Template {{
         Self::create_files(&project).expect("Failed to create files");
 
         // Write to rustyroad.toml file
-        Self::write_to_rustyroad_toml(&project, database_data)
+        Self::write_to_rustyroad_toml(&project, &database_data)
             .expect("Failed to write to rustyroad.toml");
 
         // Write to the cargo.toml file
-        Self::write_to_cargo_toml(&project).expect("Failed to write to cargo.toml");
+        Self::write_to_cargo_toml(&project, database_data).expect("Failed to write to cargo.toml");
 
         // Write to main.rs file
         write_to_main_rs(&project).expect("Failed to write to main.rs");
