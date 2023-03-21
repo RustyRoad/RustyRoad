@@ -437,29 +437,26 @@ impl Project {
             DatabaseType::Postgres => {
                 let config = format!(
                     "[package]
-                    name = \"{}\"
-                    version = \"0.1.0\"
-                    authors = [\"RustyRoad\"]
-                    edition = \"2021\"
-                    [dependencies]
-                    rocket = \"0.5.0-rc.2\"
-                    tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
-                    serde = {{ version = \"1.0\", features = [\"derive\"] }}
-                    serde_json = \"1.0.82\"
-                    random-string = \"1.0.0\"
-                    env_logger = \"0.10.0\"
-                    local-ip-address = \"0.5.0\"
-                    futures = \"0.3.23\"
-                    tera = \"1.17.1\"
-                    reqwest = \"0.11\"
-                    rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
-                    rustyroad = \"0.1.2\"
-                    [dependencies.sqlx]
-                    version = \"0.6.2\"
-
-                    [dependencies.sqlx]
-                    features = [\"postgres\", \"macros\", \"chrono\", \"json\", \"uuid\", \"offline\"]
-                    version = \"0.6.2\"",
+name = \"{}\"
+version = \"0.1.0\"
+authors = [\"RustyRoad\"]
+edition = \"2021\"
+[dependencies]
+rocket = \"0.5.0-rc.2\"
+tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
+serde = {{ version = \"1.0\", features = [\"derive\"] }}
+serde_json = \"1.0.82\"
+random-string = \"1.0.0\"
+env_logger = \"0.10.0\"
+local-ip-address = \"0.5.0\"
+futures = \"0.3.23\"
+tera = \"1.17.1\"
+reqwest = \"0.11\"
+rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
+rustyroad = \"0.1.3\"
+[dependencies.sqlx]
+features = [\"postgres\", \"macros\", \"chrono\", \"json\", \"uuid\", \"offline\"]
+version = \"0.6.2\"",
                     &self.name
                 );
                 let mut file = OpenOptions::new()
@@ -476,29 +473,26 @@ impl Project {
             DatabaseType::Mysql => {
                 let config = format!(
                     "[package]
-                    name = \"{}\"
-                    version = \"0.1.0\"
-                    authors = [\"RustyRoad\"]
-                    edition = \"2021\"
-                    [dependencies]
-                    rocket = \"0.5.0-rc.2\"
-                    tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
-                    serde = {{ version = \"1.0\", features = [\"derive\"] }}
-                    serde_json = \"1.0.82\"
-                    random-string = \"1.0.0\"
-                    env_logger = \"0.10.0\"
-                    local-ip-address = \"0.5.0\"
-                    futures = \"0.3.23\"
-                    tera = \"1.17.1\"
-                    reqwest = \"0.11\"
-                    rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
-                    rustyroad = \"0.1.2\"
-                    [dependencies.sqlx]
-                    version = \"0.6.2\"
-
-                    [dependencies.sqlx]
-                    features = [\"mysql\", \"macros\", \"chrono\", \"json\", \"uuid\", \"offline\"]
-                    version = \"0.6.2\"",
+name = \"{}\"
+version = \"0.1.0\"
+authors = [\"RustyRoad\"]
+edition = \"2021\"
+[dependencies]
+rocket = \"0.5.0-rc.2\"
+tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
+serde = {{ version = \"1.0\", features = [\"derive\"] }}
+serde_json = \"1.0.82\"
+random-string = \"1.0.0\"
+env_logger = \"0.10.0\"
+local-ip-address = \"0.5.0\"
+futures = \"0.3.23\"
+tera = \"1.17.1\"
+reqwest = \"0.11\"
+rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
+rustyroad = \"0.1.3\"
+[dependencies.sqlx]
+features = [\"mysql\", \"macros\", \"chrono\", \"json\", \"uuid\", \"offline\"]
+version = \"0.6.2\"",
                     &self.name
                 );
                 let mut file = OpenOptions::new()
@@ -515,29 +509,26 @@ impl Project {
             DatabaseType::Sqlite => {
                 let config = format!(
                     "[package]
-                    name = \"{}\"
-                    version = \"0.1.0\"
-                    authors = [\"RustyRoad\"]
-                    edition = \"2021\"
-                    [dependencies]
-                    rocket = \"0.5.0-rc.2\"
-                    tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
-                    serde = {{ version = \"1.0\", features = [\"derive\"] }}
-                    serde_json = \"1.0.82\"
-                    random-string = \"1.0.0\"
-                    env_logger = \"0.10.0\"
-                    local-ip-address = \"0.5.0\"
-                    futures = \"0.3.23\"
-                    tera = \"1.17.1\"
-                    reqwest = \"0.11\"
-                    rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
-                    rustyroad = \"0.1.2\"
-                    [dependencies.sqlx]
-                    version = \"0.6.2\"
-
-                    [dependencies.sqlx]
-                    features = [\"sqlite\", \"macros\", \"chrono\", \"json\", \"uuid\", \"offline\"]
-                    version = \"0.6.2\"",
+name = \"{}\"
+version = \"0.1.0\"
+authors = [\"RustyRoad\"]
+edition = \"2021\"
+[dependencies]
+rocket = \"0.5.0-rc.2\"
+tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
+serde = {{ version = \"1.0\", features = [\"derive\"] }}
+serde_json = \"1.0.82\"
+random-string = \"1.0.0\"
+env_logger = \"0.10.0\"
+local-ip-address = \"0.5.0\"
+futures = \"0.3.23\"
+tera = \"1.17.1\"
+reqwest = \"0.11\"
+rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
+rustyroad = \"0.1.3\"
+[dependencies.rusqlite]
+version = \"0.28.0\"
+features = [\"bundled\"]",
                     &self.name
                 );
                 let mut file = OpenOptions::new()
@@ -554,29 +545,27 @@ impl Project {
             DatabaseType::Mongo => {
                 let config = format!(
                     "[package]
-                    name = \"{}\"
-                    version = \"0.1.0\"
-                    authors = [\"RustyRoad\"]
-                    edition = \"2021\"
-                    [dependencies]
-                    rocket = \"0.5.0-rc.2\"
-                    tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
-                    serde = {{ version = \"1.0\", features = [\"derive\"] }}
-                    serde_json = \"1.0.82\"
-                    random-string = \"1.0.0\"
-                    env_logger = \"0.10.0\"
-                    local-ip-address = \"0.5.0\"
-                    futures = \"0.3.23\"
-                    tera = \"1.17.1\"
-                    reqwest = \"0.11\"
-                    rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
-                    rustyroad = \"0.1.2\"
-                    [dependencies.sqlx]
-                    version = \"0.6.2\"
-
-                    [dependencies.sqlx]
-                    features = [\"mongodb\", \"macros\", \"chrono\", \"json\", \"uuid\", \"offline\"]
-                    version = \"0.6.2\"",
+name = \"{}\"
+version = \"0.1.0\"
+authors = [\"RustyRoad\"]
+edition = \"2021\"
+[dependencies]
+rocket = \"0.5.0-rc.2\"
+tokio = {{ version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }}
+serde = {{ version = \"1.0\", features = [\"derive\"] }}
+serde_json = \"1.0.82\"
+random-string = \"1.0.0\"
+env_logger = \"0.10.0\"
+local-ip-address = \"0.5.0\"
+futures = \"0.3.23\"
+tera = \"1.17.1\"
+reqwest = \"0.11\"
+rocket_dyn_templates = {{version = \"0.1.0-rc.2\", features = [\"tera\"]}}
+rustyroad = \"0.1.3\"
+[dependencies.mongodb]
+version =  \"2.4.0\"
+default-features = false
+features = [\"sync\", \"bson\", \"tls\"]",
                     &self.name
                 );
                 let mut file = OpenOptions::new()
