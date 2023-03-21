@@ -13,6 +13,19 @@ pub struct Database {
 /// ## Description
 /// This struct is used to configure the database.
 /// This is used when creating a new project and the u
+/// Example:
+/// ```rust
+/// use crate::database::Database;
+/// let database = Database::new(
+///    "database_name".to_string(),
+///   "username".to_string(),
+///  "password".to_string(),
+/// "host".to_string(),
+/// "port".to_string(),
+/// "database_type".to_string(),
+/// );
+/// ```
+/// 
 impl Database {
     pub fn new(
         name: String,
@@ -33,6 +46,7 @@ impl Database {
                 "mysql" => DatabaseType::Mysql,
                 "sqlite" => DatabaseType::Sqlite,
                 "mongo" => DatabaseType::Mongo,
+                // this is defaulting, need to address the code running this line
                 _ => DatabaseType::Postgres,
             },
         }

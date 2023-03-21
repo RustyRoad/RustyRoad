@@ -1706,7 +1706,7 @@ pub fn index() -> Template {{
                             "Not Needed".to_string(),
                             "localhost".to_string(),
                             "Not Needed".to_string(),
-                            DatabaseType::Sqlite,
+                            "sqlite".to_string(),
                         );
                         Self::create_new_project(name, database).unwrap_or_else(|why| {
                             println!("Failed to create new project: {:?}", why.kind());
