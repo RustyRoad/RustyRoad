@@ -2,7 +2,7 @@
   "name": "rustyroad",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/Riley-Seaburg/Rusty-Road.git",
+  "repository": "https://github.com/Riley-Seaburg/RustyRoad.git",
   "author": "Riley Seaburg <riley@rileyseaburg.com>",
   "license": "MIT",
   "scripts": {

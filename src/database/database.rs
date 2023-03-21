@@ -38,7 +38,8 @@ impl Database {
         }
     }
 }
-#[derive(Debug)]
+
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq)]
 pub enum DatabaseType {
     Postgres,
     Mysql,
