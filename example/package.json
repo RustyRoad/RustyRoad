@@ -1,8 +1,8 @@
 {
-  "name": "rustyrocket",
+  "name": "rustyroad",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/Riley-Seaburg/RustyRocket.git",
+  "repository": "https://github.com/Riley-Seaburg/Rusty-Road.git",
   "author": "Riley Seaburg <riley@rileyseaburg.com>",
   "license": "MIT",
   "scripts": {

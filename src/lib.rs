@@ -160,8 +160,8 @@ pub struct Project {
     header_section: String,
 }
 
-/// # RustyRocket Project Builder
-/// Description: This is the main file for the RustyRocket project.
+/// # RustyRoad Project Builder
+/// Description: This is the main file for the RustyRoad project.
 /// It is the entry point for the program.
 ///
 /// ## Usage
@@ -439,7 +439,7 @@ impl Project {
                     "[package]
                     name = \"{}\"
                     version = \"0.1.0\"
-                    authors = [\"RustyRocket\"]
+                    authors = [\"RustyRoad\"]
                     edition = \"2021\"
                     [dependencies]
                     rocket = \"0.5.0-rc.2\"
@@ -478,7 +478,7 @@ impl Project {
                     "[package]
                     name = \"{}\"
                     version = \"0.1.0\"
-                    authors = [\"RustyRocket\"]
+                    authors = [\"RustyRoad\"]
                     edition = \"2021\"
                     [dependencies]
                     rocket = \"0.5.0-rc.2\"
@@ -517,7 +517,7 @@ impl Project {
                     "[package]
                     name = \"{}\"
                     version = \"0.1.0\"
-                    authors = [\"RustyRocket\"]
+                    authors = [\"RustyRoad\"]
                     edition = \"2021\"
                     [dependencies]
                     rocket = \"0.5.0-rc.2\"
@@ -556,7 +556,7 @@ impl Project {
                     "[package]
                     name = \"{}\"
                     version = \"0.1.0\"
-                    authors = [\"RustyRocket\"]
+                    authors = [\"RustyRoad\"]
                     edition = \"2021\"
                     [dependencies]
                     rocket = \"0.5.0-rc.2\"
@@ -622,10 +622,10 @@ impl Project {
         file.write_all(
             format!(
                 "{{
-  \"name\": \"rustyrocket\",
+  \"name\": \"RustyRoad\",
   \"version\": \"1.0.0\",
   \"main\": \"index.js\",
-  \"repository\": \"https://github.com/Riley-Seaburg/RustyRocket.git\",
+  \"repository\": \"https://github.com/Riley-Seaburg/RustyRoad.git\",
   \"author\": \"Riley Seaburg <riley@rileyseaburg.com>\",
   \"license\": \"MIT\",
   \"scripts\": {{
