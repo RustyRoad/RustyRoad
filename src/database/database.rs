@@ -1,4 +1,5 @@
-// Database options
+// Add this import at the top of the `database.rs` file
+
 
 pub struct Database {
     pub name: String,
@@ -25,7 +26,7 @@ pub struct Database {
 /// "database_type".to_string(),
 /// );
 /// ```
-/// 
+///
 impl Database {
     pub fn new(
         name: String,

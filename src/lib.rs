@@ -34,7 +34,7 @@ use std::{fs::OpenOptions, io::Write};
 
 pub(crate) mod database;
 pub(crate) mod generators;
-use database::{Database, DatabaseType};
+use database::{Database, DatabaseType, create_migration};
 pub(crate) mod writers;
 use crate::generators::create_directory;
 
@@ -342,6 +342,8 @@ impl Project {
             header_section,
         }
     }
+
+   
 
     pub fn create_files(&self) -> Result<(), Error> {
         let files = vec![
@@ -1567,9 +1569,56 @@ pub fn index() -> Template {{
                             .about("Generates a new controller")
                             .arg(arg!(<name> "The name of the controller")),
                     )
+                    .subcommand(
+                        Command::new("migration")
+                            .about("Generates a new migration")
+                            .arg(arg!(<name> "The name of the migration"
+                            ))
+                            .subcommand_help_heading("SUBCOMMANDS:")
+                            // if no subcommand is provided, print help
+                            .subcommand_required(true)
+                            .arg_required_else_help(true)
+                            .allow_external_subcommands(true),
+                    ),
+            )
+            .subcommand(
+                Command::new("migrate")
+                    .about("Runs migrations")
+                    .subcommand(
+                        Command::new("up")
+                            .about("Runs all migrations")
+                            .arg(arg!(<name> "The name of the migration")),
+                    )
+                    .subcommand(
+                        Command::new("down")
+                            .about("Rolls back the last migration")
+                            .arg(arg!(<name> "The name of the migration")),
+                    )
+                    .subcommand(
+                        Command::new("redo")
+                            .about("Rolls back the last migration and runs it again")
+                            .arg(arg!(<name> "The name of the migration")),
+                    )
+                    .subcommand(
+                        Command::new("reset")
+                            .about("Rolls back all migrations")
+                            .arg(arg!(<name> "The name of the migration")),
+                    )
+                    .subcommand(
+                        Command::new("status")
+                            .about("Prints the status of all migrations")
+                            .arg(arg!(<name> "The name of the migration")),
+                    )
+                    .subcommand(
+                        Command::new("create")
+                            .about("Creates a new migration")
+                            .arg(arg!(<name> "The name of the migration")),
+                    )
                     .subcommand_help_heading("SUBCOMMANDS:")
                     // if no subcommand is provided, print help
-                    .subcommand_required(true),
+                    .subcommand_required(true)
+                    .arg_required_else_help(true)
+                    .allow_external_subcommands(true),
             )
     }
 
@@ -1776,6 +1825,42 @@ pub fn index() -> Template {{
                         println!("Invalid database choice");
                     }
                 };
+            }
+            Some(("generate", matches)) => {
+                match matches.subcommand() {
+                    Some(("route", matches)) => {
+                        let name = matches.get_one::<String>("name").unwrap().to_string();
+                        match Self::create_new_route(name) {
+                            // This is always going to be okay becase the error will be handled in the console
+                            Ok(_) => return,
+                            Err(e) => println!("Error generating route: {}", e.kind()),
+                        }
+                    }
+                    Some(("model", matches)) => {
+                        let name = matches.get_one::<String>("name").unwrap().to_string();
+                        match Self::create_new_route(name) {
+                            Ok(_) => println!("Model created!"),
+                            Err(e) => println!("Error creating model: {}", e),
+                        }
+                    }
+                    Some(("controller", matches)) => {
+                        let name = matches.get_one::<String>("name").unwrap().to_string();
+                        match Self::create_new_route(name) {
+                            Ok(_) => println!("Controller created!"),
+                            Err(e) => println!("Error creating controller: {}", e),
+                        }
+                    }
+                    Some(("migration", matches)) => {
+                        let name = matches.get_one::<String>("name").unwrap().to_string();
+                        match create_migration(&name) {
+                            Ok(_) => println!("Migration created!"),
+                            Err(e) => println!("Error creating migration: {}", e),
+                        }
+                    }
+                    _ => {
+                        println!("Invalid generate choice");
+                    }
+                }
             }
             _ => {
                 println!("Invalid project choice");
