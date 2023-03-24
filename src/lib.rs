@@ -27,16 +27,19 @@
 use serde::Deserialize;
 
 use clap::{arg, Arg, Command, Parser};
-use std::fs;
 use std::fs::create_dir;
 use std::io::Error;
+use std::{fs, process};
 use std::{fs::OpenOptions, io::Write};
 
-pub(crate) mod database;
-pub(crate) mod generators;
-use database::{Database, DatabaseType, create_migration};
+pub mod database;
+pub mod generators;
+use database::{create_migration, Database, DatabaseType};
 pub(crate) mod writers;
 use crate::generators::create_directory;
+use diesel::sqlite::SqliteConnection;
+use diesel::{result::Error as DieselError, Connection};
+use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 
 /**
  * # Struct RustyRoad
@@ -343,8 +346,6 @@ impl Project {
         }
     }
 
-   
-
     pub fn create_files(&self) -> Result<(), Error> {
         let files = vec![
             &self.rustyroad_toml,
@@ -420,7 +421,7 @@ impl Project {
             database_port = \"{}\"
             database_type = \"{:?}\"",
             self.name,
-            database_data.name,
+            database_data.clone().name,
             database_data.username,
             database_data.password,
             database_data.host,
@@ -434,7 +435,7 @@ impl Project {
     // if the database is postgres, add the postgres crate to the dependencies
     // if the database is mysql, add the mysql crate to the dependencies
     // if the database is sqlite, add the rusqlite crate to the dependencies
-    fn write_to_cargo_toml(&self, database_data: Database) -> Result<(), Error> {
+    fn write_to_cargo_toml(&self, database_data: &Database) -> Result<(), Error> {
         match database_data.database_type {
             DatabaseType::Postgres => {
                 let config = format!(
@@ -1369,7 +1370,7 @@ pub fn index() -> Template {{
             .expect("Failed to write to rustyroad.toml");
 
         // Write to the cargo.toml file
-        Self::write_to_cargo_toml(&project, database_data).expect("Failed to write to cargo.toml");
+        Self::write_to_cargo_toml(&project, &database_data).expect("Failed to write to cargo.toml");
 
         // Write to main.rs file
         write_to_main_rs(&project).expect("Failed to write to main.rs");
@@ -1444,6 +1445,92 @@ pub fn index() -> Template {{
         write_to_navbar(&project).unwrap_or_else(|why| {
             println!("Failed to write to navbar: {:?}", why.kind());
         });
+
+        // We need to tell Diesel where to find our database. We do this by setting the DATABASE_URL environment variable.
+        // We can do this by running the following command in the terminal:
+        let temp_database = &database_data.clone();
+        // Embed migrations from the "migrations" directory
+        // Use the embed_migrations macro to embed migrations into the binary
+        // Adjust the path to point to the location of your migration files
+        pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations/");
+
+        match temp_database.database_type {
+            DatabaseType::Sqlite => {
+                // Create the database URL
+                let database_url =
+                    format!("{}/database/{}.sqlite", project.name, database_data.name);
+                println!("database_url: {}", database_url);
+
+                // Establish a database connection
+
+                // Establish a database connection
+                let mut connection: SqliteConnection = SqliteConnection::establish(&database_url)
+                    .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+
+                connection
+                    .transaction::<_, DieselError, _>(|conn| {
+                        // Run the pending migrations
+                        diesel_migrations::MigrationHarness::run_pending_migrations(
+                            conn, MIGRATIONS,
+                        )
+                        .unwrap_or_else(|e| {
+                            println!(
+                                "Error running migrations at {}. \n Error: {}",
+                                database_url, e
+                            );
+                            process::exit(1);
+                        });
+                        println!("Migrations completed successfully");
+                        Ok(())
+                    })
+                    .unwrap_or_else(|e| {
+                        println!("Error running migrations: {}", e);
+                        process::exit(1);
+                    });
+            }
+            DatabaseType::Postgres => {
+                // Create the database
+                let database_url = format!(
+                    "DATABASE_URL=postgres://postgres:postgres@localhost:5432/{}",
+                    &database_data.clone().name
+                );
+                println!("database_url: {}", database_url);
+                let output = std::process::Command::new("diesel")
+                    .arg("setup")
+                    .env("DATABASE_URL", database_url)
+                    .output()
+                    .expect("Failed to execute process");
+                println!("output: {:?}", output);
+            }
+            DatabaseType::Mysql => {
+                // Create the database
+                let database_url = format!(
+                    "DATABASE_URL=mysql://root:root@localhost:3306/{}",
+                    &database_data.clone().name
+                );
+                println!("database_url: {}", database_url);
+                let output = std::process::Command::new("diesel")
+                    .arg("setup")
+                    .env("DATABASE_URL", database_url)
+                    .output()
+                    .expect("Failed to execute process");
+                println!("output: {:?}", output);
+            }
+            DatabaseType::Mongo => {
+                // Create the database
+                let database_url = format!(
+                    "DATABASE_URL=mongodb://localhost:27017/{}",
+                    &database_data.clone().name
+                );
+                println!("database_url: {}", database_url);
+                let output = std::process::Command::new("diesel")
+                    .arg("setup")
+                    .env("DATABASE_URL", database_url)
+                    .output()
+                    .expect("Failed to execute process");
+                println!("output: {:?}", output);
+            }
+        }
 
         println!("Project {} created!", &project.name);
 
@@ -1626,6 +1713,11 @@ pub fn index() -> Template {{
         vec![arg!(-m --message <MESSAGE>)]
     }
 
+    /// Runs the CLI
+    /// # Examples
+    /// ```
+    /// rusty_road::cli::run();
+    /// ```
     pub fn run() {
         let matches = Self::cli().get_matches();
         match matches.subcommand() {

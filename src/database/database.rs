@@ -1,6 +1,6 @@
 // Add this import at the top of the `database.rs` file
 
-
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq)]
 pub struct Database {
     pub name: String,
     pub username: String,

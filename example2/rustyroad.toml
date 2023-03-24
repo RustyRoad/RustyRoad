@@ -1,0 +1,7 @@
+name = "example2"
+            database_name = "SQLite"
+            database_user = "Sqlite Local DB"
+            database_password = "Not Needed"
+            database_host = "localhost"
+            database_port = "Not Needed"
+            database_type = "Sqlite"
