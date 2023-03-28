@@ -1,3 +1,0 @@
-<link rel="stylesheet" href="styles.css" />
-<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
-<title>{% block title %}{% endblock title %} - example2/templates/sections/header.html.tera</title>
