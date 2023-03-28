@@ -48,9 +48,7 @@ pub fn index() -> Template {{
         }},
     )
 }}"#,
-        route_name,
-        route_name,
-        route_name
+        route_name, route_name, route_name
     );
 
     write_to_file(
