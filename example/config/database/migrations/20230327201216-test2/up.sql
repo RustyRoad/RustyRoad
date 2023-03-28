@@ -1,0 +1,3 @@
+get * from users
+
+finish

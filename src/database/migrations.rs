@@ -1,6 +1,5 @@
 use chrono::prelude::*;
-use rustyline::history::MemHistory;
-use rustyline::Editor;
+use rustyline::DefaultEditor;
 use std::fs;
 use std::io::Error;
 use std::io::ErrorKind;
@@ -78,125 +77,232 @@ pub fn create_migration(name: &str) -> Result<(), Error> {
     create_file(&format!("{}/up.sql", folder_name).to_string())
         .unwrap_or_else(|why| panic!("Couldn't create {}: {}", &name, why.to_string()));
 
-    let file = format!("{}/up.sql", folder_name).to_string();
+    let up_file = format!("{}/up.sql", folder_name).to_string();
 
-    // Initialize the rustyline Editor
-    // let mut rl = Editor::<(), MemHistory>::load_history("history.txt").unwrap();
+    let down_file = format!("{}/down.sql", folder_name).to_string();
 
-    // Prompt the user for the migration type
-    let migration_type = match rl.readline("Enter the migration type (CRUD/Custom): ") {
-        Ok(input) => input.trim().to_string(),
-        Err(_) => return Err(Error::new(ErrorKind::Other, "Failed to read input")),
-    };
-
-    // Define table name and columns based on migration type
-    let (table_name, mut columns) = match migration_type.to_lowercase().as_str() {
-        "crud" => {
-            // Prompt the user for the table name
-            let table_name = match rl.readline("Enter the table name: ") {
-                Ok(input) => input.trim().to_string(),
-                Err(_) => return Err(Error::new(ErrorKind::Other, "Failed to read input")),
-            };
-
-            // Automatically add columns for CRUD operations
-            let columns = vec![
-                "id SERIAL PRIMARY KEY",
-                "name VARCHAR(255) NOT NULL",
-                "email VARCHAR(255) NOT NULL",
-                "created_at TIMESTAMP NOT NULL",
-                "updated_at TIMESTAMP NOT NULL",
-            ];
-
-            (table_name, columns)
-        }
-        "custom" | _ => {
-            // Prompt the user for the table name
-            let table_name = match rl.readline("Enter the table name: ") {
-                Ok(input) => input.trim().to_string(),
-                Err(_) => return Err(Error::new(ErrorKind::Other, "Failed to read input")),
-            };
-
-            // Prompt the user for the number of columns
-            let num_columns: usize = match rl.readline("Enter the number of columns: ") {
-                Ok(input) => match input.trim().parse() {
-                    Ok(num) => num,
-                    Err(_) => {
-                        return Err(Error::new(ErrorKind::Other, "Invalid number of columns"))
-                    }
-                },
-                Err(_) => return Err(Error::new(ErrorKind::Other, "Failed to read input")),
-            };
-
-            // Prompt the user for column information
-            let mut columns = Vec::new();
-            for i in 0..num_columns {
-                let column_name = match rl.readline(&format!("Enter name for column {}: ", i + 1)) {
-                    Ok(input) => input.trim().to_string(),
-                    Err(_) => return Err(Error::new(ErrorKind::Other, "Failed to read input")),
-                };
-
-                // Show available column types
-                println!("Choose type for column {}:", i + 1);
-                for (index, column_type) in COLUMN_TYPES.iter().enumerate() {
-                    println!("  [{}] {}", index + 1, column_type);
-                }
-                let column_type_index: usize = match rl.readline("Enter choice (1-3): ") {
-                    Ok(input) => match input.trim().parse() {
-                        Ok(index) => {
-                            if index > 0 && index <= COLUMN_TYPES.len() {
-                                index - 1
-                            } else {
-                                return Err(Error::new(ErrorKind::Other, "Invalid choice"));
-                            }
-                        }
-                        Err(_) => return Err(Error::new(ErrorKind::Other, "Invalid choice")),
-                    },
-                    Err(_) => return Err(Error::new(ErrorKind::Other, "Failed to read input")),
-                };
-                let column_type = COLUMN_TYPES[column_type_index];
-
-                let constraints = match rl.readline(&format!(
-                    "Enter constraints for column {} (e.g., PRIMARY KEY, NULL, etc.): ",
-                    i + 1
-                )) {
-                    Ok(input) => input.trim().to_string(),
-                    Err(_) => return Err(Error::new(ErrorKind::Other, "Failed to read input")),
-                };
-
-                columns.push(format!("{} {} {}", column_name, column_type, constraints));
-            }
-
-            (table_name, columns)
-        }
-    };
-
-    // Generate the SQL query based on user input
-    let columns_definition = columns.join(",\n    ");
-    let contents = format!(
-        r#"
-      CREATE TABLE IF NOT EXISTS {} (
-    {}
-  );
-  "#,
-        table_name, columns_definition
-    );
-
-    write_to_file(&file, contents.as_bytes())
-        .unwrap_or_else(|why| panic!("Couldn't create {}: {}", &name, why.to_string()));
-
-    // Create the down file
+    // Create the down.sql file
     create_file(&format!("{}/down.sql", folder_name).to_string())
         .unwrap_or_else(|why| panic!("Couldn't create {}: {}", &name, why.to_string()));
 
-    let file = format!("{}/down.sql", folder_name).to_string();
+    // Initialize the rustyline Editor with the default helper and in-memory history
+    let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
+        panic!("Failed to create rustyline editor: {}", why.to_string());
+    });
+    #[cfg(feature = "with-file-history")]
+    if rl.load_history("history.txt").is_err() {
+        println!("No previous history.");
+    }
 
-    let contents = format!(r#"DROP TABLE IF EXISTS {};"#, table_name);
+    // Prompt the user for SQL queries for the up.sql file
+    let mut up_sql_contents = String::new();
+    let mut down_sql_contents = String::new();
 
-    write_to_file(&file, contents.as_bytes())
-        .unwrap_or_else(|why| panic!("Couldn't create {}: {}", &name, why.to_string()));
+    // get the name of the table
+    let table_name = rl
+        .readline("Enter the name of the table: ")
+        .unwrap_or_else(|why| {
+            panic!("Failed to read table name: {}", why.to_string());
+        });
 
+    // ask the user how many columns they want to add
+
+    let num_columns = rl
+        .readline("Enter the number of columns: ")
+        .unwrap_or_else(|why| {
+            panic!("Failed to read number of columns: {}", why.to_string());
+        });
+
+    // loop through the number of columns and ask the user for the column name, type, and constraints
+
+    for _ in 0..num_columns.parse::<i32>().unwrap() {
+        let column_name = rl
+            .readline("Enter the name of the column: ")
+            .unwrap_or_else(|why| {
+                panic!("Failed to read column name: {}", why.to_string());
+            });
+
+        let column_type = rl
+            .readline("Enter the type of the column: ")
+            .unwrap_or_else(|why| {
+                panic!("Failed to read column type: {}", why.to_string());
+            });
+
+        let column_constraints = rl
+            .readline("Enter the constraints of the column: ")
+            .unwrap_or_else(|why| {
+                panic!("Failed to read column constraints: {}", why.to_string());
+            });
+
+        // Ask if the column is nullable
+        let nullable_input = rl
+            .readline("Is the column nullable? (y/n): ")
+            .unwrap_or_else(|why| {
+                panic!("Failed to read nullable: {}", why.to_string());
+            });
+
+        // Convert input to bool
+        let nullable = match nullable_input.trim().to_lowercase().as_str() {
+            "y" => true,
+            "n" => false,
+            _ => {
+                println!("Invalid input. Please enter 'y' for yes or 'n' for no.");
+                continue; // Ask again if input is invalid
+            }
+        };
+
+        // validate the column type to sql type
+        match column_type.to_lowercase().as_str() {
+            "string" => {
+                // ask the user for the length of the string
+                let string_length = rl
+                    .readline("Enter the length of the string: ")
+                    .unwrap_or_else(|why| {
+                        panic!("Failed to read string length: {}", why.to_string());
+                    });
+
+                match nullable {
+                    true => {
+                        // add the column to the up.sql file
+                        up_sql_contents.push_str(&format!(
+                            "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) {};",
+                            table_name, column_name, string_length, column_constraints
+                        ));
+                        up_sql_contents.push('\n');
+
+                        // add the column to the up.sql file
+                        down_sql_contents.push_str(&format!(
+                            "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) {};",
+                            table_name, column_name, string_length, column_constraints
+                        ));
+                        down_sql_contents.push('\n');
+                    }
+                    false => {
+                        // add the column to the up.sql file
+                        up_sql_contents.push_str(&format!(
+                            "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) NOT NULL {};",
+                            table_name, column_name, string_length, column_constraints
+                        ));
+                        up_sql_contents.push('\n');
+
+                        // add the column to the up.sql file
+                        down_sql_contents.push_str(&format!(
+                            "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) NOT NULL {};",
+                            table_name, column_name, string_length, column_constraints
+                        ));
+                        down_sql_contents.push('\n');
+                    }
+                }
+
+                // add the column to the up.sql file
+                down_sql_contents.push_str(&format!(
+                    "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) {};",
+                    table_name, column_name, string_length, column_constraints
+                ));
+                down_sql_contents.push('\n');
+
+                // write the up.sql file
+                write_to_file(&up_file, up_sql_contents.as_bytes())
+                    .unwrap_or_else(|why| panic!("Couldn't write to up.sql: {}", why.to_string()));
+
+                // write the down.sql file
+                down_sql_contents.push_str(&format!(
+                    "ALTER TABLE {} DROP COLUMN {};",
+                    table_name, column_name
+                ));
+                down_sql_contents.push('\n');
+
+                // write the down.sql file
+                write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
+                    panic!("Couldn't write to down.sql: {}", why.to_string())
+                });
+
+                continue;
+            }
+            "integer" => {
+                // add the column to the down.sql file
+                down_sql_contents.push_str(&format!(
+                    "ALTER TABLE {} ADD COLUMN {} INT {};",
+                    table_name, column_name, column_constraints
+                ));
+                down_sql_contents.push('\n');
+
+                // write the up.sql file
+                write_to_file(&up_file, up_sql_contents.as_bytes())
+                    .unwrap_or_else(|why| panic!("Couldn't write to up.sql: {}", why.to_string()));
+
+                // write the down.sql file
+                write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
+                    panic!("Couldn't write to down.sql: {}", why.to_string())
+                });
+
+                continue;
+            }
+            "float" => {
+                // add the column to the down.sql file
+                down_sql_contents.push_str(&format!(
+                    "ALTER TABLE {} ADD COLUMN {} FLOAT {};",
+                    table_name, column_name, column_constraints
+                ));
+                down_sql_contents.push('\n');
+
+                // write the up.sql file
+                write_to_file(&up_file, up_sql_contents.as_bytes())
+                    .unwrap_or_else(|why| panic!("Couldn't write to up.sql: {}", why.to_string()));
+
+                // write the down.sql file
+                write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
+                    panic!("Couldn't write to down.sql: {}", why.to_string())
+                });
+
+                continue;
+            }
+            "boolean" => {
+                // add the column to the down.sql file
+                down_sql_contents.push_str(&format!(
+                    "ALTER TABLE {} ADD COLUMN {} BOOLEAN {};",
+                    table_name, column_name, column_constraints
+                ));
+                down_sql_contents.push('\n');
+
+                // write the up.sql file
+                write_to_file(&up_file, up_sql_contents.as_bytes())
+                    .unwrap_or_else(|why| panic!("Couldn't write to up.sql: {}", why.to_string()));
+
+                // write the down.sql file
+                write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
+                    panic!("Couldn't write to down.sql: {}", why.to_string())
+                });
+
+                continue;
+            }
+            "date" => {
+                // add the column to the down.sql file
+                down_sql_contents.push_str(&format!(
+                    "ALTER TABLE {} ADD COLUMN {} DATE {};",
+                    table_name, column_name, column_constraints
+                ));
+                down_sql_contents.push('\n');
+
+                // write the up.sql file
+                write_to_file(&up_file, up_sql_contents.as_bytes())
+                    .unwrap_or_else(|why| panic!("Couldn't write to up.sql: {}", why.to_string()));
+
+                // write the down.sql file
+                write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
+                    panic!("Couldn't write to down.sql: {}", why.to_string())
+                });
+
+                continue;
+            }
+            _ => {
+                panic!("Invalid data type: {}", column_type);
+            }
+        }
+    }
     Ok(())
 }
+// Write the user-entered SQL queries to the up.sql file
 
 /// ## Name: run_migration
 /// ### Description: Runs a migration
