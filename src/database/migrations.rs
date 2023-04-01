@@ -1,11 +1,18 @@
-use chrono::prelude::*;
-use rustyline::DefaultEditor;
-use std::fs;
-use std::io::Error;
-use std::io::ErrorKind;
-
 use crate::generators::create_file;
 use crate::writers::write_to_file;
+use crate::Project;
+use chrono::prelude::*;
+use diesel::Connection;
+use diesel::SqliteConnection;
+use diesel_migrations::FileBasedMigrations;
+use diesel_migrations::MigrationError;
+use diesel_migrations::MigrationHarness;
+use rustyline::DefaultEditor;
+use std::error::Error as StdError;
+use std::fmt;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::path::PathBuf;
 
 // Define available column types and constraints
 const COLUMN_TYPES: &[&str] = &["VARCHAR(255)", "INTEGER", "TIMESTAMP"];
@@ -25,7 +32,7 @@ const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 ///
 /// create_migration("create_users_table").unwrap();
 /// ```
-pub fn create_migration(name: &str) -> Result<(), Error> {
+pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
     // Check for database folder
     // If it doesn't exist, create it
     // Ensure that the project is a rustyroad project by looking for the rustyroad.toml file in the root directory
@@ -38,10 +45,8 @@ pub fn create_migration(name: &str) -> Result<(), Error> {
     match std::fs::read_to_string(path.join("rustyroad.toml")) {
         Ok(_) => {}
         Err(_) => {
-            return Err(Error::new(
-                ErrorKind::Other,
-                "This is not a rustyroad project",
-            ));
+            println!("This is not a rustyroad project");
+            return Ok("".to_string());
         }
     }
 
@@ -70,7 +75,9 @@ pub fn create_migration(name: &str) -> Result<(), Error> {
         Ok(_) => {}
         Err(_) => {
             println!("Migration already exists");
-            return Ok(());
+            return Ok(
+                "Migration already exists".to_string(
+            ))
         }
     }
 
@@ -300,9 +307,42 @@ pub fn create_migration(name: &str) -> Result<(), Error> {
             }
         }
     }
-    Ok(())
+    // return the name of the migration
+    Ok((&name).to_string())
 }
 // Write the user-entered SQL queries to the up.sql file
+
+#[derive(Debug)]
+pub enum CustomMigrationError {
+    MigrationError(MigrationError),
+    IoError(std::io::Error),
+    RunError(Box<dyn StdError + Send + Sync>),
+}
+
+
+impl Display for CustomMigrationError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MigrationError(err) => Display::fmt(err, f),
+            Self::RunError(err) => Display::fmt(err, f),
+            Self::IoError(err) => Display::fmt(err, f),
+        }
+    }
+}
+
+impl StdError for CustomMigrationError {}
+
+impl From<MigrationError> for CustomMigrationError {
+    fn from(err: MigrationError) -> Self {
+        Self::MigrationError(err)
+    }
+}
+
+impl From<Box<dyn StdError + Send + Sync>> for CustomMigrationError {
+    fn from(err: Box<dyn StdError + Send + Sync>) -> Self {
+        Self::RunError(err)
+    }
+}
 
 /// ## Name: run_migration
 /// ### Description: Runs a migration
@@ -318,30 +358,22 @@ pub fn create_migration(name: &str) -> Result<(), Error> {
 ///
 /// run_migration("create_users_table").unwrap();
 /// ```
-pub fn run_migration(name: &str) -> Result<(), std::io::Error> {
-    // Find the name of the migration in the migrations folder
-    // Then run the migration
+pub fn run_migration(project: &Project, migration_name: String) -> Result<(), CustomMigrationError> {
+    // Establish a database connection
+    let mut connection = SqliteConnection::establish(&project.config_dev_db)
+        .expect(&format!("Error connecting to {}", &project.config_dev_db));
 
-    let output = fs::read_dir("src/database/migrations")?;
+    // Convert the migrations directory to a PathBuf
+    let migrations_dir_path = PathBuf::from(format!("{}/{}", &project.migrations, migration_name));
 
-    for entry in output {
-        let entry = entry?;
-        let path = entry.path();
-        let path = path.to_str().unwrap();
+    // Create a FileBasedMigrations instance based on the path to the migrations directory
+    let migrations = FileBasedMigrations::from_path(migrations_dir_path)?;
 
-        if path.contains(name) {
-            let output = std::process::Command::new("diesel")
-                .arg("migration")
-                .arg("run")
-                .arg("--migration-dir")
-                .arg(path)
-                .output()
-                .expect("failed to execute process");
-
-            println!("output: {}", String::from_utf8_lossy(&output.stdout));
-            println!("error: {}", String::from_utf8_lossy(&output.stderr));
-        }
-    }
+    // Run pending migrations using the `run_pending_migrations` method on the connection
+    // The `MigrationHarness` trait provides this method as an extension trait on the connection
+    connection.run_pending_migrations(migrations).map_err(|err| {
+        CustomMigrationError::RunError(err)
+    })?;
 
     Ok(())
 }

@@ -24,22 +24,21 @@
 #![deny(warnings)]
 #![allow(dead_code)]
 
-use serde::Deserialize;
-
 use clap::{arg, Arg, Command, Parser};
+use serde::Deserialize;
+use std::fs;
 use std::fs::create_dir;
 use std::io::Error;
-use std::{fs, process};
 use std::{fs::OpenOptions, io::Write};
-
 pub mod database;
 pub mod generators;
-use database::{create_migration, Database, DatabaseType};
-pub(crate) mod writers;
+use database::{create_migration, run_migration, Database, DatabaseType};
+pub mod writers;
+
 use crate::generators::create_directory;
+use crate::writers::migrations::initial_sql_loader;
 use diesel::sqlite::SqliteConnection;
-use diesel::{result::Error as DieselError, Connection};
-use diesel_migrations::{embed_migrations, EmbeddedMigrations};
+use diesel::Connection;
 
 /**
  * # Struct RustyRoad
@@ -82,85 +81,85 @@ use crate::writers::{
 /// From there, the user can use the project to create a new web app.
 /// Notice that other functions are called on the `Project` struct.  These functions are used to create a new web app.
 /// These are the functions that ship with the cli tool and are not publicly available.
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 pub struct Project {
-    name: String,
-    rocket_toml: String,
-    rustyroad_toml: String,
-    src_dir: String,
-    main_rs: String,
-    cargo_toml: String,
-    package_json: String,
-    readme: String,
-    gitignore: String,
-    templates: String,
-    static_dir: String,
-    template_components: String,
-    template_sections: String,
-    template_layouts: String,
-    template_pages: String,
-    static_css: String,
-    static_js: String,
-    index_js: String,
-    static_images: String,
-    config: String,
-    config_env: String,
-    config_dev_env: String,
-    config_prod_env: String,
-    config_test_env: String,
-    config_default_env: String,
-    db: String,
-    config_dev_db: String,
-    config_prod_db: String,
-    config_test_db: String,
-    routes: String,
-    routes_module: String,
-    controllers: String,
-    models: String,
-    models_module: String,
-    migrations: String,
-    seeders: String,
-    tests: String,
-    config_initializers: String,
-    config_initializers_assets: String,
-    config_initializers_db: String,
-    config_initializers_default: String,
-    config_initializers_middleware: String,
-    config_initializers_routes: String,
-    index_html: String,
-    base_html: String,
-    tailwind_css: String,
-    tailwind_config: String,
-    postcss_config: String,
-    not_found_html: String,
-    server_error_html: String,
-    favicon_ico: String,
-    robots_txt: String,
-    login_page_html: String,
-    signup_page_html: String,
-    reset_password_page_html: String,
-    forgot_password_page_html: String,
-    dashboard_page_html: String,
-    user_controller_directory: String,
-    user_controller: String,
-    user_controller_module: String,
-    user_model_directory: String,
-    user_model: String,
-    user_model_module: String,
-    user_migration_directory: String,
-    user_migration: String,
-    user_migration_module: String,
-    user_seeder: String,
-    user_test: String,
-    user_route: String,
-    index_route: String,
-    login_route: String,
-    signup_route: String,
-    reset_password_route: String,
-    forgot_password_route: String,
-    dashboard_route: String,
-    navbar_component: String,
-    header_section: String,
+    pub name: String,
+    pub rocket_toml: String,
+    pub rustyroad_toml: String,
+    pub src_dir: String,
+    pub main_rs: String,
+    pub cargo_toml: String,
+    pub package_json: String,
+    pub readme: String,
+    pub gitignore: String,
+    pub templates: String,
+    pub static_dir: String,
+    pub template_components: String,
+    pub template_sections: String,
+    pub template_layouts: String,
+    pub template_pages: String,
+    pub static_css: String,
+    pub static_js: String,
+    pub index_js: String,
+    pub static_images: String,
+    pub config: String,
+    pub config_env: String,
+    pub config_dev_env: String,
+    pub config_prod_env: String,
+    pub config_test_env: String,
+    pub config_default_env: String,
+    pub db: String,
+    pub config_dev_db: String,
+    pub config_prod_db: String,
+    pub config_test_db: String,
+    pub routes: String,
+    pub routes_module: String,
+    pub controllers: String,
+    pub models: String,
+    pub models_module: String,
+    pub migrations: String,
+    pub seeders: String,
+    pub tests: String,
+    pub config_initializers: String,
+    pub config_initializers_assets: String,
+    pub config_initializers_db: String,
+    pub config_initializers_default: String,
+    pub config_initializers_middleware: String,
+    pub config_initializers_routes: String,
+    pub index_html: String,
+    pub base_html: String,
+    pub tailwind_css: String,
+    pub tailwind_config: String,
+    pub postcss_config: String,
+    pub not_found_html: String,
+    pub server_error_html: String,
+    pub favicon_ico: String,
+    pub robots_txt: String,
+    pub login_page_html: String,
+    pub signup_page_html: String,
+    pub reset_password_page_html: String,
+    pub forgot_password_page_html: String,
+    pub dashboard_page_html: String,
+    pub user_controller_directory: String,
+    pub user_controller: String,
+    pub user_controller_module: String,
+    pub user_model_directory: String,
+    pub user_model: String,
+    pub user_model_module: String,
+    pub user_migration_directory: String,
+    pub user_migration: String,
+    pub user_migration_module: String,
+    pub user_seeder: String,
+    pub user_test: String,
+    pub user_route: String,
+    pub index_route: String,
+    pub login_route: String,
+    pub signup_route: String,
+    pub reset_password_route: String,
+    pub forgot_password_route: String,
+    pub dashboard_route: String,
+    pub navbar_component: String,
+    pub header_section: String,
 }
 
 /// # RustyRoad Project Builder
@@ -223,7 +222,7 @@ impl Project {
         let tests = format!("{}/tests", name);
         let config_initializers = format!("{}/initializers", config);
         let config_initializers_assets = format!("{}/assets.rs", config_initializers);
-        let config_initializers_db = format!("{}/db.rs", config_initializers);
+        let config_initializers_db = format!("{}/initialize_db.sql", config_initializers);
         let config_initializers_default = format!("{}/default.rs", config_initializers);
         let config_initializers_middleware = format!("{}/middleware.rs", config_initializers);
         let config_initializers_routes = format!("{}/routes.rs", config_initializers);
@@ -253,7 +252,7 @@ impl Project {
             user_migration_directory
         );
         let user_migration_module = format!("{}/components", user_migration_directory);
-        let user_seeder = format!("{}/seeders/00000000000000_create_users_table.rs", name);
+        let user_seeder = format!("{}/seeders/initial_db.sql", name);
         let user_test = format!("{}/tests/user.rs", name);
         let user_route = format!("{}/user.rs", routes);
         let index_route = format!("{}/index.rs", routes);
@@ -1349,7 +1348,7 @@ pub fn index() -> Template {{
     /// and ask the user to choose a different db_type
     /// Allow unused variables because the db_type is not used yet
     #[allow(unused_variables)]
-    pub fn create_new_project(name: String, database_data: Database) -> Result<(), Error> {
+    pub fn create_new_project(name: String, database_data: Database) -> Result<Project, Error> {
         // If name is provided, create a new directory with that name
         // If no name is provided, run the rest of the code in the function
         // write the database data to the rustyroad.toml file
@@ -1452,42 +1451,34 @@ pub fn index() -> Template {{
         // Embed migrations from the "migrations" directory
         // Use the embed_migrations macro to embed migrations into the binary
         // Adjust the path to point to the location of your migration files
-        pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations/");
 
         match temp_database.database_type {
             DatabaseType::Sqlite => {
                 // Create the database URL
-                let database_url =
-                    format!("{}/database/{}.sqlite", project.name, database_data.name);
+                let database_url = format!("{}", project.config_dev_db);
                 println!("database_url: {}", database_url);
 
-                // Establish a database connection
-
-                // Establish a database connection
-                let mut connection: SqliteConnection = SqliteConnection::establish(&database_url)
+                // Create a migration to initialize the database
+                let intial_migration = create_migration("initialize_data")?;
+                // Create a connection to the database
+                let connection = SqliteConnection::establish(&database_url)
                     .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
 
-                connection
-                    .transaction::<_, DieselError, _>(|conn| {
-                        // Run the pending migrations
-                        diesel_migrations::MigrationHarness::run_pending_migrations(
-                            conn, MIGRATIONS,
-                        )
-                        .unwrap_or_else(|e| {
-                            println!(
-                                "Error running migrations at {}. \n Error: {}",
-                                database_url, e
-                            );
-                            process::exit(1);
-                        });
-                        println!("Migrations completed successfully");
-                        Ok(())
-                    })
-                    .unwrap_or_else(|e| {
-                        println!("Error running migrations: {}", e);
-                        process::exit(1);
-                    });
+                // write the sql to initialize the database
+                initial_sql_loader::load_sql_for_new_project(&project).unwrap_or_else(|why| {
+                    println!("Failed to write to initial_sql_loader: {:?}", why.kind());
+                });
+
+                // Run the migration
+                run_migration(&project, intial_migration).unwrap_or_else(|why| {
+                    println!("Failed to run migration: {:?}", why.to_string());
+                });
+
+         
+
             }
+
+
             DatabaseType::Postgres => {
                 // Create the database
                 let database_url = format!(
@@ -1535,7 +1526,7 @@ pub fn index() -> Template {{
         println!("Project {} created!", &project.name);
 
         // Create the database
-        Ok(())
+        Ok(project)
     } // End of create_new_project function
 
     pub fn create_new_route(route_name: String) -> Result<(), Error> {
@@ -1787,9 +1778,7 @@ pub fn index() -> Template {{
                             database_port.to_string(),
                             database_host,
                         );
-                        Self::create_new_project(name, database).unwrap_or_else(|why| {
-                            println!("Failed to create new project: {:?}", why.kind());
-                        })
+                        Self::create_new_project(name, database).err();
                     }
                     2 => {
                         // ask for the database name, username, and password
@@ -1833,9 +1822,7 @@ pub fn index() -> Template {{
                             database_port.to_string(),
                             database_host,
                         );
-                        Self::create_new_project(name, database).unwrap_or_else(|why| {
-                            println!("Failed to create new project: {:?}", why.kind());
-                        })
+                        Self::create_new_project(name, database).err();
                     }
                     3 => {
                         database_choice = "SQLite".to_string();
@@ -1849,9 +1836,7 @@ pub fn index() -> Template {{
                             "Not Needed".to_string(),
                             "sqlite".to_string(),
                         );
-                        Self::create_new_project(name, database).unwrap_or_else(|why| {
-                            println!("Failed to create new project: {:?}", why.kind());
-                        })
+                        Self::create_new_project(name, database).err();
                     }
                     4 => {
                         // ask for the database name, username, and password
@@ -1895,9 +1880,7 @@ pub fn index() -> Template {{
                             database_port.to_string(),
                             database_host,
                         );
-                        Self::create_new_project(name, database).unwrap_or_else(|why| {
-                            println!("Failed to create new project: {:?}", why.kind());
-                        })
+                        Self::create_new_project(name, database).err();
                     }
                     5 => {
                         // create a new project with the name and database information
@@ -1909,9 +1892,7 @@ pub fn index() -> Template {{
                             "".to_string(),
                             "".to_string(),
                         );
-                        Self::create_new_project(name, database).unwrap_or_else(|why| {
-                            println!("Failed to create new project: {:?}", why.kind());
-                        })
+                        Self::create_new_project(name, database).err();
                     }
                     _ => {
                         println!("Invalid database choice");
