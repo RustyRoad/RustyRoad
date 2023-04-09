@@ -1419,9 +1419,12 @@ pub fn index() -> Template {{
 
                 // Write the generated SQL content to the up.sql file
                 write_to_file(&project.initial_migration_up, sql_content.as_bytes())?;
-
+                println!("Created the initial migration file: {}", project.initial_migration_up);
+                println!("Runnning the initial migration");
                 // Run the migration using the run_migration function
                 run_migration(&project, project.initial_migration_directory.clone()).unwrap_err();
+                println!("Ran the initial migration");
+
             }
 
             DatabaseType::Postgres => {
