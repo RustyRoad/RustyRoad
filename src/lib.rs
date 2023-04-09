@@ -36,7 +36,9 @@ use database::{create_migration, run_migration, Database, DatabaseType};
 pub mod writers;
 
 use crate::generators::create_directory;
-use crate::writers::migrations::initial_sql_loader;
+use crate::writers::{
+    migrations::initial_sql_loader, templates::project_creation::create_file::create_files,
+};
 use diesel::sqlite::SqliteConnection;
 use diesel::Connection;
 
@@ -58,6 +60,10 @@ use crate::writers::{
     add_new_route_to_main_rs, write_to_file, write_to_main_rs, write_to_route_name_html,
     write_to_route_name_rs, write_to_routes_mod,
 };
+
+// timestamp
+
+// get time
 
 /// # Name: Project
 /// ## Type: Struct
@@ -147,7 +153,8 @@ pub struct Project {
     pub user_model: String,
     pub user_model_module: String,
     pub user_migration_directory: String,
-    pub user_migration: String,
+    pub user_migration_up: String,
+    pub user_migration_down: String,
     pub user_migration_module: String,
     pub user_seeder: String,
     pub user_test: String,
@@ -184,85 +191,86 @@ impl Project {
     /// The {path} is the path to the directory where the project will be created.
     /// If a path is not provided, the project will be created in the current directory.
     pub fn new(name: String) -> Project {
-        let src_dir = format!("{}/src", name);
-        let rocket_toml = format!("{}/Rocket.toml", name);
-        let rustyroad_toml = format!("{}/rustyroad.toml", name);
-        let cargo_toml = format!("{}/Cargo.toml", name);
-        let main_rs = format!("{}/main.rs", src_dir);
-        let package_json = format!("{}/package.json", name);
-        let readme = format!("{}/README.md", name);
-        let gitignore = format!("{}/.gitignore", name);
-        let templates = format!("{}/templates", name);
-        let static_dir = format!("{}/static", name);
-        let template_components = format!("{}/components", templates);
-        let template_sections = format!("{}/sections", templates);
-        let template_layouts = format!("{}/layouts", templates);
-        let template_pages = format!("{}/pages", templates);
-        let static_css = format!("{}/css", static_dir);
-        let static_js = format!("{}/js", static_dir);
-        let index_js = format!("{}/index.js", static_js);
-        let static_images = format!("{}/images", static_dir);
-        let config = format!("{}/config", name);
-        let config_env = format!("{}/environments", config);
-        let config_dev_env = format!("{}/dev.env", config_env);
-        let config_prod_env = format!("{}/prod.env", config_env);
-        let config_test_env = format!("{}/test.env", config_env);
-        let config_default_env = format!("{}/default.env", config_env);
-        let db = format!("{}/database", config);
-        let config_dev_db = format!("{}/dev.db", db);
-        let config_prod_db = format!("{}/prod.db", db);
-        let config_test_db = format!("{}/test.db", db);
-        let routes = format!("{}/routes", src_dir);
-        let routes_module = format!("{}/mod.rs", routes);
-        let controllers = format!("{}/controllers", src_dir);
-        let models = format!("{}/models", src_dir);
-        let models_module = format!("{}/components", models);
-        let migrations = format!("{}/migrations", db);
-        let seeders = format!("{}/seeders", name);
-        let tests = format!("{}/tests", name);
-        let config_initializers = format!("{}/initializers", config);
-        let config_initializers_assets = format!("{}/assets.rs", config_initializers);
-        let config_initializers_db = format!("{}/initialize_db.sql", config_initializers);
-        let config_initializers_default = format!("{}/default.rs", config_initializers);
-        let config_initializers_middleware = format!("{}/middleware.rs", config_initializers);
-        let config_initializers_routes = format!("{}/routes.rs", config_initializers);
-        let index_html = format!("{}/index.html.tera", template_pages);
-        let base_html = format!("{}/base.html.tera", templates);
-        let tailwind_css = format!("{}/tailwind.css", src_dir);
-        let tailwind_config = format!("{}/tailwind.config.js", name);
-        let postcss_config = format!("{}/postcss.config.js", name);
-        let not_found_html = format!("{}/404.html.tera", template_pages);
-        let server_error_html = format!("{}/500.html.tera", template_pages);
-        let favicon_ico = format!("{}/favicon.ico", static_images);
-        let robots_txt = format!("{}/robots.txt", static_dir);
-        let login_page_html = format!("{}/login.html.tera", template_pages);
-        let signup_page_html = format!("{}/signup.html.tera", template_pages);
-        let reset_password_page_html = format!("{}/reset_password.html.tera", template_pages);
-        let forgot_password_page_html = format!("{}/forgot_password.html.tera", template_pages);
-        let dashboard_page_html = format!("{}/dashboard.html.tera", template_pages);
-        let user_controller_directory = format!("{}/user", controllers);
-        let user_controller = format!("{}/user.rs", user_controller_directory);
-        let user_controller_module = format!("{}/components", user_controller_directory);
-        let user_model_directory = format!("{}/user", models);
-        let user_model = format!("{}/user.rs", user_model_directory);
-        let user_model_module = format!("{}/components", user_model_directory);
-        let user_migration_directory = format!("{}/user", migrations);
-        let user_migration = format!(
-            "{}/00000000000000_create_users_table.rs",
-            user_migration_directory
-        );
-        let user_migration_module = format!("{}/components", user_migration_directory);
-        let user_seeder = format!("{}/seeders/initial_db.sql", name);
-        let user_test = format!("{}/tests/user.rs", name);
-        let user_route = format!("{}/user.rs", routes);
-        let index_route = format!("{}/index.rs", routes);
-        let login_route = format!("{}/login.rs", routes);
-        let signup_route = format!("{}/signup.rs", routes);
-        let reset_password_route = format!("{}/reset_password.rs", routes);
-        let forgot_password_route = format!("{}/forgot_password.rs", routes);
-        let dashboard_route = format!("{}/dashboard.rs", routes);
-        let navbar_component = format!("{}/navbar.html.tera", template_components);
-        let header_section = format!("{}/header.html.tera", template_sections);
+        let timestamp = chrono::offset::Local::now().format("%Y%m%d%H%M%S");
+
+        let src_dir = format!("{name}/src");
+        let rocket_toml = format!("{name}/Rocket.toml");
+        let rustyroad_toml = format!("{name}/rustyroad.toml");
+        let cargo_toml = format!("{name}/Cargo.toml");
+        let main_rs = format!("{src_dir}/main.rs");
+        let package_json = format!("{name}/package.json");
+        let readme = format!("{name}/README.md");
+        let gitignore = format!("{name}/.gitignore");
+        let templates = format!("{name}/templates");
+        let static_dir = format!("{name}/static");
+        let template_components = format!("{templates}/components");
+        let template_sections = format!("{templates}/sections");
+        let template_layouts = format!("{templates}/layouts");
+        let template_pages = format!("{templates}/pages");
+        let static_css = format!("{static_dir}/css");
+        let static_js = format!("{static_dir}/js");
+        let index_js = format!("{static_js}/index.js");
+        let static_images = format!("{static_dir}/images");
+        let config = format!("{name}/config");
+        let config_env = format!("{config}/environments");
+        let config_dev_env = format!("{config_env}/dev.env");
+        let config_prod_env = format!("{config_env}/prod.env");
+        let config_test_env = format!("{config_env}/test.env");
+        let config_default_env = format!("{config_env}/default.env");
+        let db = format!("{config}/database");
+        let config_dev_db = format!("{db}/dev.db");
+        let config_prod_db = format!("{db}/prod.db");
+        let config_test_db = format!("{db}/test.db");
+        let routes = format!("{src_dir}/routes");
+        let routes_module = format!("{routes}/mod.rs");
+        let controllers = format!("{src_dir}/controllers");
+        let models = format!("{src_dir}/models");
+        let models_module = format!("{models}/components");
+        let migrations = format!("{db}/migrations");
+        let seeders = format!("{name}/seeders");
+        let tests = format!("{name }/tests");
+        let config_initializers = format!("{config}/initializers");
+        let config_initializers_assets = format!("{config_initializers}/assets.rs");
+        let config_initializers_db = format!("{config_initializers}/initialize_db.sql");
+        let config_initializers_default = format!("{config_initializers}/default.rs");
+        let config_initializers_middleware = format!("{config_initializers}/middleware.rs");
+        let config_initializers_routes = format!("{config_initializers}/routes.rs");
+        let index_html = format!("{template_pages}/index.html.tera");
+        let base_html = format!("{templates}/base.html.tera");
+        let tailwind_css = format!("{src_dir}/tailwind.css");
+        let tailwind_config = format!("{name}/tailwind.config.js");
+        let postcss_config = format!("{name}/postcss.config.js");
+        let not_found_html = format!("{template_pages}/404.html.tera");
+        let server_error_html = format!("{template_pages}/500.html.tera");
+        let favicon_ico = format!("{static_images}/favicon.ico");
+        let robots_txt = format!("{static_dir}/robots.txt");
+        let login_page_html = format!("{template_pages}/login.html.tera");
+        let signup_page_html = format!("{template_pages}/signup.html.tera");
+        let reset_password_page_html = format!("{template_pages}/reset_password.html.tera");
+        let forgot_password_page_html = format!("{template_pages}/forgot_password.html.tera");
+        let dashboard_page_html = format!("{template_pages}/dashboard.html.tera");
+        let user_controller_directory = format!("{controllers}/user");
+        let user_controller = format!("{user_controller_directory}/user.rs");
+        let user_controller_module = format!("{user_controller_directory}/components");
+        let user_model_directory = format!("{models}/user");
+        let user_model = format!("{user_model_directory}/user.rs");
+        let user_model_module = format!("{user_model_directory}/components");
+        let user_migration_directory =
+            format!("{migrations}/{timestamp}_user", timestamp = timestamp);
+        let user_migration_up = format!("{user_migration_directory}/up.sql");
+        let user_migration_down = format!("{user_migration_directory}/down.sql");
+        let user_migration_module = format!("{user_migration_directory}/components");
+        let user_seeder = format!("{name}/seeders/initial_db.sql");
+        let user_test = format!("{name}/tests/user.rs");
+        let user_route = format!("{routes}/user.rs");
+        let index_route = format!("{routes}/index.rs");
+        let login_route = format!("{routes}/login.rs");
+        let signup_route = format!("{routes}/signup.rs");
+        let reset_password_route = format!("{routes}/reset_password.rs");
+        let forgot_password_route = format!("{routes}/forgot_password.rs");
+        let dashboard_route = format!("{routes}/dashboard.rs");
+        let navbar_component = format!("{template_components}/navbar.html.tera");
+        let header_section = format!("{template_sections}/header.html.tera");
 
         Project {
             name,
@@ -329,7 +337,8 @@ impl Project {
             user_model,
             user_model_module,
             user_migration_directory,
-            user_migration,
+            user_migration_up,
+            user_migration_down,
             user_migration_module,
             user_seeder,
             user_test,
@@ -345,64 +354,6 @@ impl Project {
         }
     }
 
-    pub fn create_files(&self) -> Result<(), Error> {
-        let files = vec![
-            &self.rustyroad_toml,
-            &self.rocket_toml,
-            &self.cargo_toml,
-            &self.main_rs,
-            &self.package_json,
-            &self.readme,
-            &self.gitignore,
-            &self.config_dev_env,
-            &self.config_prod_env,
-            &self.config_test_env,
-            &self.config_default_env,
-            &self.config_dev_db,
-            &self.config_prod_db,
-            &self.config_test_db,
-            &self.routes_module,
-            &self.models_module,
-            &self.user_controller_module,
-            &self.user_model_module,
-            &self.user_migration_module,
-            &self.index_html,
-            &self.base_html,
-            &self.tailwind_css,
-            &self.tailwind_config,
-            &self.postcss_config,
-            &self.not_found_html,
-            &self.server_error_html,
-            &self.favicon_ico,
-            &self.robots_txt,
-            &self.login_page_html,
-            &self.signup_page_html,
-            &self.reset_password_page_html,
-            &self.forgot_password_page_html,
-            &self.dashboard_page_html,
-            &self.user_controller,
-            &self.user_model,
-            &self.user_migration,
-            &self.user_seeder,
-            &self.user_test,
-            &self.user_route,
-            &self.index_route,
-            &self.login_route,
-            &self.signup_route,
-            &self.reset_password_route,
-            &self.forgot_password_route,
-            &self.dashboard_route,
-            &self.index_js,
-            &self.navbar_component,
-            &self.header_section,
-        ];
-
-        for file in files {
-            create_file(file)?;
-        }
-
-        Ok(())
-    }
     // Write to rustyroad_toml
     fn write_to_rustyroad_toml(&self, database_data: &Database) -> Result<(), Error> {
         let mut file = OpenOptions::new()
@@ -505,7 +456,7 @@ version = \"0.6.2\"",
 
                 file.write_all(config.as_bytes())?;
 
-                return Ok(());
+                Ok(())
             }
 
             DatabaseType::Sqlite => {
@@ -541,7 +492,7 @@ features = [\"bundled\"]",
 
                 file.write_all(config.as_bytes())?;
 
-                return Ok(());
+                Ok(())
             }
 
             DatabaseType::Mongo => {
@@ -578,7 +529,7 @@ features = [\"sync\", \"bson\", \"tls\"]",
 
                 file.write_all(config.as_bytes())?;
 
-                return Ok(());
+                Ok(())
             }
         }
     }
@@ -611,8 +562,7 @@ features = [\"sync\", \"bson\", \"tls\"]",
             .expect("Failed to open package.json");
 
         file.write_all(
-            format!(
-                "{{
+            "{{
   \"name\": \"rustyroad\",
   \"version\": \"1.0.0\",
   \"main\": \"index.js\",
@@ -631,7 +581,6 @@ features = [\"sync\", \"bson\", \"tls\"]",
     \"tailwindcss\": \"^3.2.4\"
   }}
 }}"
-            )
             .as_bytes(),
         )
         .expect("Failed to write to package.json");
@@ -1188,9 +1137,9 @@ impl UserLogin {
         }}
             }}
         }}
-        
+
         const rusty-road = new RustyRoad();
-        
+
         rusty-road.greet();
         ",
             self.name, self.name
@@ -1362,7 +1311,9 @@ pub fn index() -> Template {{
         });
 
         // Create the files
-        Self::create_files(&project).expect("Failed to create files");
+        create_files(&project).unwrap_or_else(|why| {
+            panic!("Couldn't create files: {:?}", why.kind());
+        });
 
         // Write to rustyroad.toml file
         Self::write_to_rustyroad_toml(&project, &database_data)
@@ -1459,25 +1410,29 @@ pub fn index() -> Template {{
                 println!("database_url: {}", database_url);
 
                 // Create a migration to initialize the database
-                let intial_migration = create_migration("initialize_data")?;
+                // let intial_migration = create_migration("initialize_data")?;
                 // Create a connection to the database
                 let connection = SqliteConnection::establish(&database_url)
                     .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
 
                 // write the sql to initialize the database
-                initial_sql_loader::load_sql_for_new_project(&project).unwrap_or_else(|why| {
-                    println!("Failed to write to initial_sql_loader: {:?}", why.kind());
-                });
+                initial_sql_loader::load_sql_for_new_project(&project).unwrap_or_else(|why|
+                  panic!("Failed to write to initialize_data: {:?}", why.kind())
+                );
+                // Call create_migration to create a new migration
+                
+                // Generate the file path for the up.sql file within the migration folder
+                
 
-                // Run the migration
-                run_migration(&project, intial_migration).unwrap_or_else(|why| {
-                    println!("Failed to run migration: {:?}", why.to_string());
-                });
+                // Generate the SQL content for the new project
+                let sql_content = initial_sql_loader::load_sql_for_new_project(&project)?;
 
-         
+                // Write the generated SQL content to the up.sql file
+                write_to_file(&project.user_migration_up, sql_content.as_bytes())?;
 
+                // Run the migration using the run_migration function
+                run_migration(&project, project.user_migration_directory.clone()).unwrap_err();
             }
-
 
             DatabaseType::Postgres => {
                 // Create the database

@@ -1,3 +1,0 @@
-get * from users
-
-finish

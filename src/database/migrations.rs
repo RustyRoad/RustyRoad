@@ -12,6 +12,9 @@ use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::fs::create_dir_all;
+use std::io::ErrorKind;
+use std::path::Path;
 use std::path::PathBuf;
 
 // Define available column types and constraints
@@ -45,8 +48,10 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
     match std::fs::read_to_string(path.join("rustyroad.toml")) {
         Ok(_) => {}
         Err(_) => {
-            println!("This is not a rustyroad project");
-            return Ok("".to_string());
+            println!("This is why you can't have nice things");
+            return Ok(
+                "This is why you can't have nice things".to_string(
+            ))
         }
     }
 
@@ -309,6 +314,73 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
     }
     // return the name of the migration
     Ok((&name).to_string())
+}
+
+
+/// ## Name: initialize_migration
+/// ### Description: Creates the initial migration directory and the up.sql and down.sql files for the initial migration
+/// ### Arguments:
+/// * [`&project`] - The project struct that contains the project name and the project path
+///
+/// ### Returns:
+/// * [`Result<(), CustomMigrationError>`] - Returns a result with a unit type or a CustomMigrationError
+/// ### Example:
+/// ```rust
+/// use rustyroad::database::migrations::initial_migration;
+///
+/// let project = Project {
+///    name: "test".to_string(),
+///   path: "/home/user/test".to_string(),
+///   // .. rest of the struct
+/// };
+/// let result = initialize_migration(&project);
+/// 
+/// assert!(result.is_ok());
+/// ```
+pub fn initialize_migration(project: &Project) -> Result<(), ErrorKind> {
+    // create the migrations directory
+   let sql = "
+       CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+  );";
+    let migrations_dir = Path::new(&project.user_migration_directory).join("migrations");
+
+    if !migrations_dir.exists() {
+        create_dir_all(&migrations_dir).unwrap_or_else(|why| {
+            panic!(
+                "Couldn't create migrations directory: {}",
+                why.to_string()
+            )
+        });
+    }
+
+    // create the up.sql file
+    let up_file = &project.user_migration_up;
+
+    // write the up.sql file
+    write_to_file(&up_file, sql.as_bytes()).unwrap_or_else(|why| {
+        panic!("Couldn't write to up.sql: {}", why.to_string())
+    });
+
+    let sql_to_down = "
+    DROP TABLE IF EXISTS users;
+    ";
+
+
+    // create the down.sql file
+    let down_file = &project.user_migration_down;
+
+    // write the down.sql file
+    write_to_file(&down_file, sql_to_down.as_bytes()).unwrap_or_else(|why| {
+        panic!("Couldn't write to down.sql: {}", why.to_string())
+    });
+
+    Ok(())
 }
 // Write the user-entered SQL queries to the up.sql file
 

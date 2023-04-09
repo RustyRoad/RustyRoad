@@ -7,8 +7,8 @@
         }
             }
         }
-        
+
         const rusty-road = new RustyRoad();
-        
+
         rusty-road.greet();
         

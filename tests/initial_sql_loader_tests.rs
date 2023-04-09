@@ -1,9 +1,8 @@
 use rustyroad::Project;
 use rustyroad::database::Database;
 #[cfg(test)]
-use rustyroad::writers::migrations::initial_sql_loader::load_sql_for_new_project;
 use std::fs::{read_to_string, remove_file};
-use std::io::ErrorKind;
+use std::{io::ErrorKind, fs};
 
 #[test]
 fn test_integration_load_sql_for_new_project() {
@@ -18,39 +17,24 @@ fn test_integration_load_sql_for_new_project() {
     );
 
     // Create a sample project
-    let project = Project::create_new_project("test_project".to_string(), database_data).unwrap_or_else(|e| {
-        panic!("Failed to create new project: {}", e);
-    });
+    let project = Project::create_new_project("example".to_string(), database_data);
+    assert!(project.is_ok(), "Expected valid project");
 
-    // Call the function to generate the SQL file
-    let result = load_sql_for_new_project(&project);
-    assert!(result.is_ok(), "Expected successful SQL file generation");
 
-    // Verify the content of the generated SQL file
-    let file_name = format!("{}_initial.sql", project.config_initializers_db);
-    match read_to_string(&file_name) {
-        Ok(content) => {
-            // Check that the generated SQL contains the expected statements
-            assert!(content.contains("CREATE DATABASE test_project DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"));
-            assert!(content.contains("CREATE TABLE Users ("));
-            assert!(content.contains("CREATE TABLE Roles ("));
-            assert!(content.contains("CREATE TABLE Permissions ("));
-            assert!(content.contains("CREATE TABLE Sessions ("));
-            assert!(content.contains("INSERT INTO Roles (name) VALUES ('admin');"));
-            assert!(content
-                .contains("INSERT INTO Permissions (name, role_id) VALUES ('create_user', 1);"));
-            assert!(content
-                .contains("INSERT INTO Permissions (name, role_id) VALUES ('read_user', 1);"));
-            assert!(content.contains(
-                "INSERT INTO Users (password, username, role_id) VALUES ('admin', 'admin', 1);"
-            ));
+    // Verify the up migration file is present
+    let project = project.unwrap();
+    let up_migration_file = project.user_migration_up;
+    // check that the file exists
+    let is_up_present = fs::metadata(&up_migration_file).is_ok();
+    assert!(is_up_present, "Expected up migration file to be present");
 
-            // Clean up by removing the generated SQL file
-            remove_file(&file_name).expect("Failed to clean up test file");
-        }
-        Err(error) => match error.kind() {
-            ErrorKind::NotFound => panic!("Test file not found"),
-            other_error => panic!("An unexpected error occurred: {:?}", other_error),
-        },
-    }
+    let sql = read_to_string(up_migration_file.clone()).unwrap();
+    // parse the sql file and verify the content
+    assert!(sql.contains("CREATE TABLE Users ("));
+
+    // Verify the down migration file is present
+    let down_migration_file = project.user_migration_down;
+    // check that the file exists
+    let is_down_present = fs::metadata(down_migration_file).is_ok();
+    assert!(is_down_present, "Expected down migration file to be present");
 }
