@@ -49,9 +49,7 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
         Ok(_) => {}
         Err(_) => {
             println!("This is why you can't have nice things");
-            return Ok(
-                "This is why you can't have nice things".to_string(
-            ))
+            return Ok("This is why you can't have nice things".to_string());
         }
     }
 
@@ -80,9 +78,7 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
         Ok(_) => {}
         Err(_) => {
             println!("Migration already exists");
-            return Ok(
-                "Migration already exists".to_string(
-            ))
+            return Ok("Migration already exists".to_string());
         }
     }
 
@@ -316,7 +312,6 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
     Ok((&name).to_string())
 }
 
-
 /// ## Name: initialize_migration
 /// ### Description: Creates the initial migration directory and the up.sql and down.sql files for the initial migration
 /// ### Arguments:
@@ -334,12 +329,12 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
 ///   // .. rest of the struct
 /// };
 /// let result = initialize_migration(&project);
-/// 
+///
 /// assert!(result.is_ok());
 /// ```
 pub fn initialize_migration(project: &Project) -> Result<(), ErrorKind> {
     // create the migrations directory
-   let sql = "
+    let sql = "
        CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -348,37 +343,31 @@ pub fn initialize_migration(project: &Project) -> Result<(), ErrorKind> {
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
   );";
-    let migrations_dir = Path::new(&project.user_migration_directory).join("migrations");
+    let migrations_dir = Path::new(&project.initial_migration_directory).join("migrations");
 
     if !migrations_dir.exists() {
         create_dir_all(&migrations_dir).unwrap_or_else(|why| {
-            panic!(
-                "Couldn't create migrations directory: {}",
-                why.to_string()
-            )
+            panic!("Couldn't create migrations directory: {}", why.to_string())
         });
     }
 
     // create the up.sql file
-    let up_file = &project.user_migration_up;
+    let up_file = &project.initial_migration_up;
 
     // write the up.sql file
-    write_to_file(&up_file, sql.as_bytes()).unwrap_or_else(|why| {
-        panic!("Couldn't write to up.sql: {}", why.to_string())
-    });
+    write_to_file(&up_file, sql.as_bytes())
+        .unwrap_or_else(|why| panic!("Couldn't write to up.sql: {}", why.to_string()));
 
     let sql_to_down = "
     DROP TABLE IF EXISTS users;
     ";
 
-
     // create the down.sql file
-    let down_file = &project.user_migration_down;
+    let down_file = &project.initial_migration_down;
 
     // write the down.sql file
-    write_to_file(&down_file, sql_to_down.as_bytes()).unwrap_or_else(|why| {
-        panic!("Couldn't write to down.sql: {}", why.to_string())
-    });
+    write_to_file(&down_file, sql_to_down.as_bytes())
+        .unwrap_or_else(|why| panic!("Couldn't write to down.sql: {}", why.to_string()));
 
     Ok(())
 }
@@ -390,7 +379,6 @@ pub enum CustomMigrationError {
     IoError(std::io::Error),
     RunError(Box<dyn StdError + Send + Sync>),
 }
-
 
 impl Display for CustomMigrationError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -430,7 +418,10 @@ impl From<Box<dyn StdError + Send + Sync>> for CustomMigrationError {
 ///
 /// run_migration("create_users_table").unwrap();
 /// ```
-pub fn run_migration(project: &Project, migration_name: String) -> Result<(), CustomMigrationError> {
+pub fn run_migration(
+    project: &Project,
+    migration_name: String,
+) -> Result<(), CustomMigrationError> {
     // Establish a database connection
     let mut connection = SqliteConnection::establish(&project.config_dev_db)
         .expect(&format!("Error connecting to {}", &project.config_dev_db));
@@ -443,9 +434,9 @@ pub fn run_migration(project: &Project, migration_name: String) -> Result<(), Cu
 
     // Run pending migrations using the `run_pending_migrations` method on the connection
     // The `MigrationHarness` trait provides this method as an extension trait on the connection
-    connection.run_pending_migrations(migrations).map_err(|err| {
-        CustomMigrationError::RunError(err)
-    })?;
+    connection
+        .run_pending_migrations(migrations)
+        .map_err(|err| CustomMigrationError::RunError(err))?;
 
     Ok(())
 }

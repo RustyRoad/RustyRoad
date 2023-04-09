@@ -80,10 +80,13 @@ pub fn load_sql_for_new_project(project: &Project) -> Result<String, std::io::Er
     );
 
     // write the template to the file
-    write_to_file(
-        &project.user_migration_up,
-        template.as_bytes(),
-    ).unwrap_or_else(|why| panic!("Failed to write to file {}: {:?}", &project.user_migration_up, why.kind()));
+    write_to_file(&project.initial_migration_up, template.as_bytes()).unwrap_or_else(|why| {
+        panic!(
+            "Failed to write to file {}: {:?}",
+            &project.initial_migration_up,
+            why.kind()
+        )
+    });
 
     // create the down migration
     let mut template = String::new();
@@ -96,9 +99,16 @@ pub fn load_sql_for_new_project(project: &Project) -> Result<String, std::io::Er
     // write the template to the file
 
     write_to_file(
-        &project.user_migration_down.to_string(),
+        &project.initial_migration_down.to_string(),
         template.as_bytes(),
-    ).unwrap_or_else(|why| panic!("Failed to write to file {}: {:?}", &project.user_migration_down.to_string(), why.kind()));
+    )
+    .unwrap_or_else(|why| {
+        panic!(
+            "Failed to write to file {}: {:?}",
+            &project.initial_migration_down.to_string(),
+            why.kind()
+        )
+    });
 
     Ok(template)
 }

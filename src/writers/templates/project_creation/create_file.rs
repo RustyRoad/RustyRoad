@@ -1,6 +1,6 @@
-use std::io::Error;
 use crate::generators::create_file;
 use crate::Project;
+use std::io::Error;
 
 pub fn create_files(project: &Project) -> Result<(), Error> {
     let files = vec![
@@ -21,8 +21,6 @@ pub fn create_files(project: &Project) -> Result<(), Error> {
         &project.routes_module,
         &project.models_module,
         &project.user_controller_module,
-        &project.user_model_module,
-        &project.user_migration_module,
         &project.index_html,
         &project.base_html,
         &project.tailwind_css,
@@ -39,9 +37,8 @@ pub fn create_files(project: &Project) -> Result<(), Error> {
         &project.dashboard_page_html,
         &project.user_controller,
         &project.user_model,
-        &project.user_migration_up,
-        &project.user_migration_down,
-        &project.user_seeder,
+        &project.initial_migration_up,
+        &project.initial_migration_down,
         &project.user_test,
         &project.user_route,
         &project.index_route,

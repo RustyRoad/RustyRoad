@@ -1,8 +1,8 @@
-use rustyroad::Project;
 use rustyroad::database::Database;
+use rustyroad::Project;
+use std::fs;
 #[cfg(test)]
-use std::fs::{read_to_string, remove_file};
-use std::{io::ErrorKind, fs};
+use std::fs::read_to_string;
 
 #[test]
 fn test_integration_load_sql_for_new_project() {
@@ -20,10 +20,9 @@ fn test_integration_load_sql_for_new_project() {
     let project = Project::create_new_project("example".to_string(), database_data);
     assert!(project.is_ok(), "Expected valid project");
 
-
     // Verify the up migration file is present
     let project = project.unwrap();
-    let up_migration_file = project.user_migration_up;
+    let up_migration_file = project.initial_migration_up;
     // check that the file exists
     let is_up_present = fs::metadata(&up_migration_file).is_ok();
     assert!(is_up_present, "Expected up migration file to be present");
@@ -33,8 +32,11 @@ fn test_integration_load_sql_for_new_project() {
     assert!(sql.contains("CREATE TABLE Users ("));
 
     // Verify the down migration file is present
-    let down_migration_file = project.user_migration_down;
+    let down_migration_file = project.initial_migration_down;
     // check that the file exists
     let is_down_present = fs::metadata(down_migration_file).is_ok();
-    assert!(is_down_present, "Expected down migration file to be present");
+    assert!(
+        is_down_present,
+        "Expected down migration file to be present"
+    );
 }

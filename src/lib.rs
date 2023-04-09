@@ -151,12 +151,9 @@ pub struct Project {
     pub user_controller_module: String,
     pub user_model_directory: String,
     pub user_model: String,
-    pub user_model_module: String,
-    pub user_migration_directory: String,
-    pub user_migration_up: String,
-    pub user_migration_down: String,
-    pub user_migration_module: String,
-    pub user_seeder: String,
+    pub initial_migration_directory: String,
+    pub initial_migration_up: String,
+    pub initial_migration_down: String,
     pub user_test: String,
     pub user_route: String,
     pub index_route: String,
@@ -254,13 +251,10 @@ impl Project {
         let user_controller_module = format!("{user_controller_directory}/components");
         let user_model_directory = format!("{models}/user");
         let user_model = format!("{user_model_directory}/user.rs");
-        let user_model_module = format!("{user_model_directory}/components");
-        let user_migration_directory =
+        let initial_migration_directory =
             format!("{migrations}/{timestamp}_user", timestamp = timestamp);
-        let user_migration_up = format!("{user_migration_directory}/up.sql");
-        let user_migration_down = format!("{user_migration_directory}/down.sql");
-        let user_migration_module = format!("{user_migration_directory}/components");
-        let user_seeder = format!("{name}/seeders/initial_db.sql");
+        let initial_migration_up = format!("{initial_migration_directory}/up.sql");
+        let initial_migration_down = format!("{initial_migration_directory}/down.sql");
         let user_test = format!("{name}/tests/user.rs");
         let user_route = format!("{routes}/user.rs");
         let index_route = format!("{routes}/index.rs");
@@ -335,12 +329,9 @@ impl Project {
             user_controller_module,
             user_model_directory,
             user_model,
-            user_model_module,
-            user_migration_directory,
-            user_migration_up,
-            user_migration_down,
-            user_migration_module,
-            user_seeder,
+            initial_migration_directory,
+            initial_migration_up,
+            initial_migration_down,
             user_test,
             user_route,
             index_route,
@@ -1416,22 +1407,21 @@ pub fn index() -> Template {{
                     .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
 
                 // write the sql to initialize the database
-                initial_sql_loader::load_sql_for_new_project(&project).unwrap_or_else(|why|
-                  panic!("Failed to write to initialize_data: {:?}", why.kind())
-                );
+                initial_sql_loader::load_sql_for_new_project(&project).unwrap_or_else(|why| {
+                    panic!("Failed to write to initialize_data: {:?}", why.kind())
+                });
                 // Call create_migration to create a new migration
-                
+
                 // Generate the file path for the up.sql file within the migration folder
-                
 
                 // Generate the SQL content for the new project
                 let sql_content = initial_sql_loader::load_sql_for_new_project(&project)?;
 
                 // Write the generated SQL content to the up.sql file
-                write_to_file(&project.user_migration_up, sql_content.as_bytes())?;
+                write_to_file(&project.initial_migration_up, sql_content.as_bytes())?;
 
                 // Run the migration using the run_migration function
-                run_migration(&project, project.user_migration_directory.clone()).unwrap_err();
+                run_migration(&project, project.initial_migration_directory.clone()).unwrap_err();
             }
 
             DatabaseType::Postgres => {
