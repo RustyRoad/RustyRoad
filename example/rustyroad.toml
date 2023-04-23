@@ -1,0 +1,7 @@
+name = "example"
+            database_name = "pwned"
+            database_user = "test_user"
+            database_password = "password"
+            database_host = "localhost"
+            database_port = "3306"
+            database_type = "Sqlite"

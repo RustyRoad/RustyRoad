@@ -1,21 +1,25 @@
+
+use super::Database;
+use crate::database;
 use crate::generators::create_file;
 use crate::writers::write_to_file;
 use crate::Project;
 use chrono::prelude::*;
-use diesel::Connection;
-use diesel::SqliteConnection;
-use diesel_migrations::FileBasedMigrations;
-use diesel_migrations::MigrationError;
-use diesel_migrations::MigrationHarness;
+
+ // Import Pool from mysql crate
+ // Import Client from postgres crate
 use rustyline::DefaultEditor;
+use sqlx::{sqlite::SqlitePool, postgres::PgPoolOptions};
 use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fs::create_dir_all;
+use std::fs::{self};
 use std::io::ErrorKind;
+use std::io::Read;
 use std::path::Path;
-use std::path::PathBuf;
+use diesel_migrations::MigrationError;
 
 // Define available column types and constraints
 const COLUMN_TYPES: &[&str] = &["VARCHAR(255)", "INTEGER", "TIMESTAMP"];
@@ -418,25 +422,134 @@ impl From<Box<dyn StdError + Send + Sync>> for CustomMigrationError {
 ///
 /// run_migration("create_users_table").unwrap();
 /// ```
-pub fn run_migration(
+pub async fn run_migration(
     project: &Project,
     migration_name: String,
+    database: Database,
 ) -> Result<(), CustomMigrationError> {
-    // Establish a database connection
-    let mut connection = SqliteConnection::establish(&project.config_dev_db)
-        .expect(&format!("Error connecting to {}", &project.config_dev_db));
+    // Generate the path to the migrations directory at runtime
+    let migrations_dir_path = format!("{}/{}", &project.migrations, &migration_name);
 
-    // Convert the migrations directory to a PathBuf
-    let migrations_dir_path = PathBuf::from(format!("{}/{}", &project.migrations, migration_name));
+    // Get migration files from the specified directory
+    let mut migration_files: Vec<_> = fs::read_dir(&migrations_dir_path).unwrap_or_else(|why| {
+        panic!(
+            "Couldn't read migrations directory: {}",
+            why.to_string() )
+    })
+        .filter_map(Result::ok)
+        .collect();
+    // Sort the migration files based on their name (to apply them in order)
+    migration_files.sort_by_key(|entry| entry.file_name());
 
-    // Create a FileBasedMigrations instance based on the path to the migrations directory
-    let migrations = FileBasedMigrations::from_path(migrations_dir_path)?;
+    // Print the path to the migration directory and the migration name
+    println!("Migration directory path: {:?}", migrations_dir_path);
+    println!("Migration name: {:?}", &migration_name.clone());
 
-    // Run pending migrations using the `run_pending_migrations` method on the connection
-    // The `MigrationHarness` trait provides this method as an extension trait on the connection
-    connection
-        .run_pending_migrations(migrations)
-        .map_err(|err| CustomMigrationError::RunError(err))?;
+    // Determine the type of database and run the migrations
+    match database.database_type {
+        database::DatabaseType::Sqlite => {
+            // Create a connection to the SQLite database
+            // Create a connection pool to the SQLite database
+            let pool = SqlitePool::connect(&project.config_dev_db).await.unwrap_or_else(|why| {
+                panic!("Failed to connect to database: {}", why.to_string())
+            });
 
+            for entry in migration_files {
+                let path = entry.path();
+                // Ignore non-SQL files
+                if path.extension() != Some(std::ffi::OsStr::new("sql")) {
+                    continue;
+                }
+                let mut file = fs::File::open(&path).unwrap_or_else(|why| {
+                    panic!("Failed to open migration file: {}", why.to_string())
+                });
+                let mut sql = String::new();
+                file.read_to_string(&mut sql).unwrap_or_else(|why| {
+                    panic!("Failed to read migration file: {}", why.to_string())
+                });
+
+                // Execute the SQL statements from the migration file
+                sqlx::query(&sql).execute(&pool).await.unwrap_or_else(|why| {
+                    panic!("Failed to execute migration: {}", why.to_string())
+                });
+                println!("Applied migration: {:?}", path.file_name().unwrap());
+            }
+        }
+        database::DatabaseType::Postgres => {
+            // Create a connection pool to the PostgreSQL database
+            let pool = PgPoolOptions::new()
+                .max_connections(20)
+                .connect(&project.config_dev_db)
+                .await
+                .unwrap_or_else(|why| {
+                    panic!("Failed to connect to database: {}", why.to_string())
+                });
+
+            for entry in migration_files {
+                let path = entry.path();
+                // Ignore non-SQL files
+                if path.extension() != Some(std::ffi::OsStr::new("sql")) {
+                    continue;
+                }
+                let mut file = fs::File::open(&path).unwrap_or_else(|why| {
+                    panic!("Failed to open migration file: {}", why.to_string())
+                });
+                let mut sql = String::new();
+                file.read_to_string(&mut sql).unwrap_or_else(|why| {
+                    panic!("Failed to read migration file: {}", why.to_string())
+                });
+
+                // Execute the SQL statements from the migration file
+                sqlx::query(&sql).execute(&pool).await.unwrap_or_else(|why| {
+                    panic!("Failed to execute migration: {}", why.to_string())
+                });
+                println!("Applied migration: {:?}", path.file_name().unwrap());
+            }
+        }
+        database::DatabaseType::Mysql => {
+            // Create a connection pool to the MySQL database
+            // let pool = MySqlPool::connect(&database.config_dev_db).await?;
+            //
+            // for entry in migration_files {
+            //     let path = entry.path();
+            //     // Ignore non-SQL files
+            //     if path.extension() != Some(std::ffi::OsStr::new("sql")) {
+            //         continue;
+            //     }
+            //     let mut file = fs::File::open(&path)?;
+            //     let mut sql = String::new();
+            //     file.read_to_string(&mut sql)?;
+            //
+            //     // Execute the SQL statements from the migration file
+            //     sqlx::query(&sql).execute(&pool).await?;
+            //     println!("Applied migration: {:?}", path.file_name().unwrap());
+            // }
+            todo!("ya");
+        }
+        database::DatabaseType::Mongo => {
+            // Create a connection to the MongoDB database
+            // let client = mongodb::Client::with_uri_str(&database.config_dev_db).await?;
+            // let db = client.database("my_db"); // You need to specify the database name
+
+            // for entry in migration_files {
+            //     let path = entry.path();
+            //     // Ignore non-SQL files
+            //     if path.extension() != Some(std::ffi::OsStr::new("sql")) {
+            //         continue;
+            //     }
+            //     let mut file = fs::File::open(&path)?;
+            //     let mut sql = String::new();
+            //     file.read_to_string(&mut sql)?;
+
+            //     // Execute the SQL statements from the migration file
+            //     db.run_command(mongodb::bson::doc! { "eval": sql }, None).await?;
+            //     println!("Applied migration: {:?}", path.file_name().unwrap());
+            // }
+            // not implemented yet
+            todo!("MongoDB migrations are not implemented yet.");
+        }
+    }
+
+    println!("Migration executed successfully");
     Ok(())
 }

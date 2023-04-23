@@ -1,5 +1,8 @@
 use rustyroad::Project;
 
-pub fn main() {
-    Project::run();
+
+
+#[tokio::main]
+pub async fn main() {
+    Project::run().await;
 }

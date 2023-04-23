@@ -15,15 +15,21 @@ documentation = "https://docs.rs/rustyroad"
 clap = { version = "4.0.32", features = ["derive"] }
 serde = {version = "1.0.152", features = ["derive"] }
 toml = "0.7.2"
-libsqlite3-sys = { version = "0.22", features = ["bundled"] }  # A
 pkg-config = {version = "0.3.26", optional = true}
-diesel = { version = "2.0", features = ["sqlite", "postgres"]}
+diesel = { version = "2.0", features = [  "r2d2"]} # Enable the r2d2 feature here
 chrono = "0.4"
 clap_complete = "4.1.5"
 diesel_migrations = "2.0"
 regex = "1.0"
 serde_regex = "1.0"
 rustyline = {version = "11.0.0", features = ["with-file-history"]} 
-sqlparser = "0.32.0"
+sqlparser = "0.33.0"
+tempfile = "3.5.0"
+postgres = "0.19.5"
+r2d2 = "0.8.10"
+refinery = "0.8.7"
+mysql = "23.0.1"
+sqlx = { version = "0.6.2", features = ["runtime-actix-native-tls", "sqlite", "postgres", "time", "uuid", "mysql"] }
+tokio = { version = "1.27.0", features = ["full"] }
 [features]
 with-file-history = []

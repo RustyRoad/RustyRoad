@@ -1,6 +1,6 @@
-use sqlparser::dialect::SQLiteDialect;
-
 use crate::writers::write_to_file;
+use postgres::{Client, NoTls};
+use sqlparser::dialect::SQLiteDialect;
 
 /// # Name: write_to_sql
 /// # Description: Writes to a sql file and creates the file if it does not exist
@@ -14,21 +14,18 @@ use crate::writers::write_to_file;
 /// # Example
 /// ```
 /// use crate::writers::general::sql_writer::write_to_sql;
-/// 
+///
 /// write_to_sql("test.sql", "SELECT * FROM test;".to_string());
-/// 
+///
 /// ```
 /// # Result
 /// ```sql
 /// SELECT * FROM test;
 /// ```
-pub fn write_to_sql(file_name: &String,sql: &str) -> Result<(), std::io::Error> {
-
-
-  // parse the sql to make sure it is valid
-  let _ = sqlparser::parser::Parser::parse_sql(&SQLiteDialect {}, sql).unwrap();
-  // if the sql is not valid, the parser will throw an error
-  
+pub fn write_to_sql(file_name: &String, sql: &str) -> Result<(), std::io::Error> {
+    // parse the sql to make sure it is valid
+    let _ = sqlparser::parser::Parser::parse_sql(&SQLiteDialect {}, sql).unwrap();
+    // if the sql is not valid, the parser will throw an error
 
     let mut template = String::new();
 
@@ -36,4 +33,24 @@ pub fn write_to_sql(file_name: &String,sql: &str) -> Result<(), std::io::Error> 
 
     // write the template to the file
     write_to_file(file_name, template.as_bytes())
+}
+pub fn create_database_if_not_exists(
+    admin_database_url: &str,
+    database_name: &str,
+) -> Result<(), postgres::Error> {
+    // Connect to the default "postgres" database to check for existence and create a new database
+    let mut client = Client::connect(admin_database_url, NoTls)?;
+
+    // Check if the specified database exists
+    let row = client.query_opt(
+        "SELECT 1 FROM pg_database WHERE datname = $1",
+        &[&database_name],
+    )?;
+
+    if row.is_none() {
+        // If the database does not exist, create it
+        client.batch_execute(&format!("CREATE DATABASE {}", database_name))?;
+    }
+
+    Ok(())
 }
