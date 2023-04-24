@@ -31,5 +31,7 @@ refinery = "0.8.7"
 mysql = "23.0.1"
 sqlx = { version = "0.6.2", features = ["runtime-actix-native-tls", "sqlite", "postgres", "time", "uuid", "mysql"] }
 tokio = { version = "1.27.0", features = ["full"] }
+tokio-postgres = "0.7.8"
+futures-util = "0.3.28"
 [features]
 with-file-history = []

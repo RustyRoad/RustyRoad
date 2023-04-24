@@ -1,4 +1,3 @@
-
 use super::Database;
 use crate::database;
 use crate::generators::create_file;
@@ -6,10 +5,11 @@ use crate::writers::write_to_file;
 use crate::Project;
 use chrono::prelude::*;
 
- // Import Pool from mysql crate
- // Import Client from postgres crate
+// Import Pool from mysql crate
+// Import Client from postgres crate
+use diesel_migrations::MigrationError;
 use rustyline::DefaultEditor;
-use sqlx::{sqlite::SqlitePool, postgres::PgPoolOptions};
+use sqlx::{postgres::PgPoolOptions, sqlite::SqlitePool};
 use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::Display;
@@ -19,7 +19,6 @@ use std::fs::{self};
 use std::io::ErrorKind;
 use std::io::Read;
 use std::path::Path;
-use diesel_migrations::MigrationError;
 
 // Define available column types and constraints
 const COLUMN_TYPES: &[&str] = &["VARCHAR(255)", "INTEGER", "TIMESTAMP"];
@@ -431,11 +430,8 @@ pub async fn run_migration(
     let migrations_dir_path = format!("{}/{}", &project.migrations, &migration_name);
 
     // Get migration files from the specified directory
-    let mut migration_files: Vec<_> = fs::read_dir(&migrations_dir_path).unwrap_or_else(|why| {
-        panic!(
-            "Couldn't read migrations directory: {}",
-            why.to_string() )
-    })
+    let mut migration_files: Vec<_> = fs::read_dir(&migrations_dir_path)
+        .unwrap_or_else(|why| panic!("Couldn't read migrations directory: {}", why.to_string()))
         .filter_map(Result::ok)
         .collect();
     // Sort the migration files based on their name (to apply them in order)
@@ -450,9 +446,9 @@ pub async fn run_migration(
         database::DatabaseType::Sqlite => {
             // Create a connection to the SQLite database
             // Create a connection pool to the SQLite database
-            let pool = SqlitePool::connect(&project.config_dev_db).await.unwrap_or_else(|why| {
-                panic!("Failed to connect to database: {}", why.to_string())
-            });
+            let pool = SqlitePool::connect(&project.config_dev_db)
+                .await
+                .unwrap_or_else(|why| panic!("Failed to connect to database: {}", why.to_string()));
 
             for entry in migration_files {
                 let path = entry.path();
@@ -468,11 +464,21 @@ pub async fn run_migration(
                     panic!("Failed to read migration file: {}", why.to_string())
                 });
 
-                // Execute the SQL statements from the migration file
-                sqlx::query(&sql).execute(&pool).await.unwrap_or_else(|why| {
-                    panic!("Failed to execute migration: {}", why.to_string())
-                });
-                println!("Applied migration: {:?}", path.file_name().unwrap());
+                // Split the SQL statements and execute each one separately
+                let sql_statements: Vec<&str> = sql.split(';').collect();
+                for statement in sql_statements {
+                    if statement.trim().is_empty() {
+                        continue;
+                    }
+                    // Execute the SQL statement
+                    sqlx::query(statement)
+                        .execute(&pool)
+                        .await
+                        .unwrap_or_else(|why| {
+                            panic!("Failed to execute migration: {}", why.to_string())
+                        });
+                    println!("Applied migration: {:?}", path.file_name().unwrap());
+                }
             }
         }
         database::DatabaseType::Postgres => {
@@ -481,9 +487,7 @@ pub async fn run_migration(
                 .max_connections(20)
                 .connect(&project.config_dev_db)
                 .await
-                .unwrap_or_else(|why| {
-                    panic!("Failed to connect to database: {}", why.to_string())
-                });
+                .unwrap_or_else(|why| panic!("Failed to connect to database: {}", why.to_string()));
 
             for entry in migration_files {
                 let path = entry.path();
@@ -499,11 +503,21 @@ pub async fn run_migration(
                     panic!("Failed to read migration file: {}", why.to_string())
                 });
 
-                // Execute the SQL statements from the migration file
-                sqlx::query(&sql).execute(&pool).await.unwrap_or_else(|why| {
-                    panic!("Failed to execute migration: {}", why.to_string())
-                });
-                println!("Applied migration: {:?}", path.file_name().unwrap());
+                // Split the SQL statements and execute each one separately
+                let sql_statements: Vec<&str> = sql.split(';').collect();
+                for statement in sql_statements {
+                    if statement.trim().is_empty() {
+                        continue;
+                    }
+                    // Execute the SQL statement
+                    sqlx::query(statement)
+                        .execute(&pool)
+                        .await
+                        .unwrap_or_else(|why| {
+                            panic!("Failed to execute migration: {}", why.to_string())
+                        });
+                    println!("Applied migration: {:?}", path.file_name().unwrap());
+                }
             }
         }
         database::DatabaseType::Mysql => {

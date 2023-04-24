@@ -2209,6 +2209,7 @@ dependencies = [
  "clap_complete",
  "diesel",
  "diesel_migrations",
+ "futures-util",
  "mysql",
  "pkg-config",
  "postgres",
@@ -2222,6 +2223,7 @@ dependencies = [
  "sqlx",
  "tempfile",
  "tokio",
+ "tokio-postgres",
  "toml 0.7.3",
 ]
 

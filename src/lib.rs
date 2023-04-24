@@ -26,6 +26,8 @@
 
 use clap::{arg, Arg, Command, Parser};
 use serde::Deserialize;
+use sqlx::postgres::PgConnectOptions;
+use sqlx::ConnectOptions;
 use std::ffi::OsStr;
 use std::fs::create_dir;
 use std::io::Error;
@@ -1249,19 +1251,7 @@ pub fn index() -> Template {{
                 // Create a migration to initialize the database
                 // let intial_migration = create_migration("initialize_data")?;
 
-                // write the sql to initialize the database
-                initial_sql_loader::load_sql_for_new_project(&project).unwrap_or_else(|why| {
-                    panic!("Failed to write to initialize_data: {:?}", why.kind())
-                });
-                // Call create_migration to create a new migration
-
-                // Generate the file path for the up.sql file within the migration folder
-
-                // Generate the SQL content for the new project
-                let sql_content = initial_sql_loader::load_sql_for_new_project(&project)?;
-
-                // Write the generated SQL content to the up.sql file
-                write_to_file(&project.initial_migration_up, sql_content.as_bytes())?;
+                
                 // Extract the migration name from the initial_migration_directory path
                 let migration_name = Path::new(&project.initial_migration_directory)
                 .file_name()
@@ -1292,6 +1282,7 @@ pub fn index() -> Template {{
 
                 // Call the function with the admin_database_url
                 create_database_if_not_exists(&admin_database_url, &database_data.name)
+                    .await
                     .unwrap_or_else(|why| {
                         panic!("Failed to create database: {:?}", why);
                     });
@@ -1316,33 +1307,40 @@ pub fn index() -> Template {{
 
                 println!("database_url: {}", database_url);
 
-                // Set the DATABASE_URL environment variable
-                std::env::set_var("DATABASE_URL", &database_url);
-
-                // write the sql to initialize the database
-                initial_sql_loader::load_sql_for_new_project(&project).unwrap_or_else(|why| {
-                    panic!("Failed to write to initialize_data: {:?}", why.kind())
-                });
-
                 // Generate the SQL content for the new project
-                let sql_content = initial_sql_loader::load_sql_for_new_project(&project)?;
+                let sql_content =
+                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone()).await?;
 
-                // Write the generated SQL content to the up.sql file
-                write_to_file(&project.initial_migration_up, sql_content.as_bytes())?;
-                // Extract the migration name from the initial_migration_directory path
-                let migration_name = Path::new(&project.initial_migration_directory)
-                .file_name()
-                .and_then(OsStr::to_str)
-                .unwrap_or_else(|| {
-                    panic!("Failed to extract migration name from initial_migration_directory path");
-                })
-                .to_string();
+                // Establish a connection to the new database
+                let connection_result = PgConnectOptions::new()
+                    .username(&database_data.username)
+                    .password(&database_data.password)
+                    .host(&database_data.host)
+                    .port(database_data.port.parse::<u16>().unwrap())
+                    .database(&database_data.name)
+                    .connect()
+                    .await;
 
-                // Run the migration with the extracted migration name
-                run_migration(&project, migration_name, database_data)
-                    .await
-                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+                // Check if the connection was successful
+                let mut connection = match connection_result {
+                    Ok(conn) => conn,
+                    Err(why) => {
+                        panic!("Failed to establish connection: {}", why.to_string());
+                    }
+                };
+
+                // Iterate through the vector of SQL commands and execute them one at a time
+                for sql_command in sql_content {
+                    // Execute the SQL command
+                    sqlx::query(&sql_command)
+                        .execute(&mut connection)
+                        .await
+                        .unwrap_or_else(|why| {
+                            panic!("Failed to execute SQL command: {}", why.to_string())
+                        });
+                }
             }
+            // ... (rest of the code) ...
             DatabaseType::Mysql => {
                 // Create the database
                 let database_url = format!(
