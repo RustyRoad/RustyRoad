@@ -27,19 +27,18 @@
 use clap::{arg, Arg, Command, Parser};
 use serde::Deserialize;
 use sqlx::postgres::PgConnectOptions;
+use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
-use std::ffi::OsStr;
+
 use std::fs::create_dir;
 use std::io::Error;
-use std::path::Path;
 use std::{env, fs};
 use std::{fs::OpenOptions, io::Write};
 pub mod database;
 pub mod generators;
-use database::{create_migration, run_migration, Database, DatabaseType};
+use database::{create_migration, Database, DatabaseType};
 pub mod writers;
 
-use crate::database::CustomMigrationError;
 use crate::generators::create_directory;
 use crate::writers::{
     migrations::initial_sql_loader, templates::project_creation::create_file::create_files,
@@ -1248,26 +1247,39 @@ pub fn index() -> Template {{
                 let database_url = format!("{}", project.config_dev_db);
                 println!("database_url: {}", database_url);
 
-                // Create a migration to initialize the database
-                // let intial_migration = create_migration("initialize_data")?;
+                // In SQLite, creating a connection to a non-existent database
+                // automatically creates the database file, so we don't need to
+                // explicitly create the database.
 
-                
-                // Extract the migration name from the initial_migration_directory path
-                let migration_name = Path::new(&project.initial_migration_directory)
-                .file_name()
-                .and_then(OsStr::to_str)
-                .unwrap_or_else(|| {
-                    panic!("Failed to extract migration name from initial_migration_directory path");
-                })
-                .to_string();
+                // Generate the SQL content for the new project
+                let sql_content =
+                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone())
+                        .await?;
 
-                // Run the migration with the extracted migration name
-                // Run the migration with the extracted migration name
-                run_migration(&project, migration_name, database_data)
-                    .await
-                    .unwrap_or_else(|why: CustomMigrationError| {
-                        panic!("Failed to run migration: {:?}", why.to_string());
-                    });
+                // Establish a connection to the new database
+                let connection_result = SqliteConnectOptions::new()
+                    .filename(&database_url)
+                    .connect()
+                    .await;
+
+                // Check if the connection was successful
+                let mut connection = match connection_result {
+                    Ok(conn) => conn,
+                    Err(why) => {
+                        panic!("Failed to establish connection: {}", why.to_string());
+                    }
+                };
+
+                // Iterate through the vector of SQL commands and execute them one at a time
+                for sql_command in sql_content {
+                    // Execute the SQL command
+                    sqlx::query(&sql_command)
+                        .execute(&mut connection)
+                        .await
+                        .unwrap_or_else(|why| {
+                            panic!("Failed to execute SQL command: {}", why.to_string())
+                        });
+                }
             }
 
             DatabaseType::Postgres => {
@@ -1309,7 +1321,8 @@ pub fn index() -> Template {{
 
                 // Generate the SQL content for the new project
                 let sql_content =
-                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone()).await?;
+                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone())
+                        .await?;
 
                 // Establish a connection to the new database
                 let connection_result = PgConnectOptions::new()

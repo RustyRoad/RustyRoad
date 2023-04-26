@@ -12,13 +12,9 @@ pub async fn load_sql_for_new_project(
 
     match database.database_type {
         crate::database::DatabaseType::Sqlite => {
-            std::process::Command::new("export DATABASE_URL={}")
-                .arg(&project.config_dev_db)
-                .spawn()
-                .expect("Failed to set DATABASE_URL");
             // create the users table
             statements.push(
-                "CREATE TABLE Users (
+                "CREATE TABLE IF NOT EXISTS Users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     password TEXT NOT NULL,
                     username TEXT NOT NULL UNIQUE,
@@ -30,7 +26,7 @@ pub async fn load_sql_for_new_project(
 
             // create the roles table
             statements.push(
-                "CREATE TABLE Roles (
+                "CREATE TABLE IF NOT EXISTS Roles (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE
                 );"
@@ -39,7 +35,7 @@ pub async fn load_sql_for_new_project(
 
             // create the permissions table
             statements.push(
-                "CREATE TABLE Permissions (
+                "CREATE TABLE IF NOT EXISTS Permissions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
                     role_id INTEGER NOT NULL,
@@ -50,7 +46,7 @@ pub async fn load_sql_for_new_project(
 
             // create the sessions table
             statements.push(
-                "CREATE TABLE Sessions (
+                "CREATE TABLE IF NOT EXISTS Sessions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     session_token TEXT NOT NULL UNIQUE,
@@ -62,23 +58,23 @@ pub async fn load_sql_for_new_project(
             );
 
             // add admin role
-            statements.push(format!("INSERT INTO Roles (name) VALUES ('{}');", "admin"));
+            statements.push(format!("INSERT OR IGNORE INTO Roles (name) VALUES ('{}');", "admin"));
 
             // create default permissions
             statements.push(format!(
-                "INSERT INTO Permissions (name, role_id) VALUES ('{}', 1);",
+                "INSERT OR IGNORE INTO Permissions (name, role_id) VALUES ('{}', 1);",
                 "create_user"
             ));
 
             // create default permissions
             statements.push(format!(
-                "INSERT INTO Permissions (name, role_id) VALUES ('{}', 1);",
+                "INSERT OR IGNORE INTO Permissions (name, role_id) VALUES ('{}', 1);",
                 "read_user"
             ));
 
             // add admin user
             statements.push(
-                "INSERT INTO Users (password, username, role_id) VALUES ('admin', 'admin', 1);"
+                "INSERT OR IGNORE INTO Users (password, username, role_id) VALUES ('admin', 'admin', 1);"
                     .to_string(),
             );
 

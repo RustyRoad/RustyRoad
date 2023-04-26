@@ -25,7 +25,7 @@ mod tests {
         );
 
         // Create a new project with the desired name
-        let project_name = String::from("test_project");
+        let project_name = String::from("example");
         let project = Project::create_new_project(project_name, database.clone())
             .await
             .expect("Error creating new project");
@@ -36,7 +36,8 @@ mod tests {
             .filename(&project.config_dev_db)
             .connect()
             .await?;
-
+        println!("{:?}", connection);
+        println!("{:?}", project.config_dev_db);
         // Query to list all tables in the SQLite database
         let query = "SELECT name FROM sqlite_master WHERE type='table';";
         // Run the query and load the result into a Vec<TableResult>
@@ -50,9 +51,9 @@ mod tests {
         // Assert that the 'users' table was created
         assert!(
             result.contains(&TableResult {
-                name: "users".to_string()
+                name: "Users".to_string()
             }),
-            "The 'users' table should have been created by the migration"
+            "The 'Users' table should have been created by the migration"
         );
 
         Ok(())
