@@ -17,22 +17,33 @@
 ---
 
 <p align="center">
-  Rusty Road is a web framework for the Rust programming language that takes inspiration from Ruby on Rails. It combines the familiar conventions and ease of use of Rails with the performance and efficiency of Rust, making it a powerful and reliable platform for building web applications.
+  <a href="" rel="noopener">
+ <img src="https://i.imgur.com/S2ZwTrA.png" alt="Project logo"></a>
+</p>
+<h3 align="center">Rusty Road</h3>
+<div align="center">
+Hackathon
+Status
+GitHub Issues
+GitHub Pull Requests
+License
+
+</div>
+<p align="center">
+  Rusty Road is a powerful and reliable web framework for the Rust programming language, inspired by Ruby on Rails. Combining the familiar conventions and ease of use of Rails with the performance and efficiency of Rust, Rusty Road empowers developers to build cutting-edge web applications with confidence.
   <br>
   The name "Rusty Road" not only reflects the language that the framework is built on, but also the journey that developers will take as they build their applications.
 </p>
 <p align="center">
-  As a young programmer, Riley had always been drawn to the power and efficiency of the Rust programming language. He spent countless hours tinkering with code and dreaming of ways to harness Rust's potential to build truly great software. One day, while working on a particularly challenging project, Riley had a breakthrough. He realized that by combining Rust's low-level control with a high-level web framework, he could create a tool that was not only fast and reliable, but also easy to use and accessible to developers of all skill levels. And so, Rusty Road was born.
+  Born from a passion for Rust and a desire to make it more accessible to developers of all skill levels, Rusty Road was created to bridge the gap between Rust's low-level control and high-level web framework capabilities. With its lightning-fast performance and powerful features, Rusty Road is well-equipped to handle the demands of modern web development.
 </p>
-
 <p align="center">
-  In the future, Rusty Road will continue to push the boundaries of what is possible with Rust and web development. With its lightning-fast performance and powerful features, Rusty Road will help developers to build the most advanced and sophisticated web applications imaginable. And as it evolves and grows, Rusty Road will remain a beacon of hope for developers everywhere, empowering them to achieve their greatest goals and make the world a better place through the power of software. Together, we will build a brighter future for the good of all.
+  As Rusty Road continues to evolve, it will break new ground in Rust and web development, enabling developers to create increasingly advanced and sophisticated web applications. By providing a solid foundation for web development, Rusty Road will empower developers to achieve their greatest goals and make the world a better place through the power of software.
 </p>
-
 <p align="center">
-  Are you tired of slow and unreliable web frameworks? Are you ready to take your web development to the next level with the power of Rust? Look no further than Rusty Road! This revolutionary web framework combines the ease of use of Ruby on Rails with the performance and efficiency of Rust, giving you the best of both worlds.
+  If you're tired of slow and unreliable web frameworks, and you're ready to take your web development to the next level with Rust, Rusty Road is your answer. Experience the perfect blend of Ruby on Rails' ease of use with the performance and efficiency of Rust, and unlock the full potential of your web development.
   <br>
-  Don't let your web development be held back any longer. With Rusty Road, you can build fast and reliable applications that will wow your users and set you apart from the competition. So why wait? Take control of your web development today with Rusty Road!
+  Don't let your web development be held back any longer. With Rusty Road, you can build fast and reliable applications that will delight your users and set you apart from the competition. Embrace the power of Rusty Road and elevate your web development today!
 </p>
 
 
@@ -43,6 +54,7 @@
 - [Problem Statement](#problem_statement)
 - [Idea / Solution](#idea)
 - [What is Rusty Road](#Rusty_Rocket)
+- [Current Features](#features)
 - [Dependencies / Limitations](#limitations)
 - [Future Scope](#future_scope)
 - [Setting up a local environment](#getting_started)
@@ -88,6 +100,17 @@ Rusty Road currently works with the Rocket web framework, the Diesel ORM, the Te
 
 Because Rusty Road uses the Rocket web framework, the architecture is not exactly MVC
 
+## 🎈 Current Features <a name="features"></a>
+
+- Database migrations
+- Database seeds
+- Support for PostgreSQL
+- Support for MySQL
+- Support for SQLite
+- Support for MongoDB (Planned)
+- Routing (Rocket)
+- Templating (Tera)
+- CSS Framework (Tailwind CSS)
 
 ## ⛓️ Dependencies / Limitations <a name = "limitations"></a>
 
@@ -98,11 +121,11 @@ Because Rusty Road uses the Rocket web framework, the architecture is not exactl
 ## 🚀 Future Scope <a name = "future_scope"></a>
 
 - Add support for more database adapters.
-- Add support for more template engines.
+- Add support for react.
+- Add support for GraphQL.
+- Add support for API based microservices.
 - Add support for more asset pipelines.
-- Add support for more web servers.
-- Add support for more deployment platforms.
-- Add support for more testing frameworks.
+- One click deployment to AWS, GCP, Azure, and Digital Ocean or provide a docker image.
 - Add support for more authentication frameworks.
 
 ## 🏁 Getting Started <a name = "getting_started"></a>

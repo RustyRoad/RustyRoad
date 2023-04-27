@@ -26,22 +26,24 @@
 
 use clap::{arg, Arg, Command, Parser};
 use serde::Deserialize;
-use std::fs;
+use sqlx::mysql::MySqlConnectOptions;
+use sqlx::postgres::PgConnectOptions;
+use sqlx::sqlite::SqliteConnectOptions;
+use sqlx::ConnectOptions;
+
 use std::fs::create_dir;
 use std::io::Error;
+use std::{env, fs};
 use std::{fs::OpenOptions, io::Write};
 pub mod database;
 pub mod generators;
-use database::{create_migration, run_migration, Database, DatabaseType};
+use database::{create_migration, Database, DatabaseType};
 pub mod writers;
 
 use crate::generators::create_directory;
 use crate::writers::{
     migrations::initial_sql_loader, templates::project_creation::create_file::create_files,
 };
-use diesel::sqlite::SqliteConnection;
-use diesel::Connection;
-
 /**
  * # Struct RustyRoad
  * ## Description
@@ -55,10 +57,10 @@ pub struct RustyRoad {
 }
 use crate::generators::create_file;
 use crate::writers::templates::navbar::write_to_navbar;
-use crate::writers::templates::{write_to_base_html, write_to_header};
+use crate::writers::templates::{new, write_to_base_html, write_to_header};
 use crate::writers::{
-    add_new_route_to_main_rs, write_to_file, write_to_main_rs, write_to_route_name_html,
-    write_to_route_name_rs, write_to_routes_mod,
+    add_new_route_to_main_rs, create_database_if_not_exists, write_to_file, write_to_main_rs,
+    write_to_route_name_html, write_to_route_name_rs, write_to_routes_mod,
 };
 
 // timestamp
@@ -187,166 +189,9 @@ impl Project {
     /// The {name} is the name of the project.
     /// The {path} is the path to the directory where the project will be created.
     /// If a path is not provided, the project will be created in the current directory.
-    pub fn new(name: String) -> Project {
-        let timestamp = chrono::offset::Local::now().format("%Y%m%d%H%M%S");
-
-        let src_dir = format!("{name}/src");
-        let rocket_toml = format!("{name}/Rocket.toml");
-        let rustyroad_toml = format!("{name}/rustyroad.toml");
-        let cargo_toml = format!("{name}/Cargo.toml");
-        let main_rs = format!("{src_dir}/main.rs");
-        let package_json = format!("{name}/package.json");
-        let readme = format!("{name}/README.md");
-        let gitignore = format!("{name}/.gitignore");
-        let templates = format!("{name}/templates");
-        let static_dir = format!("{name}/static");
-        let template_components = format!("{templates}/components");
-        let template_sections = format!("{templates}/sections");
-        let template_layouts = format!("{templates}/layouts");
-        let template_pages = format!("{templates}/pages");
-        let static_css = format!("{static_dir}/css");
-        let static_js = format!("{static_dir}/js");
-        let index_js = format!("{static_js}/index.js");
-        let static_images = format!("{static_dir}/images");
-        let config = format!("{name}/config");
-        let config_env = format!("{config}/environments");
-        let config_dev_env = format!("{config_env}/dev.env");
-        let config_prod_env = format!("{config_env}/prod.env");
-        let config_test_env = format!("{config_env}/test.env");
-        let config_default_env = format!("{config_env}/default.env");
-        let db = format!("{config}/database");
-        let config_dev_db = format!("{db}/dev.db");
-        let config_prod_db = format!("{db}/prod.db");
-        let config_test_db = format!("{db}/test.db");
-        let routes = format!("{src_dir}/routes");
-        let routes_module = format!("{routes}/mod.rs");
-        let controllers = format!("{src_dir}/controllers");
-        let models = format!("{src_dir}/models");
-        let models_module = format!("{models}/components");
-        let migrations = format!("{db}/migrations");
-        let seeders = format!("{name}/seeders");
-        let tests = format!("{name }/tests");
-        let config_initializers = format!("{config}/initializers");
-        let config_initializers_assets = format!("{config_initializers}/assets.rs");
-        let config_initializers_db = format!("{config_initializers}/initialize_db.sql");
-        let config_initializers_default = format!("{config_initializers}/default.rs");
-        let config_initializers_middleware = format!("{config_initializers}/middleware.rs");
-        let config_initializers_routes = format!("{config_initializers}/routes.rs");
-        let index_html = format!("{template_pages}/index.html.tera");
-        let base_html = format!("{templates}/base.html.tera");
-        let tailwind_css = format!("{src_dir}/tailwind.css");
-        let tailwind_config = format!("{name}/tailwind.config.js");
-        let postcss_config = format!("{name}/postcss.config.js");
-        let not_found_html = format!("{template_pages}/404.html.tera");
-        let server_error_html = format!("{template_pages}/500.html.tera");
-        let favicon_ico = format!("{static_images}/favicon.ico");
-        let robots_txt = format!("{static_dir}/robots.txt");
-        let login_page_html = format!("{template_pages}/login.html.tera");
-        let signup_page_html = format!("{template_pages}/signup.html.tera");
-        let reset_password_page_html = format!("{template_pages}/reset_password.html.tera");
-        let forgot_password_page_html = format!("{template_pages}/forgot_password.html.tera");
-        let dashboard_page_html = format!("{template_pages}/dashboard.html.tera");
-        let user_controller_directory = format!("{controllers}/user");
-        let user_controller = format!("{user_controller_directory}/user.rs");
-        let user_controller_module = format!("{user_controller_directory}/components");
-        let user_model_directory = format!("{models}/user");
-        let user_model = format!("{user_model_directory}/user.rs");
-        let initial_migration_directory =
-            format!("{migrations}/{timestamp}_user", timestamp = timestamp);
-        let initial_migration_up = format!("{initial_migration_directory}/up.sql");
-        let initial_migration_down = format!("{initial_migration_directory}/down.sql");
-        let user_test = format!("{name}/tests/user.rs");
-        let user_route = format!("{routes}/user.rs");
-        let index_route = format!("{routes}/index.rs");
-        let login_route = format!("{routes}/login.rs");
-        let signup_route = format!("{routes}/signup.rs");
-        let reset_password_route = format!("{routes}/reset_password.rs");
-        let forgot_password_route = format!("{routes}/forgot_password.rs");
-        let dashboard_route = format!("{routes}/dashboard.rs");
-        let navbar_component = format!("{template_components}/navbar.html.tera");
-        let header_section = format!("{template_sections}/header.html.tera");
-
-        Project {
-            name,
-            src_dir,
-            rocket_toml,
-            rustyroad_toml,
-            cargo_toml,
-            main_rs,
-            package_json,
-            readme,
-            gitignore,
-            templates,
-            static_dir,
-            template_components,
-            template_sections,
-            template_layouts,
-            template_pages,
-            static_css,
-            static_js,
-            index_js,
-            static_images,
-            config,
-            config_env,
-            config_dev_env,
-            config_prod_env,
-            config_test_env,
-            config_default_env,
-            db,
-            config_dev_db,
-            config_prod_db,
-            config_test_db,
-            routes,
-            routes_module,
-            controllers,
-            models,
-            models_module,
-            migrations,
-            seeders,
-            tests,
-            config_initializers,
-            config_initializers_assets,
-            config_initializers_db,
-            config_initializers_default,
-            config_initializers_middleware,
-            config_initializers_routes,
-            index_html,
-            base_html,
-            tailwind_css,
-            tailwind_config,
-            postcss_config,
-            not_found_html,
-            server_error_html,
-            favicon_ico,
-            robots_txt,
-            login_page_html,
-            signup_page_html,
-            reset_password_page_html,
-            forgot_password_page_html,
-            dashboard_page_html,
-            user_controller_directory,
-            user_controller,
-            user_controller_module,
-            user_model_directory,
-            user_model,
-            initial_migration_directory,
-            initial_migration_up,
-            initial_migration_down,
-            user_test,
-            user_route,
-            index_route,
-            login_route,
-            signup_route,
-            reset_password_route,
-            forgot_password_route,
-            dashboard_route,
-            navbar_component,
-            header_section,
-        }
-    }
 
     // Write to rustyroad_toml
-    fn write_to_rustyroad_toml(&self, database_data: &Database) -> Result<(), Error> {
+    pub fn write_to_rustyroad_toml(&self, database_data: &Database) -> Result<(), Error> {
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
@@ -1288,13 +1133,16 @@ pub fn index() -> Template {{
     /// and ask the user to choose a different db_type
     /// Allow unused variables because the db_type is not used yet
     #[allow(unused_variables)]
-    pub fn create_new_project(name: String, database_data: Database) -> Result<Project, Error> {
+    pub async fn create_new_project(
+        name: String,
+        database_data: Database,
+    ) -> Result<Project, Error> {
         // If name is provided, create a new directory with that name
         // If no name is provided, run the rest of the code in the function
         // write the database data to the rustyroad.toml file
 
         // Create new project with name
-        let project = Self::new(name);
+        let mut project = new(name);
 
         // Create the project directory
         create_directory(&project).unwrap_or_else(|why| {
@@ -1400,61 +1248,194 @@ pub fn index() -> Template {{
                 let database_url = format!("{}", project.config_dev_db);
                 println!("database_url: {}", database_url);
 
-                // Create a migration to initialize the database
-                // let intial_migration = create_migration("initialize_data")?;
-                // Create a connection to the database
-                let connection = SqliteConnection::establish(&database_url)
-                    .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
-
-                // write the sql to initialize the database
-                initial_sql_loader::load_sql_for_new_project(&project).unwrap_or_else(|why| {
-                    panic!("Failed to write to initialize_data: {:?}", why.kind())
-                });
-                // Call create_migration to create a new migration
-
-                // Generate the file path for the up.sql file within the migration folder
+                // In SQLite, creating a connection to a non-existent database
+                // automatically creates the database file, so we don't need to
+                // explicitly create the database.
 
                 // Generate the SQL content for the new project
-                let sql_content = initial_sql_loader::load_sql_for_new_project(&project)?;
+                let sql_content =
+                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone())
+                        .await?;
 
-                // Write the generated SQL content to the up.sql file
-                write_to_file(&project.initial_migration_up, sql_content.as_bytes())?;
-                println!("Created the initial migration file: {}", project.initial_migration_up);
-                println!("Runnning the initial migration");
-                // Run the migration using the run_migration function
-                run_migration(&project, project.initial_migration_directory.clone()).unwrap_err();
-                println!("Ran the initial migration");
+                // Establish a connection to the new database
+                let connection_result = SqliteConnectOptions::new()
+                    .filename(&database_url)
+                    .connect()
+                    .await;
 
+                // Check if the connection was successful
+                let mut connection = match connection_result {
+                    Ok(conn) => conn,
+                    Err(why) => {
+                        panic!("Failed to establish connection: {}", why.to_string());
+                    }
+                };
+
+                // Iterate through the vector of SQL commands and execute them one at a time
+                for sql_command in sql_content {
+                    // Execute the SQL command
+                    sqlx::query(&sql_command)
+                        .execute(&mut connection)
+                        .await
+                        .unwrap_or_else(|why| {
+                            panic!("Failed to execute SQL command: {}", why.to_string())
+                        });
+                }
             }
 
             DatabaseType::Postgres => {
-                // Create the database
-                let database_url = format!(
-                    "DATABASE_URL=postgres://postgres:postgres@localhost:5432/{}",
-                    &database_data.clone().name
+                // Replace this line with the correct URL for the default "postgres" database
+                let admin_database_url = format!(
+                    "postgres://{}:{}@{}:{}/postgres",
+                    database_data.username,
+                    database_data.password,
+                    database_data.host,
+                    database_data.port,
                 );
+
+                // Call the function with the admin_database_url
+                create_database_if_not_exists(&admin_database_url, database_data.clone())
+                    .await
+                    .unwrap_or_else(|why| {
+                        panic!("Failed to create database: {:?}", why);
+                    });
+
+                // Create the database URL
+                let database_url = format!(
+                    "postgres://{}:{}@{}:{}/{}",
+                    database_data.username,
+                    database_data.password,
+                    database_data.host,
+                    database_data.port,
+                    database_data.name
+                );
+
+                // Update the DATABASE_URL environment variable to point to the new 'test' database
+                env::set_var(
+                    "DATABASE_URL",
+                    database_url.replace(&database_data.name, "test"),
+                );
+
+                project.config_dev_db = database_url.clone();
+
                 println!("database_url: {}", database_url);
-                let output = std::process::Command::new("diesel")
-                    .arg("setup")
-                    .env("DATABASE_URL", database_url)
-                    .output()
-                    .expect("Failed to execute process");
-                println!("output: {:?}", output);
+
+                // Generate the SQL content for the new project
+                let sql_content =
+                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone())
+                        .await?;
+
+                // Establish a connection to the new database
+                let connection_result = PgConnectOptions::new()
+                    .username(&database_data.username)
+                    .password(&database_data.password)
+                    .host(&database_data.host)
+                    .port(database_data.port.parse::<u16>().unwrap())
+                    .database(&database_data.name)
+                    .connect()
+                    .await;
+
+                // Check if the connection was successful
+                let mut connection = match connection_result {
+                    Ok(conn) => conn,
+                    Err(why) => {
+                        panic!("Failed to establish connection: {}", why.to_string());
+                    }
+                };
+
+                // Iterate through the vector of SQL commands and execute them one at a time
+                for sql_command in sql_content {
+                    // Execute the SQL command
+                    sqlx::query(&sql_command)
+                        .execute(&mut connection)
+                        .await
+                        .unwrap_or_else(|why| {
+                            panic!("Failed to execute SQL command: {}", why.to_string())
+                        });
+                }
             }
+            // ... (rest of the code) ...
             DatabaseType::Mysql => {
-                // Create the database
-                let database_url = format!(
-                    "DATABASE_URL=mysql://root:root@localhost:3306/{}",
-                    &database_data.clone().name
+                // Create the database URL for the default "mysql" database
+                let admin_database_url = format!(
+                    "mysql://{}:{}@{}:{}/mysql",
+                    database_data.username,
+                    database_data.password,
+                    database_data.host,
+                    database_data.port,
                 );
+
+                // Call the function with the admin_database_url
+                create_database_if_not_exists(&admin_database_url, database_data.clone())
+                    .await
+                    .unwrap_or_else(|why| {
+                        panic!("Failed to create database: {:?}", why);
+                    });
+
+                // Create the database URL for the new database
+                let database_url = format!(
+                    "mysql://{}:{}@{}:{}/{}",
+                    database_data.username,
+                    database_data.password,
+                    database_data.host,
+                    database_data.port,
+                    database_data.name
+                );
+
+                // Update the DATABASE_URL environment variable to point to the new 'test' database
+                env::set_var(
+                    "DATABASE_URL",
+                    database_url.replace(&database_data.name, "test"),
+                );
+
+                project.config_dev_db = database_url.clone();
+
                 println!("database_url: {}", database_url);
-                let output = std::process::Command::new("diesel")
-                    .arg("setup")
-                    .env("DATABASE_URL", database_url)
-                    .output()
-                    .expect("Failed to execute process");
-                println!("output: {:?}", output);
+
+                // Generate the SQL content for the new project
+                let sql_content =
+                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone())
+                        .await?;
+
+                // Establish a connection to the new database
+                let connection_result = MySqlConnectOptions::new()
+                    .username(&database_data.username)
+                    .password(&database_data.password)
+                    .host(&database_data.host)
+                    .port(database_data.port.parse::<u16>().unwrap())
+                    .database(&database_data.name)
+                    .connect()
+                    .await;
+
+                // Check if the connection was successful
+                let mut connection = match connection_result {
+                    Ok(conn) => conn,
+                    Err(why) => {
+                        panic!("Failed to establish connection: {}", why.to_string());
+                    }
+                };
+
+                // Iterate through the vector of SQL commands and execute them one at a time
+                for sql_command in sql_content {
+                    println!("Executing SQL command: {}", sql_command); // Log the SQL command being executed
+                                                                        // Execute the SQL command
+                    match sqlx::query(&sql_command).execute(&mut connection).await {
+                        Ok(_) => {
+                            println!("Successfully executed SQL command: {}", sql_command);
+                        }
+                        Err(why) => {
+                            println!(
+                                "Failed to execute SQL command: {}, Error: {}",
+                                sql_command,
+                                why.to_string()
+                            );
+                            // Optionally, return an error instead of panicking
+                            // return Err(why.into());
+                        }
+                    }
+                }
             }
+
             DatabaseType::Mongo => {
                 // Create the database
                 let database_url = format!(
@@ -1657,7 +1638,7 @@ pub fn index() -> Template {{
     /// ```
     /// rusty_road::cli::run();
     /// ```
-    pub fn run() {
+    pub async fn run() {
         let matches = Self::cli().get_matches();
         match matches.subcommand() {
             Some(("new", matches)) => {
@@ -1726,7 +1707,7 @@ pub fn index() -> Template {{
                             database_port.to_string(),
                             database_host,
                         );
-                        Self::create_new_project(name, database).err();
+                        Self::create_new_project(name, database).await.err();
                     }
                     2 => {
                         // ask for the database name, username, and password
@@ -1770,7 +1751,7 @@ pub fn index() -> Template {{
                             database_port.to_string(),
                             database_host,
                         );
-                        Self::create_new_project(name, database).err();
+                        Self::create_new_project(name, database).await.err();
                     }
                     3 => {
                         database_choice = "SQLite".to_string();
@@ -1784,7 +1765,7 @@ pub fn index() -> Template {{
                             "Not Needed".to_string(),
                             "sqlite".to_string(),
                         );
-                        Self::create_new_project(name, database).err();
+                        Self::create_new_project(name, database).await.err();
                     }
                     4 => {
                         // ask for the database name, username, and password
@@ -1828,7 +1809,7 @@ pub fn index() -> Template {{
                             database_port.to_string(),
                             database_host,
                         );
-                        Self::create_new_project(name, database).err();
+                        Self::create_new_project(name, database).await.err();
                     }
                     5 => {
                         // create a new project with the name and database information
@@ -1840,7 +1821,7 @@ pub fn index() -> Template {{
                             "".to_string(),
                             "".to_string(),
                         );
-                        Self::create_new_project(name, database).err();
+                        Self::create_new_project(name, database).await.err();
                     }
                     _ => {
                         println!("Invalid database choice");
