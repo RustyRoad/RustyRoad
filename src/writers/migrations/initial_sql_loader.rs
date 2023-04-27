@@ -58,7 +58,10 @@ pub async fn load_sql_for_new_project(
             );
 
             // add admin role
-            statements.push(format!("INSERT OR IGNORE INTO Roles (name) VALUES ('{}');", "admin"));
+            statements.push(format!(
+                "INSERT OR IGNORE INTO Roles (name) VALUES ('{}');",
+                "admin"
+            ));
 
             // create default permissions
             statements.push(format!(
@@ -212,52 +215,52 @@ CREATE TABLE Sessions (
             }
         }
         crate::database::DatabaseType::Mysql => {
-            // create the users table
-            statements.push(
-                "
-    CREATE TABLE Users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        password TEXT NOT NULL,
-        username TEXT NOT NULL UNIQUE,
-        role_id INTEGER,
-        FOREIGN KEY (role_id) REFERENCES Roles(id)
-    );"
-                .to_string(),
-            );
-
             // create the roles table
             statements.push(
                 "
-    CREATE TABLE Roles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE
-    );"
+CREATE TABLE Roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
+);"
+                .to_string(),
+            );
+
+            // create the users table
+            statements.push(
+                "
+CREATE TABLE Users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    password VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    role_id INT,
+    FOREIGN KEY (role_id) REFERENCES Roles(id)
+);"
                 .to_string(),
             );
 
             // create the permissions table
             statements.push(
                 "
-    CREATE TABLE Permissions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        role_id INTEGER NOT NULL,
-        FOREIGN KEY (role_id) REFERENCES Roles(id)
-    );"
+CREATE TABLE Permissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    role_id INT NOT NULL,
+    FOREIGN KEY (role_id) REFERENCES Roles(id)
+);"
                 .to_string(),
             );
 
             // create the sessions table
             statements.push(
                 "
-    CREATE TABLE Sessions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        session_token TEXT NOT NULL UNIQUE,
-        session_data TEXT,
-        expiration_date DATETIME,
-        FOREIGN KEY (user_id) REFERENCES Users(id)
-    );"
+CREATE TABLE Sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    session_token VARCHAR(255) NOT NULL UNIQUE,
+    session_data TEXT,
+    expiration_date DATETIME,
+    FOREIGN KEY (user_id) REFERENCES Users(id)
+);"
                 .to_string(),
             );
 

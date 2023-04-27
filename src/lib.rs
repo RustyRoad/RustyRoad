@@ -26,6 +26,7 @@
 
 use clap::{arg, Arg, Command, Parser};
 use serde::Deserialize;
+use sqlx::mysql::MySqlConnectOptions;
 use sqlx::postgres::PgConnectOptions;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
@@ -1293,7 +1294,7 @@ pub fn index() -> Template {{
                 );
 
                 // Call the function with the admin_database_url
-                create_database_if_not_exists(&admin_database_url, &database_data.name)
+                create_database_if_not_exists(&admin_database_url, database_data.clone())
                     .await
                     .unwrap_or_else(|why| {
                         panic!("Failed to create database: {:?}", why);
@@ -1355,19 +1356,86 @@ pub fn index() -> Template {{
             }
             // ... (rest of the code) ...
             DatabaseType::Mysql => {
-                // Create the database
-                let database_url = format!(
-                    "DATABASE_URL=mysql://root:root@localhost:3306/{}",
-                    &database_data.clone().name
+                // Create the database URL for the default "mysql" database
+                let admin_database_url = format!(
+                    "mysql://{}:{}@{}:{}/mysql",
+                    database_data.username,
+                    database_data.password,
+                    database_data.host,
+                    database_data.port,
                 );
+
+                // Call the function with the admin_database_url
+                create_database_if_not_exists(&admin_database_url, database_data.clone())
+                    .await
+                    .unwrap_or_else(|why| {
+                        panic!("Failed to create database: {:?}", why);
+                    });
+
+                // Create the database URL for the new database
+                let database_url = format!(
+                    "mysql://{}:{}@{}:{}/{}",
+                    database_data.username,
+                    database_data.password,
+                    database_data.host,
+                    database_data.port,
+                    database_data.name
+                );
+
+                // Update the DATABASE_URL environment variable to point to the new 'test' database
+                env::set_var(
+                    "DATABASE_URL",
+                    database_url.replace(&database_data.name, "test"),
+                );
+
+                project.config_dev_db = database_url.clone();
+
                 println!("database_url: {}", database_url);
-                let output = std::process::Command::new("diesel")
-                    .arg("setup")
-                    .env("DATABASE_URL", database_url)
-                    .output()
-                    .expect("Failed to execute process");
-                println!("output: {:?}", output);
+
+                // Generate the SQL content for the new project
+                let sql_content =
+                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone())
+                        .await?;
+
+                // Establish a connection to the new database
+                let connection_result = MySqlConnectOptions::new()
+                    .username(&database_data.username)
+                    .password(&database_data.password)
+                    .host(&database_data.host)
+                    .port(database_data.port.parse::<u16>().unwrap())
+                    .database(&database_data.name)
+                    .connect()
+                    .await;
+
+                // Check if the connection was successful
+                let mut connection = match connection_result {
+                    Ok(conn) => conn,
+                    Err(why) => {
+                        panic!("Failed to establish connection: {}", why.to_string());
+                    }
+                };
+
+                // Iterate through the vector of SQL commands and execute them one at a time
+                for sql_command in sql_content {
+                    println!("Executing SQL command: {}", sql_command); // Log the SQL command being executed
+                                                                        // Execute the SQL command
+                    match sqlx::query(&sql_command).execute(&mut connection).await {
+                        Ok(_) => {
+                            println!("Successfully executed SQL command: {}", sql_command);
+                        }
+                        Err(why) => {
+                            println!(
+                                "Failed to execute SQL command: {}, Error: {}",
+                                sql_command,
+                                why.to_string()
+                            );
+                            // Optionally, return an error instead of panicking
+                            // return Err(why.into());
+                        }
+                    }
+                }
             }
+
             DatabaseType::Mongo => {
                 // Create the database
                 let database_url = format!(

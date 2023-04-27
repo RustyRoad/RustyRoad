@@ -1,9 +1,10 @@
-use crate::writers::write_to_file;
+use crate::{database::Database, writers::write_to_file};
 use futures_util::future::FutureExt;
+use sqlx::{mysql::MySqlConnectOptions, MySqlPool};
 use std::str::FromStr;
 
 use sqlparser::dialect::SQLiteDialect;
-use tokio_postgres::{Config, Error, NoTls};
+use tokio_postgres::{Config, NoTls};
 
 /// # Name: write_to_sql
 /// # Description: Writes to a sql file and creates the file if it does not exist
@@ -40,36 +41,71 @@ pub fn write_to_sql(file_name: &String, sql: &str) -> Result<(), std::io::Error>
 
 pub async fn create_database_if_not_exists(
     admin_database_url: &str,
-    database_name: &str,
-) -> Result<(), Error> {
-    // Parse the connection string
-    let config = Config::from_str(admin_database_url)?;
+    database: Database,
+) -> Result<(), Box<dyn std::error::Error>> {
+    match database.database_type {
+        crate::database::DatabaseType::Postgres => {
+            // Parse the connection string
+            let config = Config::from_str(admin_database_url).unwrap();
 
-    // Connect to the default "postgres" database to check for existence and create a new database
-    let (client, connection) = config.connect(NoTls).await?;
+            // Connect to the default "postgres" database to check for existence and create a new database
+            let (client, connection) = config.connect(NoTls).await.unwrap();
 
-    // The connection object performs the actual communication with the database,
-    // so spawn it off to run on its own.
-    let connection_task = connection.map(|r| {
-        if let Err(e) = r {
-            eprintln!("Connection error: {}", e);
+            // The connection object performs the actual communication with the database,
+            // so spawn it off to run on its own.
+            let connection_task = connection.map(|r| {
+                if let Err(e) = r {
+                    eprintln!("Connection error: {}", e);
+                }
+            });
+            tokio::spawn(connection_task); // Spawn the connection task
+
+            // Check if the specified database exists
+            let row = client
+                .query_opt(
+                    "SELECT 1 FROM pg_database WHERE datname = $1",
+                    &[&database.name],
+                )
+                .await
+                .unwrap();
+
+            if row.is_none() {
+                // If the database does not exist, create it
+                client
+                    .batch_execute(&format!("CREATE DATABASE {}", &database.name))
+                    .await
+                    .unwrap();
+            }
         }
-    });
-    tokio::spawn(connection_task); // Spawn the connection task
+        crate::database::DatabaseType::Mysql => {
+            // Parse the connection string
+            let mut options = MySqlConnectOptions::from_str(admin_database_url).unwrap();
 
-    // Check if the specified database exists
-    let row = client
-        .query_opt(
-            "SELECT 1 FROM pg_database WHERE datname = $1",
-            &[&database_name],
-        )
-        .await?;
+            // Set the options to connect to the default "mysql" database
+            options = options.database("mysql");
 
-    if row.is_none() {
-        // If the database does not exist, create it
-        client
-            .batch_execute(&format!("CREATE DATABASE {}", database_name))
-            .await?;
+            // Create a connection pool
+            let pool = MySqlPool::connect_with(options).await.unwrap();
+
+            // Check if the specified database exists
+            let row: Option<(String,)> = sqlx::query_as(
+                "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?",
+            )
+            .bind(&database.name)
+            .fetch_optional(&pool)
+            .await
+            .unwrap();
+
+            if row.is_none() {
+                // If the database does not exist, create it
+                sqlx::query(&format!("CREATE DATABASE {}", &database.name))
+                    .execute(&pool)
+                    .await
+                    .unwrap();
+            }
+        }
+        crate::database::DatabaseType::Sqlite => todo!(),
+        crate::database::DatabaseType::Mongo => todo!(),
     }
 
     Ok(())

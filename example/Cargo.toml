@@ -16,6 +16,6 @@ tera = "1.17.1"
 reqwest = "0.11"
 rocket_dyn_templates = {version = "0.1.0-rc.2", features = ["tera"]}
 rustyroad = "0.1.3"
-[dependencies.rusqlite]
-version = "0.28.0"
-features = ["bundled"]
+[dependencies.sqlx]
+features = ["mysql", "macros", "chrono", "json", "uuid", "offline"]
+version = "0.6.2"
