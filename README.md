@@ -17,19 +17,6 @@
 ---
 
 <p align="center">
-  <a href="" rel="noopener">
- <img src="https://i.imgur.com/S2ZwTrA.png" alt="Project logo"></a>
-</p>
-<h3 align="center">Rusty Road</h3>
-<div align="center">
-Hackathon
-Status
-GitHub Issues
-GitHub Pull Requests
-License
-
-</div>
-<p align="center">
   Rusty Road is a powerful and reliable web framework for the Rust programming language, inspired by Ruby on Rails. Combining the familiar conventions and ease of use of Rails with the performance and efficiency of Rust, Rusty Road empowers developers to build cutting-edge web applications with confidence.
   <br>
   The name "Rusty Road" not only reflects the language that the framework is built on, but also the journey that developers will take as they build their applications.
