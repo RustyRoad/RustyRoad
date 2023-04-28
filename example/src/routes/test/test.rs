@@ -1,12 +1,12 @@
 use rocket::fs::{relative, FileServer};
 use rocket_dyn_templates::{context, Template};
 
-#[get("/dashboard")]
+#[get("/test")]
 pub fn index() -> Template {
     Template::render(
-        "pages/dashboard",
+        "pages/test",
         context! {
-            route_name: "dashboard",
+            route_name: "test",
         },
     )
 }
