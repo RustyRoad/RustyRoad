@@ -61,7 +61,7 @@ pub fn index() -> Template {{
     Ok(())
 }
 
-pub fn write_to_initial_route_rs(route_name: String) -> Result<(), Error> {
+pub fn write_to_initial_get_route_rs(route_name: String) -> Result<(), Error> {
     // trim the route_name to remove the text before the last slash and the text before the .rs
     let new_route_name = route_name
         .trim_start_matches("./src/routes/")
@@ -97,3 +97,18 @@ pub fn index() -> Template {{
 
     Ok(())
 }
+
+
+pub fn write_to_initial_post_route_rs(route_name: String) -> Result<(), Error> {
+    // trim the route_name to remove the text before the last slash and the text before the .rs
+    let new_route_name = route_name
+        .trim_start_matches("./src/routes/")
+        .trim_end_matches(".rs");
+
+    let route_file_name = std::path::Path::new(&route_name)
+        .file_name()
+        .and_then(std::ffi::OsStr::to_str)
+        .unwrap_or("");
+
+    let contents = format!(
+        r#"use rocket::fs::{{relative, FileServer}};

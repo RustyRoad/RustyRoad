@@ -15,12 +15,13 @@ use rocket_dyn_templates::Template;
 use routes::{
     index::{index},
     dashboard::{index as dashboard_route},
+    login::{index as login_route},
 };
 
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index, dashboard_route])
+        .mount("/", routes![index, dashboard_route, login_route])
         .mount("/", FileServer::from(relative!("static")))
         .attach(Template::fairing())
 }"#;

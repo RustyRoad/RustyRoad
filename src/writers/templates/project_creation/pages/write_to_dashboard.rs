@@ -24,7 +24,7 @@ pub fn write_to_dashboard(project: Project) -> Result<(), Error> {
         )
     });
 
-    route_writer::write_to_initial_route_rs(project.dashboard_route.clone()).unwrap_or_else(
+    route_writer::write_to_initial_get_route_rs(project.dashboard_route.clone()).unwrap_or_else(
         |why| {
             panic!(
                 "Couldn't write to the: {}: {}",

@@ -57,7 +57,7 @@ pub struct RustyRoad {
 }
 use crate::generators::create_file;
 use crate::writers::templates::navbar::write_to_navbar;
-use crate::writers::templates::{new, write_to_base_html, write_to_header, write_to_dashboard};
+use crate::writers::templates::{new, write_to_base_html, write_to_header, write_to_dashboard, write_to_login_page};
 use crate::writers::{
     add_new_route_to_main_rs, create_database_if_not_exists, write_to_file, write_to_main_rs,
     write_to_route_name_html, write_to_route_name_rs, write_to_routes_mod,
@@ -1239,6 +1239,11 @@ pub fn index() -> Template {{
         // write to the dashboard page
         write_to_dashboard(project.clone()).unwrap_or_else(|why| {
             println!("Failed to write to dashboard: {:?}", why.kind());
+        });
+
+        // write to the login page
+        write_to_login_page(project.clone()).unwrap_or_else(|why| {
+            println!("Failed to write to login: {:?}", why.kind());
         });
 
         // We need to tell Diesel where to find our database. We do this by setting the DATABASE_URL environment variable.
