@@ -57,7 +57,7 @@ pub struct RustyRoad {
 }
 use crate::generators::create_file;
 use crate::writers::templates::navbar::write_to_navbar;
-use crate::writers::templates::{new, write_to_base_html, write_to_header};
+use crate::writers::templates::{new, write_to_base_html, write_to_header, write_to_dashboard};
 use crate::writers::{
     add_new_route_to_main_rs, create_database_if_not_exists, write_to_file, write_to_main_rs,
     write_to_route_name_html, write_to_route_name_rs, write_to_routes_mod,
@@ -1120,6 +1120,7 @@ pub fn index() -> Template {{
         Ok(())
     }
 
+
     /// Creates a new project
     /// Takes an optional name <String> and db_type <String>
     /// If no name is provided, it will default to "rustyroad"
@@ -1233,6 +1234,11 @@ pub fn index() -> Template {{
         // write to navbar
         write_to_navbar(&project).unwrap_or_else(|why| {
             println!("Failed to write to navbar: {:?}", why.kind());
+        });
+
+        // write to the dashboard page
+        write_to_dashboard(project.clone()).unwrap_or_else(|why| {
+            println!("Failed to write to dashboard: {:?}", why.kind());
         });
 
         // We need to tell Diesel where to find our database. We do this by setting the DATABASE_URL environment variable.
@@ -1532,6 +1538,7 @@ pub fn index() -> Template {{
         write_to_route_name_html(route_name.clone()).unwrap_or_else(|why| {
             println!("Failed to write to routeName.html.tera: {:?}", why.kind());
         });
+        
 
         // update main.rs file
         add_new_route_to_main_rs(&route_name)?;
@@ -1700,12 +1707,12 @@ pub fn index() -> Template {{
                         database_choice = "Postgres".to_string();
                         // create a new project with the name and database information
                         let database: Database = Database::new(
-                            database_choice.to_string(),
                             database_name,
                             database_username,
                             database_password,
-                            database_port.to_string(),
                             database_host,
+                            database_port.to_string(),
+                            database_choice.to_string(),
                         );
                         Self::create_new_project(name, database).await.err();
                     }
@@ -1741,15 +1748,15 @@ pub fn index() -> Template {{
                             .read_line(&mut database_host)
                             .expect("Failed to read line");
                         let database_host = database_host.trim().to_string();
-                        database_choice = "MySQL".to_string();
+                        database_choice = "mysql".to_string();
                         // create a new project with the name and database information
                         let database: Database = Database::new(
-                            database_choice.to_string(),
                             database_name,
                             database_username,
                             database_password,
-                            database_port.to_string(),
                             database_host,
+                            database_port.to_string(),
+                            database_choice.to_string(),
                         );
                         Self::create_new_project(name, database).await.err();
                     }

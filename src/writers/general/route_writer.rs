@@ -1,6 +1,6 @@
 use std::io::Error;
 
-use crate::writers::write_to_file;
+use crate::writers::{write_to_file};
 
 pub fn write_to_route_name_html(route_name: String) -> Result<(), Error> {
     let contents = format!(
@@ -56,7 +56,44 @@ pub fn index() -> Template {{
         contents.as_bytes(),
     )
     .unwrap_or_else(|why| {
-        println!("Failed to write to routeName.rs: {:?}", why.kind());
+        println!("Failed to write to {}.rs: {:?}", route_name, why.kind());
     });
+    Ok(())
+}
+
+pub fn write_to_initial_route_rs(route_name: String) -> Result<(), Error> {
+    // trim the route_name to remove the text before the last slash and the text before the .rs
+    let new_route_name = route_name
+        .trim_start_matches("./src/routes/")
+        .trim_end_matches(".rs");
+
+    let route_file_name = std::path::Path::new(&route_name)
+        .file_name()
+        .and_then(std::ffi::OsStr::to_str)
+        .unwrap_or("");
+
+    let contents = format!(
+        r#"use rocket::fs::{{relative, FileServer}};
+use rocket_dyn_templates::{{context, Template}};
+
+#[get("/{}")]
+pub fn index() -> Template {{
+    Template::render(
+        "pages/{}",
+        context! {{
+            route_name: "{}",
+        }},
+    )
+}}"#,
+        route_file_name.trim_end_matches(".rs"),
+        route_file_name.trim_end_matches(".rs"),
+        route_file_name.trim_end_matches(".rs")
+    );
+
+    write_to_file(&route_name.to_string(), contents.as_bytes()).unwrap_or_else(|why| {
+        println!("Failed to write to {}: {:?}", new_route_name, why.kind());
+    });
+
+
     Ok(())
 }
