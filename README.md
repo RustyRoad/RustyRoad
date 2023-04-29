@@ -182,17 +182,29 @@ cargo run
 The cli will prompt you to create a new project. Enter the name of your project and the cli will create a new project in the current directory.
 
 ```bash
-$ cargo run
-    Finished dev [unoptimized + debuginfo] target(s) in 0.01s
-     Running `target/debug/Rusty_Rocket`
-Welcome to Rusty Road!
-What would you like to do?
-1. Create a new project
-2. CLI help
-3. Exit
-Enter a number: 1
-Enter the name of your project: my_project
-Creating a new Rusty Road project called my_project
+$ rustyroad
+CLI for Rusty Road
+
+Usage: rustyroad.exe <COMMAND>
+
+Commands:
+  new       Creates a new project
+  generate  Generates a new route, model, or controller
+  migrate   Runs migrations
+  help      Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+```
+Follow the command flow to create a new project
+
+```shell
+rustyroad new my_project
+```
+
+Generate a new route
+```shell
+rustyroad generate route users
 ```
 
 
