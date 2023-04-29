@@ -2202,7 +2202,7 @@ dependencies = [
 
 [[package]]
 name = "rustyroad"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "chrono",
  "clap",
@@ -2210,6 +2210,7 @@ dependencies = [
  "diesel",
  "diesel_migrations",
  "futures-util",
+ "lazy_static",
  "mysql",
  "pkg-config",
  "postgres",
