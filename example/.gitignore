@@ -1,7 +1,0 @@
-target/
-Cargo.lock
-.DS_Store
-.env
-.db
-node_modules/
-static/styles.css
