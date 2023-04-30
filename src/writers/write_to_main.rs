@@ -1,100 +1,123 @@
+use regex::Regex;
+
 use crate::writers::write_to_file;
 use crate::Project;
+use std::fs;
 use std::io::Error;
-use std::process::Command;
+use std::path::PathBuf;
 
-// Write to main.rs
+/// This function writes initial content to the main.rs file of a new RustyRoad project.
+/// The content includes setting up an Actix web server with three routes: index, dashboard, and login.
+///
+/// # Arguments
+///
+/// * `project` - A reference to the Project struct containing the paths to the project files.
+///
+/// # Returns
+///
+/// * `Ok(())` if the content was successfully written to the main.rs file, or an Error if something went wrong.
 pub fn write_to_main_rs(project: &Project) -> Result<(), Error> {
+    // Define the contents to be written to the main.rs file
+    // This includes importing necessary Actix Web modules, defining the main function, setting up the HTTP server,
+    // binding it to the localhost on port 8000, and defining three routes: index, dashboard, and login
     let contents = r#"
-// mod models;
-mod routes;
-#[macro_use]
-extern crate rocket;
-use rocket::fs::{relative, FileServer};
-use rocket_dyn_templates::Template;
-use routes::{
-    index::{index},
-    dashboard::{index as dashboard_route},
-    login::{index as login_route},
+use actix_files::Files;
+use actix_web::{
+    web::{self, Data},
+    App, HttpServer,
 };
+use tera::Tera;
+mod routes;
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
 
-#[launch]
-fn rocket() -> _ {
-    rocket::build()
-        .mount("/", routes![index, dashboard_route, login_route])
-        .mount("/", FileServer::from(relative!("static")))
-        .attach(Template::fairing())
-}"#;
-    write_to_file(&project.main_rs, contents.as_bytes())
+    println!("Starting Actix web server...");
+
+    HttpServer::new(move || {
+        // Load tera templates from the specified directory
+        let tera = Tera::new("templates/**/*").unwrap();
+        println!("Initializing Actix web application...");
+
+        App::new()
+            .app_data(Data::new(tera.clone())) // Updated line
+            .service(routes::index::index)
+            .service(routes::dashboard::dashboard_route)
+            .service(routes::login::login_route)
+            .service(routes::login::login_function)
+            .service(Files::new("/static", "./static"))  // Add this line
+    })
+    .bind("127.0.0.1:8000")?
+    .run()
+    .await
 }
-// need to create route module
+"#;
 
-pub fn add_new_route_to_main_rs(route_name: &String) -> Result<(), Error> {
-    // Determine the OS and run the appropriate shell command to add a new route to main.rs
+    // Write the contents to the main.rs file
+    // The write_to_file function is assumed to be a function that takes a path and a byte slice and writes the bytes to the file at the path
+    // If the file doesn't exist, the function will create it, and if it does exist, the function will overwrite it
 
-    if cfg!(target_os = "windows") {
-        let command = format!(
-            "(Get-Content src/main.rs) -replace 'routes::{{', 'routes::{{{}, ' | Set-Content src/main.rs",
-            route_name
-        );
-        let output = Command::new("powershell")
-            .arg("-Command")
-            .arg(&command)
-            .output()
-            .expect("failed to execute process");
+    write_to_file(&project.main_rs, contents.as_bytes())?;
 
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!("error: {}", stderr);
-        }
+    // Return Ok if everything succeeded
+    Ok(())
+}
 
-        let command = format!(
-            r#"(Get-Content src/main.rs) -replace '(?<=\.mount\("/"\, routes!\[index)', ' ,{0}::index' | Set-Content src/main.rs"#,
-            route_name
-        );
 
-        let output = Command::new("powershell")
-            .arg("-Command")
-            .arg(&command)
-            .output()
-            .expect("failed to execute process");
+/// This function adds a new route to the main.rs file of a RustyRoad project.
+/// It first verifies that the current project is indeed a RustyRoad project by checking for the presence of a rustyroad.toml file.
+/// Then it reads the main.rs file, identifies the last .service() call, and adds a new .service() call for the provided route name after the last .service() call.
+/// If successful, it overwrites the main.rs file with the updated content.
+///
+/// # Arguments
+///
+/// * `route_name` - A string slice that holds the name of the new route to be added.
+///
+/// # Returns
+///
+/// * `Ok(())` if the new route was successfully added to the main.rs file, or an Error if something went wrong.
+pub fn add_new_route_to_main_rs(route_name: &str) -> Result<(), Error> {
+    // Check for the current working directory
+    let current_dir = std::env::current_dir().unwrap();
 
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!("error: {}", stderr);
-        }
-    } else {
-        let command = format!(
-            "sed -i 's/routes::{{/routes::{{{}, /' src/main.rs",
-            route_name
-        );
-        let output = Command::new("sh")
-            .arg("-c")
-            .arg(&command)
-            .output()
-            .expect("failed to execute process");
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!("error: {}", stderr);
-        }
-
-        let command = format!(
-            r#"sed -i 's#\.mount("/", routes!\[index#& ,{}::index#' src/main.rs"#,
-            route_name
-        );
-
-        let output = Command::new("sh")
-            .arg("-c")
-            .arg(&command)
-            .output()
-            .expect("failed to execute process");
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!("error: {}", stderr);
+    // Ensure that the project is a rustyroad project by looking for the rustyroad.toml file in the root directory
+    match std::fs::read_to_string(current_dir.join("rustyroad.toml")) {
+        Ok(_) => {}
+        Err(_) => {
+            return Err(Error::new(
+                std::io::ErrorKind::InvalidData,
+                "This is not a RustyRoad project",
+            ))
         }
     }
+
+    // Construct the path to the main.rs file
+    let main_rs: PathBuf = [current_dir, PathBuf::from("src/main.rs")].iter().collect();
+
+    // Read the file into a string
+    let mut contents = fs::read_to_string(&main_rs)?;
+
+    // Prepare the new route
+    let new_route = format!(".service(routes::{}::{})", route_name, route_name);
+
+    // Prepare the regular expression to find the last .service() call
+    let re = Regex::new(r".service\(routes::\w+::\w+\)").unwrap();
+
+    // Find the last .service() call and its end position
+    let last_service_end_pos = re
+        .find_iter(&contents)
+        .last()
+        .ok_or(Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Could not find the position to insert new route",
+        ))?
+        .end();
+
+    // Insert the new route after the last .service() call
+    contents.insert_str(last_service_end_pos, &new_route);
+
+    // Write the string back to the file
+    fs::write(main_rs, contents)?;
 
     Ok(())
 }

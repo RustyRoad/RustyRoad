@@ -1,0 +1,7 @@
+name = "example"
+            database_name = "test"
+            database_user = "admin"
+            database_password = "admin"
+            database_host = "localhost"
+            database_port = "3306"
+            database_type = "Mysql"

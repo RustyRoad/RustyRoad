@@ -1,10 +1,5 @@
-use crate::writers::{route_writer, write_to_file, write_to_routes_mod};
-use crate::Project;
-use std::io::Error;
-
-pub fn write_to_login_page(project: Project) -> Result<(), Error> {
-    let contents = r#"{% extends 'base' %}
-{% block title %}Index{% endblock title %}
+{% extends 'base.html.tera' %}
+{% block title %}Login Page{% endblock title %}
 {% block head %}
 {{ super() }}
 {% endblock head %}
@@ -15,7 +10,7 @@ pub fn write_to_login_page(project: Project) -> Result<(), Error> {
       <img class='mx-auto h-10 w-auto' src='https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600' alt='Your Company'>
       <h2 class='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900'>Sign in to your account</h2>
     </div>
-    <form class='space-y-6' action='#' method='POST'>
+    <form class='space-y-6' action='login' method='POST'>
       <div class='relative -space-y-px rounded-md shadow-sm'>
         <div class='pointer-events-none absolute inset-0 z-10 rounded-md ring-1 ring-inset ring-gray-300'></div>
         <div>
@@ -50,29 +45,4 @@ pub fn write_to_login_page(project: Project) -> Result<(), Error> {
     </p>
   </div>
 </div>
-{% endblock content %}"#.to_string();
-
-    write_to_file(&project.login_page_html, contents.as_bytes()).unwrap_or_else(|why| {
-        panic!(
-            "Couldn't write to {}: {}",
-            &project.login_page_html, why
-        )
-    });
-
-    route_writer::write_to_initial_get_route_rs(project.login_route.clone()).unwrap_or_else(
-        |why| {
-            panic!(
-                "Couldn't write to the: {}: {}",
-                &project.login_route, why
-            )
-        },
-    );
-
-    write_to_routes_mod(&project.routes_module, "login".to_string()).unwrap_or_else(|why| {
-        panic!(
-            "Couldn't write to the: {}: {}",
-            &project.login_route, why
-        )
-    });
-    Ok(())
-}
+{% endblock content %}
