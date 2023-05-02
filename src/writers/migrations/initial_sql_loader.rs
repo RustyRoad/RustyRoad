@@ -1,14 +1,27 @@
 use std::env;
 
 use sqlx::{Sqlite, SqlitePool};
-
 use crate::{database::Database, writers::write_to_file, Project};
+use bcrypt::{hash as new_hash, DEFAULT_COST};
+
+async fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
+    new_hash(password, DEFAULT_COST)
+}
+
 
 pub async fn load_sql_for_new_project(
     project: &Project,
     database: Database,
 ) -> Result<Vec<String>, std::io::Error> {
     let mut statements = Vec::new();
+    // Hash the admin password
+    let hashed_admin_password = match hash_password("admin").await {
+        Ok(hashed_password) => hashed_password,
+        Err(err) => {
+            eprintln!("Failed to hash admin password: {:?}", err);
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to hash admin password"));
+        }
+    };
 
     match database.database_type {
         crate::database::DatabaseType::Sqlite => {
@@ -76,14 +89,13 @@ pub async fn load_sql_for_new_project(
             ));
 
             // add admin user
-            statements.push(
-                "INSERT OR IGNORE INTO Users (password, username, role_id) VALUES ('admin', 'admin', 1);"
-                    .to_string(),
-            );
+            statements.push(format!(
+                    "INSERT OR IGNORE INTO Users (password, username, role_id) VALUES ('{hashed_admin_password}', 'admin', 1);"
+                ));
 
             // Execute the migration
-            if let Err(e) = execute_sqlite_migration(&project, statements.clone()).await {
-                panic!("Failed to execute migration: {:?}", e);
+            if let Err(e) = execute_sqlite_migration(project, statements.clone()).await {
+                panic!("Failed to execute migration: {e}");
             }
 
             // create the down migration
@@ -173,8 +185,9 @@ CREATE TABLE Sessions (
 
             // add admin user
             statements.push(
-                "INSERT INTO Users (password, username, role_id) VALUES ('admin', 'admin', 1);"
-                    .to_string(),
+                format!(
+                    "INSERT INTO Users (password, username, role_id) VALUES ('{hashed_admin_password}', 'admin', 1);"
+                )
             );
 
             // write the template to the file
@@ -232,6 +245,7 @@ CREATE TABLE Users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     password VARCHAR(255) NOT NULL,
     username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) UNIQUE,
     role_id INT,
     FOREIGN KEY (role_id) REFERENCES Roles(id)
 );"
@@ -281,8 +295,9 @@ CREATE TABLE Sessions (
 
             // add admin user
             statements.push(
-                "INSERT INTO Users (password, username, role_id) VALUES ('admin', 'admin', 1);"
-                    .to_string(),
+                format!(
+                    "INSERT INTO Users (password, username, role_id) VALUES ('{hashed_admin_password}', 'admin', 1);"
+                )
             );
 
             // write the template to the file

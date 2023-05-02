@@ -30,7 +30,6 @@ pub fn create_directory(project: &Project) -> Result<(), Error> {
         &project.static_js,
         &project.static_images,
         &project.user_controller_directory,
-        &project.user_model_directory,
         &project.initial_migration_directory,
     ];
     for directory in directories {
