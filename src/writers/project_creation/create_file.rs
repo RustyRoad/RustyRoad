@@ -5,7 +5,6 @@ use std::io::Error;
 pub fn create_files(project: &Project) -> Result<(), Error> {
     let files = vec![
         &project.rustyroad_toml,
-        &project.rocket_toml,
         &project.cargo_toml,
         &project.main_rs,
         &project.package_json,

@@ -1,6 +1,6 @@
 [package]
 name = "rustyroad"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 license = "MIT"
 description = "Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust."
@@ -37,5 +37,6 @@ lazy_static = "1.4.0"
 syn = { version = "2.0.15", features = ["full"] }
 quote = "1.0.26"
 proc-macro2 = "1.0.56"
+bcrypt = "0.14.0"
 [features]
 with-file-history = []

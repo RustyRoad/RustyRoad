@@ -92,8 +92,10 @@ pub fn write_to_initial_get_route_rs(route_name: String) -> Result<(), Error> {
         .unwrap_or("");
 
     let contents = format!(
-        r#"use actix_web::{{get, web, HttpResponse, Responder}};
+        r#"use actix_web::{{get, web, HttpResponse, HttpRequest, Error}};
 use tera::{{Context, Tera}};
+use crate::models;
+use models::user::UserLogin;
 
 #[get("/{}")]
 async fn {}_route(tmpl: web::Data<Tera>) -> HttpResponse {{
@@ -123,29 +125,30 @@ pub fn write_to_initial_post_route_rs(route_name: String) -> Result<(), Error> {
 
     let contents = r#"
 
-    use actix_web::{post};
-    use serde::Deserialize;
-
-#[derive(Deserialize)]
-struct LoginForm {
-    username: String,
-    password: String,
-}
+ use actix_web::post;
 
 #[post("/login")]
-async fn login_function(form: web::Form<LoginForm>, tmpl: web::Data<Tera>) -> HttpResponse {
-    let mut context = Context::new();
-    if form.username == "admin" && form.password == "admin" {
-        context.insert("route_name", "dashboard");
-        let rendered = tmpl.render("pages/dashboard.html.tera", &context).unwrap();
-        HttpResponse::Ok().body(rendered)
-    } else {
-        context.insert("route_name", "login");
-        context.insert("error_message", "Invalid username or password");
-let rendered = tmpl.render("pages/login.html.tera", &context).unwrap();
-HttpResponse::Ok().body(rendered)
-    }
-}"#
+async fn login_function(
+    form: web::Form<UserLogin>,
+    tmpl: web::Data<Tera>, // Updated line
+) -> Result<HttpResponse, actix_web::Error> {
+    // get database data from rustyroad.toml
+
+    let database = rustyroad::database::Database::get_database_from_rustyroad_toml().unwrap();
+
+    form.user_login(tmpl, database).await
+}
+
+
+#[get("/logout")]
+async fn user_logout(
+    tmpl: web::Data<Tera>,
+    req: HttpRequest, // Add the HttpRequest
+) -> Result<HttpResponse, Error> {
+ let database = rustyroad::database::Database::get_database_from_rustyroad_toml().unwrap();
+    UserLogin::user_logout(tmpl, database, req).await
+}
+"#
     .to_string();
 
     write_to_file(&route_name.to_string(), contents.as_bytes()).unwrap_or_else(|why| {

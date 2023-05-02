@@ -3,14 +3,13 @@ use crate::Project;
     pub fn new(name: String) -> Project {
         let timestamp = chrono::offset::Local::now().format("%Y%m%d%H%M%S");
 
-        let src_dir = format!("{}/src", name);
-        let rocket_toml = format!("{}/Rocket.toml", name);
-        let rustyroad_toml = format!("{}/rustyroad.toml", name);
-        let cargo_toml = format!("{}/Cargo.toml", name);
-        let main_rs = format!("{}/main.rs", src_dir);
-        let package_json = format!("{}/package.json", name);
-        let readme = format!("{}/README.md", name);
-        let gitignore = format!("{}/.gitignore", name);
+        let src_dir = format!("{name}/src");
+        let rustyroad_toml = format!("{name}/rustyroad.toml");
+        let cargo_toml = format!("{name}/Cargo.toml");
+        let main_rs = format!("{src_dir}/main.rs");
+        let package_json = format!("{name}/package.json");
+        let readme = format!("{name}/README.md");
+        let gitignore = format!("{name}/.gitignore");
         let templates = format!("{}/templates", name);
         let static_dir = format!("{}/static", name);
         let template_components = format!("{}/components", templates);
@@ -35,7 +34,7 @@ use crate::Project;
         let routes_module = format!("{}/mod.rs", routes);
         let controllers = format!("{}/controllers", src_dir);
         let models = format!("{}/models", src_dir);
-        let models_module = format!("{}/components", models);
+        let models_module = format!("{}/mod.rs", models);
         let migrations = format!("{}/migrations", db);
         let seeders = format!("{}/seeders", name);
         let tests = format!("{}/tests", name);
@@ -61,9 +60,8 @@ use crate::Project;
         let dashboard_page_html = format!("{}/dashboard.html.tera", template_pages);
         let user_controller_directory = format!("{}/user", controllers);
         let user_controller = format!("{}/user.rs", user_controller_directory);
-        let user_controller_module = format!("{}/components", user_controller_directory);
-        let user_model_directory = format!("{}/user", models);
-        let user_model = format!("{}/user.rs", user_model_directory);
+        let user_controller_module = format!("{}/mod.rs", user_controller_directory);
+        let user_model = format!("{}/user.rs", models);
         let initial_migration_directory = format!("{}/{}_user", migrations, timestamp);
         let initial_migration_up = format!("{}/up.sql", initial_migration_directory);
         let initial_migration_down = format!("{}/down.sql", initial_migration_directory);
@@ -81,7 +79,6 @@ use crate::Project;
         Project {
             name,
             src_dir,
-            rocket_toml,
             rustyroad_toml,
             cargo_toml,
             main_rs,
@@ -139,7 +136,6 @@ use crate::Project;
             user_controller_directory,
             user_controller,
             user_controller_module,
-            user_model_directory,
             user_model,
             initial_migration_directory,
             initial_migration_up,

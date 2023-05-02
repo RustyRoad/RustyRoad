@@ -41,9 +41,10 @@ use database::{create_migration, Database, DatabaseType};
 pub mod writers;
 
 use crate::generators::create_directory;
-use crate::writers::{
-    migrations::initial_sql_loader, project_creation::create_file::create_files,
-};
+use crate::generators::create_file;
+use crate::writers::*;
+
+
 /**
  * # Struct RustyRoad
  * ## Description
@@ -55,13 +56,6 @@ use crate::writers::{
 pub struct RustyRoad {
     name: String,
 }
-use crate::generators::create_file;
-use crate::writers::templates::{write_to_base_html, write_to_header, navbar::write_to_navbar};
-use crate::writers::{
-    add_new_route_to_main_rs, create_database_if_not_exists, write_to_file, write_to_main_rs,
-    write_to_route_name_html, write_to_route_name_rs, write_to_routes_mod, project_creation::*
-};
-
 // timestamp
 
 // get time
@@ -91,7 +85,6 @@ use crate::writers::{
 #[derive(Parser, Debug, Clone)]
 pub struct Project {
     pub name: String,
-    pub rocket_toml: String,
     pub rustyroad_toml: String,
     pub src_dir: String,
     pub main_rs: String,
@@ -150,7 +143,6 @@ pub struct Project {
     pub user_controller_directory: String,
     pub user_controller: String,
     pub user_controller_module: String,
-    pub user_model_directory: String,
     pub user_model: String,
     pub initial_migration_directory: String,
     pub initial_migration_up: String,
@@ -197,14 +189,16 @@ impl Project {
             .truncate(true)
             .open(&self.rustyroad_toml)?;
 
+
         let config = format!(
-            "name = \"{}\"
-            database_name = \"{}\"
-            database_user = \"{}\"
-            database_password = \"{}\"
-            database_host = \"{}\"
-            database_port = \"{}\"
-            database_type = \"{:?}\"",
+            "[database]
+name = \"{}\"
+database_name = \"{}\"
+database_user = \"{}\"
+database_password = \"{}\"
+database_host = \"{}\"
+database_port = \"{}\"
+database_type = \"{:?}\"",
             self.name,
             database_data.clone().name,
             database_data.username,
@@ -216,25 +210,7 @@ impl Project {
         file.write_all(config.as_bytes())?;
         Ok(())
     }
-  // Write to rocket_toml
-    fn write_to_rocket_toml(&self) -> Result<(), Error> {
-        let config = format!(
-            "[global.databases]
-        default = {{ url = \"sqlite:./db/{}.db\" }}
-        temp_dir = \"./src/
-        ",
-            &self.name
-        );
 
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(&self.rocket_toml)?;
-
-        file.write_all(config.as_bytes())?;
-        Ok(())
-    }
 
     // Write to package.json
     fn write_to_package_json(&self) -> Result<(), Error> {
@@ -280,7 +256,7 @@ impl Project {
         file.write_all(
             format!(
                 "# {}
-This project was created using Rusty Road. Rusty Road is Rails for Rust. It is a CLI tool that allows you to create a new Rust project with a few commands. It also comes with TailwindCSS and Rocket pre-installed.
+This project was created using Rusty Road. Rusty Road is Rails for Rust. It is a CLI tool that allows you to create a new Rust project with a few commands. It also comes with TailwindCSS and Actix pre-installed.
 
 ## Getting Started
 
@@ -330,56 +306,6 @@ static/styles.css
         Ok(())
     }
 
-    // Write to models/users.rs
-    fn write_to_user_models(&self) -> Result<(), Error> {
-        let mut file = OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open(&self.user_model)?;
-        file.write_all(
-            b"use rocket::http::{Cookie, CookieJar};
-use rocket::response::{Flash, Redirect};
-use rocket_db_pools::{sqlx, Connection, Database};
-use rocket_dyn_templates::{context, Template};
-
-// let conn = SqliteConnection::connect('sqlite::memory:').await?;
-
-pub struct User {
-    id: i32,
-    username: String,
-    password: String,
-    email: String,
-    created_at: String,
-    updated_at: String,
-}
-#[derive(FromForm, Debug)]
-
-pub struct UserLogin {
-    username: String,
-    password: String,
-}
-
-impl UserLogin {
-    pub fn user_login(&self) -> Result<Template, Flash<Redirect>> {
-        if self.username == 'root' && self.password == 'root' {
-            Ok(Template::render(
-                'welcome',
-                context! {
-                    username: &self.username,
-                },
-            ))
-        } else {
-            Err(Flash::error(
-                Redirect::to('/'),
-                'Invalid username or password',
-            ))
-        }
-    }
-}",
-        )?;
-
-        Ok(())
-    }
 
     // Write to index.js
     fn write_to_index_js(&self) -> Result<(), Error> {
@@ -405,56 +331,7 @@ impl UserLogin {
 
         Ok(())
     }
-    // Write to dev.env
-    fn write_to_dev_dot_env(&self) -> Result<(), Error> {
-        let mut file = OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open(&self.config_dev_env)
-            .expect("Failed to open dev.env");
-        file.write_all(
-            b"ROCKET_ENV=dev
-            ROCKET_ADDRESS=
-            ROCKET_PORT=8000
-            ROCKET_LOG=normal
-            ROCKET_WORKERS=1
-            ROCKET_SECRET_KEY=
-            ROCKET_TEMPLATES=
-            ROCKET_DATABASES=
-            ROCKET_TLS=
-            ROCKET_TLS_CERTS=
-",
-        )
-        .expect("Failed to write to dev.env");
-
-        Ok(())
-    }
-    // Write to prod.env
-    fn write_to_prod_dot_env(&self) -> Result<(), Error> {
-        let mut file = OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open(&self.config_prod_env)
-            .expect("Failed to open prod.env");
-        file.write_all(
-            b"ROCKET_ENV=prod
-            ROCKET_ADDRESS=
-            ROCKET_PORT=8000
-            ROCKET_LOG=normal
-            ROCKET_WORKERS=1
-            ROCKET_SECRET_KEY=
-            ROCKET_TEMPLATES=
-            ROCKET_DATABASES=
-            ROCKET_TLS=
-            ROCKET_TLS_CERTS=
-",
-        )
-        .expect("Failed to write to prod.env");
-
-        Ok(())
-    }
-
-    // Write to tailwind.css
+   // Write to tailwind.css
     fn write_to_tailwind_css(&self) -> Result<(), Error> {
         let contents = "@tailwind base;
 @tailwind components;
@@ -579,16 +456,6 @@ impl UserLogin {
             println!("Failed to write to base.html: {:?}", why.kind());
         });
 
-        // Write to dev.env file
-        Self::write_to_dev_dot_env(&project).unwrap_or_else(|why| {
-            println!("Failed to write to dev.env: {:?}", why.kind());
-        });
-
-        // Write to prod.env file
-        Self::write_to_prod_dot_env(&project).unwrap_or_else(|why| {
-            println!("Failed to write to prod.env: {:?}", why.kind());
-        });
-
         // Write to tailwind.css file
         Self::write_to_tailwind_css(&project).unwrap_or_else(|why| {
             println!("Failed to write to tailwind.css: {:?}", why.kind());
@@ -614,10 +481,6 @@ impl UserLogin {
             println!("Failed to write to .gitignore: {:?}", why.kind());
         });
 
-        // Write to user models file
-        Self::write_to_user_models(&project).unwrap_or_else(|why| {
-            println!("Failed to write to user_models.rs: {:?}", why.kind());
-        });
         write_to_routes_mod(&project.routes_module, "index".to_string()).unwrap_or_else(|why| {
             println!("Failed to write to routes/mod: {:?}", why.kind());
         });
@@ -651,8 +514,8 @@ impl UserLogin {
         match temp_database.database_type {
             DatabaseType::Sqlite => {
                 // Create the database URL
-                let database_url = format!("{}", project.config_dev_db);
-                println!("database_url: {}", database_url);
+                let database_url = project.config_dev_db.to_string();
+                println!("database_url: {database_url}");
 
                 // In SQLite, creating a connection to a non-existent database
                 // automatically creates the database file, so we don't need to
@@ -660,7 +523,7 @@ impl UserLogin {
 
                 // Generate the SQL content for the new project
                 let sql_content =
-                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone())
+                    load_sql_for_new_project(&project, database_data.clone())
                         .await?;
 
                 // Establish a connection to the new database
@@ -673,7 +536,7 @@ impl UserLogin {
                 let mut connection = match connection_result {
                     Ok(conn) => conn,
                     Err(why) => {
-                        panic!("Failed to establish connection: {}", why.to_string());
+                        panic!("Failed to establish connection: {why}");
                     }
                 };
 
@@ -684,9 +547,15 @@ impl UserLogin {
                         .execute(&mut connection)
                         .await
                         .unwrap_or_else(|why| {
-                            panic!("Failed to execute SQL command: {}", why.to_string())
+                            panic!("Failed to execute SQL command: {why}"
+                            )
                         });
                 }
+
+                write_to_sqlite_user_models(&project).unwrap_or_else(|why| {
+                    println!("Failed to write to user models: {:?}", why.kind());
+                });
+
             }
 
             DatabaseType::Postgres => {
@@ -703,7 +572,7 @@ impl UserLogin {
                 create_database_if_not_exists(&admin_database_url, database_data.clone())
                     .await
                     .unwrap_or_else(|why| {
-                        panic!("Failed to create database: {:?}", why);
+                        panic!("Failed to create database: {why}");
                     });
 
                 // Create the database URL
@@ -724,7 +593,7 @@ impl UserLogin {
 
                 project.config_dev_db = database_url.clone();
 
-                println!("database_url: {}", database_url);
+                println!("database_url: {database_url}");
 
                 // Generate the SQL content for the new project
                 let sql_content =
@@ -745,7 +614,7 @@ impl UserLogin {
                 let mut connection = match connection_result {
                     Ok(conn) => conn,
                     Err(why) => {
-                        panic!("Failed to establish connection: {}", why.to_string());
+                        panic!("Failed to establish connection: {why}");
                     }
                 };
 
@@ -756,11 +625,16 @@ impl UserLogin {
                         .execute(&mut connection)
                         .await
                         .unwrap_or_else(|why| {
-                            panic!("Failed to execute SQL command: {}", why.to_string())
+                            panic!("Failed to execute SQL command: {why}")
                         });
                 }
+
+                /* Write to user models file */
+                write_to_postgres_user_models(&project).unwrap_or_else(|why| {
+                    println!("Failed to write to user models: {why}");
+                });
             }
-            // ... (rest of the code) ...
+
             DatabaseType::Mysql => {
                 // Create the database URL for the default "mysql" database
                 let admin_database_url = format!(
@@ -796,7 +670,7 @@ impl UserLogin {
 
                 project.config_dev_db = database_url.clone();
 
-                println!("database_url: {}", database_url);
+                println!("database_url: {database_url}");
 
                 // Generate the SQL content for the new project
                 let sql_content =
@@ -817,29 +691,30 @@ impl UserLogin {
                 let mut connection = match connection_result {
                     Ok(conn) => conn,
                     Err(why) => {
-                        panic!("Failed to establish connection: {}", why.to_string());
+                        panic!("Failed to establish connection: {why}");
                     }
                 };
 
                 // Iterate through the vector of SQL commands and execute them one at a time
                 for sql_command in sql_content {
-                    println!("Executing SQL command: {}", sql_command); // Log the SQL command being executed
+                    println!("Executing SQL command: {sql_command}"); // Log the SQL command being executed
                                                                         // Execute the SQL command
                     match sqlx::query(&sql_command).execute(&mut connection).await {
                         Ok(_) => {
-                            println!("Successfully executed SQL command: {}", sql_command);
+                            println!("Successfully executed SQL command: {sql_command}");
                         }
                         Err(why) => {
-                            println!(
-                                "Failed to execute SQL command: {}, Error: {}",
-                                sql_command,
-                                why.to_string()
-                            );
+                            println!("Failed to execute SQL command: {sql_command}, Error: {why}");
                             // Optionally, return an error instead of panicking
                             // return Err(why.into());
                         }
                     }
                 }
+
+                write_to_mysql_user_models(&project).unwrap_or_else(|why| {
+                    println!("Failed to write to user models: {:?}", why.kind());
+                });
+
             }
 
             DatabaseType::Mongo => {
@@ -848,7 +723,7 @@ impl UserLogin {
                     "DATABASE_URL=mongodb://localhost:27017/{}",
                     &database_data.clone().name
                 );
-                println!("database_url: {}", database_url);
+                println!("database_url: {database_url}");
                 let output = std::process::Command::new("diesel")
                     .arg("setup")
                     .env("DATABASE_URL", database_url)
