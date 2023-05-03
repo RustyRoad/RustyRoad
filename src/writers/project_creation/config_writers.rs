@@ -58,7 +58,7 @@ local-ip-address = "0.5.0"
 futures = "0.3.23"
 tera = "1.17.1"
 reqwest = "0.11"
-rustyroad = {{ path = "../../Rusty-Road" }}
+rustyroad = "0.1.7"
 rand = "0.8.5"
 chrono = "0.4.24"
 base64 = "0.21.0"

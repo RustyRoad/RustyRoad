@@ -40,7 +40,7 @@
 
 - [Problem Statement](#problem_statement)
 - [Idea / Solution](#idea)
-- [What is Rusty Road](#Rusty_Rocket)
+- [What is Rusty Road](#Rusty_actix)
 - [Current Features](#features)
 - [Dependencies / Limitations](#limitations)
 - [Future Scope](#future_scope)
@@ -75,7 +75,7 @@ I outlined this in a blog post here: https://rileyseaburg.com/posts/rust-needs-a
 
 Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
 
-## :dog: What is Rusty Road <a name = "Rusty_Rocket"></a>
+## :dog: What is Rusty Road <a name = "Rusty_actix"></a>
 
 Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
 
@@ -83,9 +83,9 @@ Rusty Road is intended to offer developers a powerful and reliable platform for 
 
 ### Understanding Rusty Road
 
-Rusty Road currently works with the Rocket web framework, the Diesel ORM, the Tera template engine, the SASS asset pipeline, and the PostgreSQL database. It also uses the dotenv crate to manage environment variables, and it uses the dotenv-linter crate to lint environment variables.
+Rusty Road currently works with the actix web framework, the Diesel ORM, the Tera template engine, the SASS asset pipeline, and the PostgreSQL database. It also uses the dotenv crate to manage environment variables, and it uses the dotenv-linter crate to lint environment variables.
 
-Because Rusty Road uses the Rocket web framework, the architecture is not exactly MVC
+Because Rusty Road uses the actix web framework, the architecture is not exactly MVC
 
 ## 🎈 Current Features <a name="features"></a>
 
@@ -95,7 +95,7 @@ Because Rusty Road uses the Rocket web framework, the architecture is not exactl
 - Support for MySQL
 - Support for SQLite
 - Support for MongoDB (Planned)
-- Routing (Rocket)
+- Routing (actix)
 - Templating (Tera)
 - CSS Framework (Tailwind CSS)
 
@@ -211,7 +211,7 @@ rustyroad generate route users
 ## ⛏️ Built With <a name = "tech_stack"></a>
 
 - [Rust](https://www.rust-lang.org/) - Programming Language
-- [Rocket](https://rocket.rs/) - Web Framework
+- [actix](https://actix.rs/) - Web Framework
 - [Diesel](https://diesel.rs/) - ORM
 - [Tera](https://tera.netlify.app/) - Template Engine
 - [PostgreSQL](https://www.postgresql.org/) - Database
@@ -228,4 +228,4 @@ who participated in this project.
 
 - Creator of Ruby on Rails, David Heinemeier Hansson (DHH)
 - Creator of Rust, Graydon Hoare
-- Creator of Rocket, Sergio Benitez
+- Creator of actix, Sergio Benitez
