@@ -1,11 +1,12 @@
-use super::Database;
+use super::database::Database;
 use crate::database;
+use crate::database::{
+    DataTypeCategory, DatabaseType, MySqlType, PostgresTypes, SqliteTypes, TypesByCategory,
+};
 use crate::generators::create_file;
 use crate::writers::write_to_file;
 use crate::Project;
 use chrono::prelude::*;
-
-// Import Pool from mysql crate
 // Import Client from postgres crate
 use diesel_migrations::MigrationError;
 use rustyline::DefaultEditor;
@@ -19,9 +20,8 @@ use std::fs::{self};
 use std::io::ErrorKind;
 use std::io::Read;
 use std::path::Path;
+use std::println;
 
-// Define available column types and constraints
-const COLUMN_TYPES: &[&str] = &["VARCHAR(255)", "INTEGER", "TIMESTAMP"];
 const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 
 /// ## Name: create_migration
@@ -109,12 +109,7 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
     let mut up_sql_contents = String::new();
     let mut down_sql_contents = String::new();
 
-    // get the name of the table
-    let table_name = rl
-        .readline("Enter the name of the table: ")
-        .unwrap_or_else(|why| {
-            panic!("Failed to read table name: {}", why.to_string());
-        });
+    let table_name = name.to_string();
 
     // ask the user how many columns they want to add
 
@@ -133,11 +128,60 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
                 panic!("Failed to read column name: {}", why.to_string());
             });
 
-        let column_type = rl
-            .readline("Enter the type of the column: ")
+        // define the propmpt to ge thte column type
+        let prompt = format!("Enter the type of the column: ");
+        // print the different column types in a list A, B, C, D, E, F, G, H
+
+        let database: Database = Database::get_database_from_rustyroad_toml()?.into();
+
+        let database_type = database.clone().database_type;
+
+        let column_types = match database_type {
+            DatabaseType::Postgres => DatabaseType::Postgres,
+            DatabaseType::Sqlite => DatabaseType::Sqlite,
+            DatabaseType::Mysql => DatabaseType::Mysql,
+            DatabaseType::Mongo => DatabaseType::Mongo,
+        };
+
+        // match the available column types to the database type
+        // need to get the values from the enum of the database type
+
+
+        println!("Available column types:");
+        for column_type in COLUMN_TYPES {
+            println!(
+                "{}. {}",
+                COLUMN_TYPES
+                    .iter()
+                    .position(|&r| r == column_type.to_string())
+                    .unwrap()
+                    + 1,
+                column_type
+            );
+        }
+
+        let mut column_type = rl
+            // Ask the user for the column type and give them a list of available types
+            .readline(&prompt)
             .unwrap_or_else(|why| {
                 panic!("Failed to read column type: {}", why.to_string());
             });
+
+        // match the column type to the sql type
+        match column_type.as_str() {
+            "1" => column_type = "VARCHAR(255)".to_owned(),
+            "2" => column_type = "INTEGER".to_owned(),
+            "3" => column_type = "BIGINT".to_owned(),
+            "4" => column_type = "FLOAT".to_owned(),
+            "5" => column_type = "DOUBLE".to_owned(),
+            "6" => column_type = "DECIMAL".to_owned(),
+            "7" => column_type = "BOOLEAN".to_owned(),
+            "8" => column_type = "DATE".to_owned(),
+            _ => {
+                println!("Invalid input. Please enter a number from 1 to 8.");
+                continue; // Ask again if input is invalid
+            }
+        }
 
         let column_constraints = rl
             .readline("Enter the constraints of the column: ")
@@ -164,7 +208,7 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
 
         // validate the column type to sql type
         match column_type.to_lowercase().as_str() {
-            "string" => {
+            "varchar(255)" => {
                 // ask the user for the length of the string
                 let string_length = rl
                     .readline("Enter the length of the string: ")
@@ -307,7 +351,12 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
                 continue;
             }
             _ => {
-                panic!("Invalid data type: {}", column_type);
+                // let the user know that the data type is not supported
+                println!(
+                    "The data type {} is not supported. Please try again.",
+                    column_type
+                );
+                continue;
             }
         }
     }
