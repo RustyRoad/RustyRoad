@@ -342,7 +342,7 @@ pub enum SqliteType {
     Unknown,
 }
 
-pub struct TypesByCategory {
+pub struct SqliteTypeMap {
     types_by_category: HashMap<DataTypeCategory, Vec<PostgresType>>,
 }
 
@@ -361,4 +361,49 @@ impl SqliteType {
             SqliteType::Unknown => DataTypeCategory::Other,
         }
     }
+}
+
+
+pub struct DatabaseTypes {
+    pub postgres: PostgresTypeMap,
+    pub mysql: MysqlTypeMap,
+    pub sqlite: SqliteTypeMap,
+}
+
+impl DatabaseTypes {
+    pub fn new() -> Self {
+        Self {
+            postgres: PostgresTypeMap::new(),
+            mysql: MysqlTypeMap::new(),
+            sqlite: SqliteTypeMap::new(),
+        }
+    }
+
+       pub fn add_postgres_type(&mut self, ty: PostgresType) {
+        let category = ty.category();
+        self.postgres.entry(category).or_insert_with(Vec::new).push(ty);
+    }
+
+    pub fn add_mysql_type(&mut self, ty: MySqlType) {
+        let category = ty.category();
+        self.mysql.entry(category).or_insert_with(Vec::new).push(ty);
+    }
+
+    pub fn add_sqlite_type(&mut self, ty: SqliteType) {
+        let category = ty.category();
+        self.sqlite.entry(category).or_insert_with(Vec::new).push(ty);
+    }
+
+    pub fn get_postgres_types(&self, category: &DataTypeCategory) -> Option<&Vec<PostgresType>> {
+        self.postgres.get(category)
+    }
+
+    pub fn get_mysql_types(&self, category: &DataTypeCategory) -> Option<&Vec<MySqlType>> {
+        self.mysql.get(category)
+    }
+
+    pub fn get_sqlite_types(&self, category: &DataTypeCategory) -> Option<&Vec<SqliteType>> {
+        self.sqlite.get(category)
+    }
+    
 }
