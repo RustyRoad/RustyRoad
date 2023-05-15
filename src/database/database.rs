@@ -140,10 +140,10 @@ pub enum DataTypeCategory {
     Other,
 }
 
-pub enum PostgresType {
+pub enum PostgresTypes {
     Boolean,
     Serial,
-    Uuid,
+    Uuid,-
     Array,
     Json,
     JsonB,
