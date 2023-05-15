@@ -44,7 +44,6 @@ use crate::generators::create_directory;
 use crate::generators::create_file;
 use crate::writers::*;
 
-
 /**
  * # Struct RustyRoad
  * ## Description
@@ -189,7 +188,6 @@ impl Project {
             .truncate(true)
             .open(&self.rustyroad_toml)?;
 
-
         let config = format!(
             "[database]
 name = \"{}\"
@@ -210,7 +208,6 @@ database_type = \"{:?}\"",
         file.write_all(config.as_bytes())?;
         Ok(())
     }
-
 
     // Write to package.json
     fn write_to_package_json(&self) -> Result<(), Error> {
@@ -306,7 +303,6 @@ static/styles.css
         Ok(())
     }
 
-
     // Write to index.js
     fn write_to_index_js(&self) -> Result<(), Error> {
         let contents = format!(
@@ -331,7 +327,7 @@ static/styles.css
 
         Ok(())
     }
-   // Write to tailwind.css
+    // Write to tailwind.css
     fn write_to_tailwind_css(&self) -> Result<(), Error> {
         let contents = "@tailwind base;
 @tailwind components;
@@ -391,7 +387,6 @@ static/styles.css
         );
         Ok(())
     }
-
 
     /// Creates a new project
     /// Takes an optional name <String> and db_type <String>
@@ -522,9 +517,7 @@ static/styles.css
                 // explicitly create the database.
 
                 // Generate the SQL content for the new project
-                let sql_content =
-                    load_sql_for_new_project(&project, database_data.clone())
-                        .await?;
+                let sql_content = load_sql_for_new_project(&project, database_data.clone()).await?;
 
                 // Establish a connection to the new database
                 let connection_result = SqliteConnectOptions::new()
@@ -546,16 +539,12 @@ static/styles.css
                     sqlx::query(&sql_command)
                         .execute(&mut connection)
                         .await
-                        .unwrap_or_else(|why| {
-                            panic!("Failed to execute SQL command: {why}"
-                            )
-                        });
+                        .unwrap_or_else(|why| panic!("Failed to execute SQL command: {why}"));
                 }
 
                 write_to_sqlite_user_models(&project).unwrap_or_else(|why| {
                     println!("Failed to write to user models: {:?}", why.kind());
                 });
-
             }
 
             DatabaseType::Postgres => {
@@ -624,9 +613,7 @@ static/styles.css
                     sqlx::query(&sql_command)
                         .execute(&mut connection)
                         .await
-                        .unwrap_or_else(|why| {
-                            panic!("Failed to execute SQL command: {why}")
-                        });
+                        .unwrap_or_else(|why| panic!("Failed to execute SQL command: {why}"));
                 }
 
                 /* Write to user models file */
@@ -698,7 +685,7 @@ static/styles.css
                 // Iterate through the vector of SQL commands and execute them one at a time
                 for sql_command in sql_content {
                     println!("Executing SQL command: {sql_command}"); // Log the SQL command being executed
-                                                                        // Execute the SQL command
+                                                                      // Execute the SQL command
                     match sqlx::query(&sql_command).execute(&mut connection).await {
                         Ok(_) => {
                             println!("Successfully executed SQL command: {sql_command}");
@@ -714,7 +701,6 @@ static/styles.css
                 write_to_mysql_user_models(&project).unwrap_or_else(|why| {
                     println!("Failed to write to user models: {:?}", why.kind());
                 });
-
             }
 
             DatabaseType::Mongo => {
@@ -813,7 +799,6 @@ static/styles.css
         write_to_route_name_html(route_name.clone()).unwrap_or_else(|why| {
             println!("Failed to write to routeName.html.tera: {:?}", why.kind());
         });
-        
 
         // update main.rs file
         add_new_route_to_main_rs(&route_name)?;
@@ -846,29 +831,52 @@ static/styles.css
                     .subcommand(
                         Command::new("route")
                             .about("Generates a new route")
-                            .arg(arg!(<name> "The name of the route")),
+                            .arg(arg!(<name> "The name of the route"))
+                            .subcommand_help_heading("SUBCOMMANDS:")
+                            // if no subcommand is provided, print help
+                            .subcommand_required(true)
+                            .arg_required_else_help(true)
+                            .allow_external_subcommands(true),
                     )
                     .subcommand(
                         Command::new("model")
                             .about("Generates a new model")
-                            .arg(arg!(<name> "The name of the model")),
+                            .arg(arg!(<name> "The name of the model"))
+                            .subcommand_help_heading("SUBCOMMANDS:")
+                            // if no subcommand is provided, print help
+                            .subcommand_required(true)
+                            .arg_required_else_help(true)
+                            .allow_external_subcommands(true),
                     )
                     .subcommand(
                         Command::new("controller")
                             .about("Generates a new controller")
-                            .arg(arg!(<name> "The name of the controller")),
+                            .arg(arg!(<name> "The name of the controller"))
+                            .subcommand_help_heading("SUBCOMMANDS:")
+                            // if no subcommand is provided, print help
+                            .subcommand_required(true)
+                            .arg_required_else_help(true)
+                            .allow_external_subcommands(true),
                     )
                     .subcommand(
                         Command::new("migration")
                             .about("Generates a new migration")
                             .arg(arg!(<name> "The name of the migration"
                             ))
-                            .subcommand_help_heading("SUBCOMMANDS:")
-                            // if no subcommand is provided, print help
-                            .subcommand_required(true)
-                            .arg_required_else_help(true)
-                            .allow_external_subcommands(true),
-                    ),
+                            .arg_required_else_help(true),
+                    )
+                    .after_help(
+                        "EXAMPLES:
+                To generate a new route:
+                    rustyroad generate route <name>
+                To generate a new model:
+                    rustyroad generate model <name>
+                To generate a new controller:
+                    rustyroad generate controller <name>
+                To generate a new migration:
+                    rustyroad generate migration <name>",
+                    )
+                    .subcommand_required(true),
             )
             .subcommand(
                 Command::new("migrate")

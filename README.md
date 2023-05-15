@@ -16,6 +16,10 @@
 
 ---
 
+<!-- Alert letting the user know to use the release candidate or the cargo crate. Not to use master as it is still in development -->
+
+> Note: Rusty Road is still in development. Please use the release candidate or the cargo crate. Do not use master for production purposes. It is still under heavy development and is not ready for production use.
+
 <p align="center">
   Rusty Road is a powerful and reliable web framework for the Rust programming language, inspired by Ruby on Rails. Combining the familiar conventions and ease of use of Rails with the performance and efficiency of Rust, Rusty Road empowers developers to build cutting-edge web applications with confidence.
   <br>
