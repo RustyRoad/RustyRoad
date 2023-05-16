@@ -1,4 +1,5 @@
 use super::database::Database;
+use super::{MySqlTypes, MysqlTypeMap, PostgresTypeMap};
 use crate::database;
 use crate::database::{
     DataTypeCategory, DatabaseType, MySqlType, PostgresTypes, SqliteTypes, TypesByCategory,
@@ -137,52 +138,120 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
         let database_type = database.clone().database_type;
 
         let column_types = match database_type {
-            DatabaseType::Postgres => DatabaseType::Postgres,
-            DatabaseType::Sqlite => DatabaseType::Sqlite,
-            DatabaseType::Mysql => DatabaseType::Mysql,
-            DatabaseType::Mongo => DatabaseType::Mongo,
+            DatabaseType::Postgres => PostgresTypes,
+            DatabaseType::Sqlite => SqliteTypes,
+            DatabaseType::Mysql => MySqlTypes,
+            DatabaseType::Mongo => todo!(),
         };
 
         // match the available column types to the database type
         // need to get the values from the enum of the database type
 
+        // hashmap of the column type categories
+        let data_type_category =
+            DataTypeCategory::get_data_type_category_from_database_type(&database_type)
+                .unwrap_or_else(|why| {
+                    panic!("Failed to get data type category: {}", why.to_string());
+                });
 
-        println!("Available column types:");
-        for column_type in COLUMN_TYPES {
-            println!(
-                "{}. {}",
-                COLUMN_TYPES
-                    .iter()
-                    .position(|&r| r == column_type.to_string())
-                    .unwrap()
-                    + 1,
-                column_type
-            );
-        }
+        // let the data type category determine the data types to use
+        let data_types = match data_type_category {
+            DataTypeCategory::String => column_types.string_types,
+            DataTypeCategory::Number => column_types.number_types,
+            DataTypeCategory::Boolean => column_types.boolean_types,
+            DataTypeCategory::Date => column_types.date_types,
+            DataTypeCategory::Time => column_types.time_types,
+            DataTypeCategory::DateTime => column_types.date_time_types,
+            DataTypeCategory::Binary => column_types.binary_types,
+            DataTypeCategory::Json => column_types.json_types,
+            DataTypeCategory::Uuid => column_types.uuid_types,
+            DataTypeCategory::Array => column_types.array_types,
+            DataTypeCategory::Enum => column_types.enum_types,
+            DataTypeCategory::Other => column_types.other_types,
+        };
 
-        let mut column_type = rl
+        // prompt the user for the column category
+        let mut column_category = rl
             // Ask the user for the column type and give them a list of available types
             .readline(&prompt)
             .unwrap_or_else(|why| {
                 panic!("Failed to read column type: {}", why.to_string());
             });
 
-        // match the column type to the sql type
-        match column_type.as_str() {
-            "1" => column_type = "VARCHAR(255)".to_owned(),
-            "2" => column_type = "INTEGER".to_owned(),
-            "3" => column_type = "BIGINT".to_owned(),
-            "4" => column_type = "FLOAT".to_owned(),
-            "5" => column_type = "DOUBLE".to_owned(),
-            "6" => column_type = "DECIMAL".to_owned(),
-            "7" => column_type = "BOOLEAN".to_owned(),
-            "8" => column_type = "DATE".to_owned(),
+        // navigate the column types based on the column category
+        match column_category.as_str() {
+            "1" => column_category = "String".to_owned(),
+            "2" => column_category = "Number".to_owned(),
+            "3" => column_category = "Boolean".to_owned(),
+            "4" => column_category = "Date".to_owned(),
+            "5" => column_category = "Time".to_owned(),
+            "6" => column_category = "DateTime".to_owned(),
+            "7" => column_category = "Binary".to_owned(),
+            "8" => column_category = "Json".to_owned(),
+            "9" => column_category = "Uuid".to_owned(),
+            "10" => column_category = "Array".to_owned(),
+            "11" => column_category = "Enum".to_owned(),
+            "12" => column_category = "Other".to_owned(),
             _ => {
-                println!("Invalid input. Please enter a number from 1 to 8.");
-                continue; // Ask again if input is invalid
+                println!("Invalid column category");
+                return Ok("Invalid column category".to_string());
             }
         }
 
+        // get the column types based on the column category
+        let column_types = match column_category.as_str() {
+            "String" => data_types.string_types,
+            "Number" => data_types.number_types,
+            "Boolean" => data_types.boolean_types,
+            "Date" => data_types.date_types,
+            "Time" => data_types.time_types,
+            "DateTime" => data_types.date_time_types,
+            "Binary" => data_types.binary_types,
+            "Json" => data_types.json_types,
+            "Uuid" => data_types.uuid_types,
+            "Array" => data_types.array_types,
+            "Enum" => data_types.enum_types,
+            "Other" => data_types.other_types,
+            _ => {
+                println!("Invalid column category");
+                return Ok("Invalid column category".to_string());
+            }
+        };
+
+        // print the column types in a list
+        for (index, column_type) in column_types.iter().enumerate() {
+            println!("{}. {}", index + 1, column_type);
+        }
+
+        // prompt the user for the column type
+        let mut column_type = rl
+            // Ask the user for the column type and give them a list of available types
+            .readline("Enter the type of the column: ")
+            .unwrap_or_else(|why| {
+                panic!("Failed to read column type: {}", why.to_string());
+            });
+
+        // match the column type to the available column types
+        match column_type.as_str() {
+            "1" => column_type = "String".to_owned(),
+            "2" => column_type = "Number".to_owned(),
+            "3" => column_type = "Boolean".to_owned(),
+            "4" => column_type = "Date".to_owned(),
+            "5" => column_type = "Time".to_owned(),
+            "6" => column_type = "DateTime".to_owned(),
+            "7" => column_type = "Binary".to_owned(),
+            "8" => column_type = "Json".to_owned(),
+            "9" => column_type = "Uuid".to_owned(),
+            "10" => column_type = "Array".to_owned(),
+            "11" => column_type = "Enum".to_owned(),
+            "12" => column_type = "Other".to_owned(),
+            _ => {
+                println!("Invalid column type");
+                return Ok("Invalid column type".to_string());
+            }
+        }
+
+        // prompt the user for the column constraints
         let column_constraints = rl
             .readline("Enter the constraints of the column: ")
             .unwrap_or_else(|why| {
