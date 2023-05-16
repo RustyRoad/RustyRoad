@@ -140,10 +140,50 @@ pub enum DataTypeCategory {
     Other,
 }
 
+impl DataTypeCategory {
+    pub fn get_data_types_from_data_type_category(
+        &self,
+        database_type: DatabaseType,
+    ) -> DatabaseTypes {
+        match database_type {
+            // need to map the control flow to the database types
+            DatabaseType::Mysql => match &self {
+                DataTypeCategory::Numeric => DatabaseTypes::MySqlTypes(vec![
+                    MySqlTypes::TinyInt,
+                    MySqlTypes::SmallInt,
+                    MySqlTypes::MediumInt,
+                    MySqlTypes::Int,
+                    MySqlTypes::BigInt,
+                    MySqlTypes::Decimal,
+                    MySqlTypes::Float,
+                    MySqlTypes::Double,
+                    MySqlTypes::Bit,
+                    MySqlTypes::Boolean,
+                    MySqlTypes::Serial,
+                ]),
+                DataTypeCategory::DateTime => todo!(),
+                DataTypeCategory::Text => todo!(),
+                DataTypeCategory::Geometric => todo!(),
+                DataTypeCategory::NetworkAddress => todo!(),
+                DataTypeCategory::Json => todo!(),
+                DataTypeCategory::Search => todo!(),
+                DataTypeCategory::Array => todo!(),
+                DataTypeCategory::UUID => todo!(),
+                DataTypeCategory::Monetary => todo!(),
+                DataTypeCategory::BitString => todo!(),
+                DataTypeCategory::Interval => todo!(),
+                DataTypeCategory::Composite => todo!(),
+                DataTypeCategory::Range => todo!(),
+                DataTypeCategory::Other => todo!(),
+            },
+        }
+    }
+}
+
 pub enum PostgresTypes {
     Boolean,
     Serial,
-    Uuid,-
+    Uuid,
     Array,
     Json,
     JsonB,
@@ -220,7 +260,7 @@ impl PostgresType {
     }
 }
 
-pub enum MysqlType {
+pub enum MySqlTypes {
     Bit,
     TinyInt,
     SmallInt,
@@ -267,69 +307,62 @@ pub enum MysqlType {
     Unknown,
 }
 
-pub struct MysqlTypeMap {
+pub struct MySqlTypeMap {
     pub types: HashMap<String, MysqlType>,
 }
 
-impl MysqlType {
+impl MySqlTypes {
     pub fn category(&self) -> DataTypeCategory {
         match self {
-            MysqlType::Bit
-            | MysqlType::TinyInt
-            | MysqlType::SmallInt
-            | MysqlType::MediumInt
-            | MysqlType::Int
-            | MysqlType::BigInt
-            | MysqlType::Float
-            | MysqlType::Double
-            | MysqlType::Decimal
-            | MysqlType::Year
-            | MysqlType::NewDecimal => DataTypeCategory::Numeric,
-
-            MysqlType::Date | MysqlType::DateTime | MysqlType::Time | MysqlType::Timestamp => {
-                DataTypeCategory::DateTime
-            }
-
-            MysqlType::Char
-            | MysqlType::VarChar
-            | MysqlType::Binary
-            | MysqlType::VarBinary
-            | MysqlType::TinyBlob
-            | MysqlType::Blob
-            | MysqlType::MediumBlob
-            | MysqlType::LongBlob
-            | MysqlType::TinyText
-            | MysqlType::Text
-            | MysqlType::MediumText
-            | MysqlType::LongText
-            | MysqlType::Enum
-            | MysqlType::Set
-            | MysqlType::Json
-            | MysqlType::BinaryJson => DataTypeCategory::Text,
-
-            MysqlType::Point
-            | MysqlType::LineString
-            | MysqlType::Polygon
-            | MysqlType::MultiPoint
-            | MysqlType::MultiLineString
-            | MysqlType::MultiPolygon
-            | MysqlType::GeometryCollection
-            | MysqlType::Geometry => DataTypeCategory::Geometric,
-
-            MysqlType::BitField => DataTypeCategory::BitString,
-
-            MysqlType::EnumInner => DataTypeCategory::Other,
-
-            MysqlType::SetInner => DataTypeCategory::Other,
-
-            MysqlType::GeometryInner => DataTypeCategory::Other,
-
-            MysqlType::Unknown => DataTypeCategory::Other,
+            MySqlTypes::Bit => DataTypeCategory::BitString,
+            MySqlTypes::TinyInt
+            | MySqlTypes::SmallInt
+            | MySqlTypes::MediumInt
+            | MySqlTypes::Int
+            | MySqlTypes::BigInt
+            | MySqlTypes::Float
+            | MySqlTypes::Double
+            | MySqlTypes::Decimal
+            | MySqlTypes::NewDecimal => DataTypeCategory::Numeric,
+            MySqlTypes::Date
+            | MySqlTypes::DateTime
+            | MySqlTypes::Time
+            | MySqlTypes::Timestamp
+            | MySqlTypes::Year => DataTypeCategory::DateTime,
+            MySqlTypes::Char
+            | MySqlTypes::VarChar
+            | MySqlTypes::Binary
+            | MySqlTypes::VarBinary
+            | MySqlTypes::TinyBlob
+            | MySqlTypes::Blob
+            | MySqlTypes::MediumBlob
+            | MySqlTypes::LongBlob
+            | MySqlTypes::TinyText
+            | MySqlTypes::Text
+            | MySqlTypes::MediumText
+            | MySqlTypes::LongText
+            | MySqlTypes::Enum
+            | MySqlTypes::Set
+            | MySqlTypes::Json
+            | MySqlTypes::BinaryJson => DataTypeCategory::Text,
+            MySqlTypes::Geometry
+            | MySqlTypes::Point
+            | MySqlTypes::LineString
+            | MySqlTypes::Polygon
+            | MySqlTypes::MultiPoint
+            | MySqlTypes::MultiLineString
+            | MySqlTypes::MultiPolygon
+            | MySqlTypes::GeometryCollection => DataTypeCategory::Geometric,
+            MySqlTypes::BitField => DataTypeCategory::Other,
+            MySqlTypes::EnumInner => DataTypeCategory::Other,
+            MySqlTypes::SetInner => DataTypeCategory::Other,
+            MySqlTypes::GeometryInner => DataTypeCategory::Other,
+            MySqlTypes::Unknown => DataTypeCategory::Other,
         }
     }
 }
 
-pub enum SqliteType {
+pub enum SqliteTypes {
     Integer,
     Real,
     Text,
@@ -346,7 +379,7 @@ pub struct SqliteTypeMap {
     types_by_category: HashMap<DataTypeCategory, Vec<PostgresType>>,
 }
 
-impl SqliteType {
+impl SqliteTypes {
     pub fn category(&self) -> DataTypeCategory {
         match self {
             SqliteType::Integer | SqliteType::Real | SqliteType::Numeric => {
@@ -363,10 +396,9 @@ impl SqliteType {
     }
 }
 
-
 pub struct DatabaseTypes {
     pub postgres: PostgresTypeMap,
-    pub mysql: MysqlTypeMap,
+    pub mysql: MySqlTypeMap,
     pub sqlite: SqliteTypeMap,
 }
 
@@ -379,31 +411,36 @@ impl DatabaseTypes {
         }
     }
 
-       pub fn add_postgres_type(&mut self, ty: PostgresType) {
+    pub fn add_postgres_type(&mut self, ty: PostgresTypes) {
         let category = ty.category();
-        self.postgres.entry(category).or_insert_with(Vec::new).push(ty);
+        self.postgres
+            .entry(category)
+            .or_insert_with(Vec::new)
+            .push(ty);
     }
 
-    pub fn add_mysql_type(&mut self, ty: MySqlType) {
+    pub fn add_mysql_type(&mut self, ty: MySqlTypes) {
         let category = ty.category();
         self.mysql.entry(category).or_insert_with(Vec::new).push(ty);
     }
 
-    pub fn add_sqlite_type(&mut self, ty: SqliteType) {
+    pub fn add_sqlite_type(&mut self, ty: SqliteTypes) {
         let category = ty.category();
-        self.sqlite.entry(category).or_insert_with(Vec::new).push(ty);
+        self.sqlite
+            .entry(category)
+            .or_insert_with(Vec::new)
+            .push(ty);
     }
 
-    pub fn get_postgres_types(&self, category: &DataTypeCategory) -> Option<&Vec<PostgresType>> {
+    pub fn get_postgres_types(&self, category: &DataTypeCategory) -> Option<&Vec<PostgresTypes>> {
         self.postgres.get(category)
     }
 
-    pub fn get_mysql_types(&self, category: &DataTypeCategory) -> Option<&Vec<MySqlType>> {
+    pub fn get_mysql_types(&self, category: &DataTypeCategory) -> Option<&Vec<MySqlTypes>> {
         self.mysql.get(category)
     }
 
-    pub fn get_sqlite_types(&self, category: &DataTypeCategory) -> Option<&Vec<SqliteType>> {
+    pub fn get_sqlite_types(&self, category: &DataTypeCategory) -> Option<&Vec<SqliteTypes>> {
         self.sqlite.get(category)
     }
-    
 }
