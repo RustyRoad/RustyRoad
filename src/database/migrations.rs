@@ -1,5 +1,5 @@
 use super::database::Database;
-use super::{MySqlTypes, MysqlTypeMap, PostgresTypeMap};
+use super::{MySqlTypes, MySqlTypeMap, PostgresTypeMap};
 use crate::database;
 use crate::database::{
     DataTypeCategory, DatabaseType, MySqlType, PostgresTypes, SqliteTypes, TypesByCategory,
