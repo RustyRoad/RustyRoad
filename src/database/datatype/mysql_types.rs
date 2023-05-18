@@ -47,7 +47,6 @@ pub enum MySqlTypes {
     EnumInner,
     SetInner,
     GeometryInner,
-    Unknown,
 }
 
 pub struct MySqlTypeMap {
@@ -100,8 +99,7 @@ impl MySqlTypes {
             MySqlTypes::BitField => DataTypeCategory::Other,
             MySqlTypes::EnumInner => DataTypeCategory::Other,
             MySqlTypes::SetInner => DataTypeCategory::Other,
-            MySqlTypes::GeometryInner => DataTypeCategory::Other,
-            MySqlTypes::Unknown => DataTypeCategory::Other,
+            MySqlTypes::GeometryInner => DataTypeCategory::Other
         }
     }
 }

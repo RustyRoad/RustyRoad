@@ -12,7 +12,7 @@ pub enum SqliteTypes {
     Time,
     DateTime,
     Boolean,
-    Unknown,
+    Null,
 }
 
 pub struct SqliteTypeMap {
@@ -21,17 +21,16 @@ pub struct SqliteTypeMap {
 
 impl SqliteTypes {
     pub fn category(&self) -> DataTypeCategory {
-        match self {
-            SqliteType::Integer | SqliteType::Real | SqliteType::Numeric => {
+        match &self {
+            SqliteTypes::Integer | SqliteTypes::Real | SqliteTypes::Numeric => {
                 DataTypeCategory::Numeric
             }
-            SqliteType::Date | SqliteType::Time | SqliteType::DateTime => {
+            SqliteTypes::Date | SqliteTypes::Time | SqliteTypes::DateTime => {
                 DataTypeCategory::DateTime
             }
-            SqliteType::Text => DataTypeCategory::Text,
-            SqliteType::Blob => DataTypeCategory::Other,
-            SqliteType::Boolean => DataTypeCategory::Other,
-            SqliteType::Unknown => DataTypeCategory::Other,
+            SqliteTypes::Text => DataTypeCategory::Text,
+            SqliteTypes::Blob => DataTypeCategory::Other,
+            SqliteTypes::Boolean => DataTypeCategory::Other
         }
     }
 }

@@ -1,3 +1,10 @@
+use std::collections::HashMap;
+
+use super::{
+    DataTypeCategory, MySqlTypeMap, MySqlTypes, PostgresTypes, PostgresTypesMap, SqliteTypeMap,
+    SqliteTypes,
+};
+
 pub struct TypesForDatabase {
     pub postgres: PostgresTypesMap,
     pub mysql: MySqlTypeMap,
@@ -19,12 +26,13 @@ impl TypesForDatabase {
         }
     }
 
-    pub fn add_postgres_type(&mut self, ty: PostgresTypes) {
-        let category = ty.try_into().unwrap();
-        self.postgres
+    pub fn add_postgres_type(&mut self, category: String, ty: PostgresTypes) {
+        let vec = self
+            .postgres
+            .types
             .entry(category)
-            .or_insert_with(Vec::new)
-            .push(ty);
+            .or_insert_with(PostgresTypes);
+        vec.push(ty);
     }
 
     pub fn add_mysql_type(&mut self, ty: MySqlTypes) {
