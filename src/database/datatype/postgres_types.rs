@@ -536,7 +536,7 @@ pub enum PostgresTypes {
 }
 
 pub struct PostgresTypesMap {
-    pub types: HashMap<String, PostgresTypes>,
+    pub types: HashMap<String, Vec<PostgresTypes>>,
 }
 
 impl PostgresTypes {
@@ -582,10 +582,6 @@ impl PostgresTypes {
             | PostgresTypes::TstzRange
             | PostgresTypes::PgLsn
             | PostgresTypes::DateRange => DataTypeCategory::Range,
-
-            PostgresTypes::Bit => DataTypeCategory::BitString,
-
-            PostgresTypes::TsVector | PostgresTypes::TsQuery => DataTypeCategory::Search,
             PostgresTypes::SmallInt => todo!(),
             PostgresTypes::Integer => todo!(),
             PostgresTypes::BigInt => todo!(),
@@ -610,6 +606,9 @@ impl PostgresTypes {
             PostgresTypes::PathOpen => todo!(),
             PostgresTypes::Macaddr => todo!(),
             PostgresTypes::Macaddr8 => todo!(),
+
+
+       
         }
     }
 }

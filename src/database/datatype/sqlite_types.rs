@@ -16,7 +16,7 @@ pub enum SqliteTypes {
 }
 
 pub struct SqliteTypeMap {
-    pub types: HashMap<String, SqliteTypes>,
+    pub types: HashMap<String, Vec<SqliteTypes>>,
 }
 
 impl SqliteTypes {
@@ -30,7 +30,8 @@ impl SqliteTypes {
             }
             SqliteTypes::Text => DataTypeCategory::Text,
             SqliteTypes::Blob => DataTypeCategory::Other,
-            SqliteTypes::Boolean => DataTypeCategory::Other
+            SqliteTypes::Boolean => DataTypeCategory::Other,
+            SqliteTypes::Null => todo!(),
         }
     }
 }

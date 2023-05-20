@@ -50,7 +50,7 @@ pub enum MySqlTypes {
 }
 
 pub struct MySqlTypeMap {
-    pub types: HashMap<String, MySqlTypes>,
+    pub types: HashMap<String, Vec<MySqlTypes>>,
 }
 
 impl MySqlTypes {
@@ -99,7 +99,7 @@ impl MySqlTypes {
             MySqlTypes::BitField => DataTypeCategory::Other,
             MySqlTypes::EnumInner => DataTypeCategory::Other,
             MySqlTypes::SetInner => DataTypeCategory::Other,
-            MySqlTypes::GeometryInner => DataTypeCategory::Other
+            MySqlTypes::GeometryInner => DataTypeCategory::Other,
         }
     }
 }

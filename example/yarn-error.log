@@ -1,0 +1,31 @@
+Arguments: 
+  C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\yarn\bin\yarn.js
+
+PATH: 
+  C:\Users\riley\bin;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\local\bin;C:\Program Files\Git\usr\bin;C:\Program Files\Git\usr\bin;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Users\riley\bin;C:\Program Files\Microsoft\jdk-11.0.16.101-hotspot\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn;C:\Program Files\Microsoft SQL Server\150\Tools\Binn;C:\Program Files\Git\cmd;C:\Users\riley\AppData\Roaming\nvm;C:\Program Files\nodejs;C:\Users\riley\vcpkg;C:\Program Files\Erlang OTP\bin;C:\Program Files (x86)\Elixir\bin;C:\Users\riley\.mix\escripts;C:\Program Files (x86)\Microsoft SQL Server\160\Tools\Binn;C:\Program Files\Microsoft SQL Server\160\Tools\Binn;C:\Program Files\Microsoft SQL Server\160\DTS\Binn;C:\Program Files (x86)\Microsoft SQL Server\150\DTS\Binn;C:\Program Files\Azure Data Studio\bin;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\chocolatey\bin;C:\Program Files\dotnet;C:\Program Files (x86)\Incredibuild;C:\Program Files\MySQL\MySQL Shell 8.0\bin;C:\Users\riley\.cargo\bin;C:\Users\riley\AppData\Local\Microsoft\WindowsApps;C:\Users\riley\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\riley\.dotnet\tools;C:\Users\riley\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin;C:\Users\riley\AppData\Roaming\nvm;C:\Program Files\nodejs;C:\Program Files\Azure Data Studio\bin;C:\Program Files\SQLITE;C:\Users\riley\AppData\Local\JetBrains\Toolbox\scripts;C:\Users\riley\.dotnet\tools;C:\Program Files\PostgreSQL\15\bin;C:\Program Files\Git\usr\bin\vendor_perl;C:\Program Files\Git\usr\bin\core_perl
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  18.12.1
+
+Platform: 
+  win32 x64
+
+Trace: 
+  SyntaxError: C:\Users\riley\Documents\programming\rust\Rusty-Road\example\package.json: Unexpected end of JSON input
+      at JSON.parse (<anonymous>)
+      at C:\Users\riley\AppData\Roaming\nvm\v18.12.1\node_modules\yarn\lib\cli.js:1629:59
+      at Generator.next (<anonymous>)
+      at step (C:\Users\riley\AppData\Roaming\nvm\v18.12.1\node_modules\yarn\lib\cli.js:310:30)
+      at C:\Users\riley\AppData\Roaming\nvm\v18.12.1\node_modules\yarn\lib\cli.js:321:13
+
+npm manifest: 
+  
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

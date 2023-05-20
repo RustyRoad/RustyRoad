@@ -1,7 +1,6 @@
 // Add this import at the top of the `database.rs` file
 
-use std::{collections::HashMap, fs};
-use sqlx::mysql::types;
+use std::fs;
 use toml::Value;
 
 #[derive(Debug, Clone, PartialEq, std::cmp::Eq)]

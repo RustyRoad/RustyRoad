@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{hash_map::Entry, HashMap};
+
+use crate::database::DatabaseType;
 
 use super::{
     DataTypeCategory, MySqlTypeMap, MySqlTypes, PostgresTypes, PostgresTypesMap, SqliteTypeMap,
@@ -27,40 +29,62 @@ impl TypesForDatabase {
     }
 
     pub fn add_postgres_type(&mut self, category: String, ty: PostgresTypes) {
-        let vec = self
-            .postgres
-            .types
-            .entry(category)
-            .or_insert_with(PostgresTypes);
-        vec.push(ty);
+        match self.postgres.types.entry(category) {
+            Entry::Occupied(entry) => {
+                entry.into_mut().push(ty);
+            }
+            Entry::Vacant(entry) => {
+                entry.insert(vec![ty]);
+            }
+        };
     }
 
-    pub fn add_mysql_type(&mut self, ty: MySqlTypes) {
-        let category = ty.category();
-        self.mysql
-            .types
-            .entry(category)
-            .or_insert_with(Vec::new)
-            .push(ty);
+    pub fn add_mysql_type(
+        &mut self,
+        category: String,
+        ty: MySqlTypes,
+    ) -> Result<&mut Vec<MySqlTypes>, String> {
+        match self.mysql.types.entry(category) {
+            Entry::Occupied(entry) => Ok(entry.into_mut()),
+            Entry::Vacant(entry) => Ok(entry.insert(vec![ty])),
+        }
     }
 
-    pub fn add_sqlite_type(&mut self, ty: SqliteTypes) {
-        let category = ty.category();
-        self.sqlite
-            .entry(category)
-            .or_insert_with(Vec::new)
-            .push(ty);
+    pub fn add_sqlite_type(
+        &mut self,
+        category: String,
+        ty: SqliteTypes,
+    ) -> Result<&mut Vec<SqliteTypes>, String> {
+        match self.sqlite.types.entry(category) {
+            Entry::Occupied(entry) => Ok(entry.into_mut()),
+            Entry::Vacant(entry) => Ok(entry.insert(vec![ty])),
+        }
     }
 
-    pub fn get_postgres_types(&self, category: &DataTypeCategory) -> Option<&Vec<PostgresTypes>> {
-        self.postgres.get(category)
+    pub fn get_postgres_types<'a>(&'a self, category: &DataTypeCategory) -> impl Iterator {
+        let types_for_database =
+            category.get_data_types_from_data_type_category(DatabaseType::Postgres);
+
+        let ite_types = types_for_database.postgres.types.into_iter();
+
+        ite_types
     }
 
-    pub fn get_mysql_types(&self, category: &DataTypeCategory) -> Option<&Vec<MySqlTypes>> {
-        self.mysql.get(category)
+    pub fn get_mysql_types<'a>(&'a self, category: &DataTypeCategory) -> impl Iterator {
+        let types_for_database =
+            category.get_data_types_from_data_type_category(DatabaseType::Mysql);
+
+        let ite_types = types_for_database.mysql.types.into_iter();
+
+        ite_types
     }
 
-    pub fn get_sqlite_types(&self, category: &DataTypeCategory) -> Option<&Vec<SqliteTypes>> {
-        self.sqlite.get(category)
+    pub fn get_sqlite_types<'a>(&'a self, category: &DataTypeCategory) -> impl Iterator {
+        let types_for_database =
+            category.get_data_types_from_data_type_category(DatabaseType::Sqlite);
+
+        let ite_types = types_for_database.sqlite.types.into_iter();
+
+        ite_types
     }
 }
