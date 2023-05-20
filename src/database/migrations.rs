@@ -9,6 +9,7 @@ use chrono::prelude::*;
 use diesel_migrations::MigrationError;
 use rustyline::DefaultEditor;
 use sqlx::{postgres::PgPoolOptions, sqlite::SqlitePool};
+use std::collections::HashMap;
 use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::Display;
@@ -134,46 +135,94 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
         // match the available column types to the database type
         // need to get the values from the enum of the database type
 
-        let column_category_to_list = match database_type {
-            database::DatabaseType::Postgres => &column_types,
-            database::DatabaseType::Mysql => &column_types,
-            database::DatabaseType::Sqlite => &column_types,
+        let column_category_to_list: HashMap<String, DataTypeCategory> = match database_type {
+            database::DatabaseType::Postgres => column_types
+                .iter()
+                .map(|category| (category.to_string(), category.clone()))
+                .collect(),
+            database::DatabaseType::Mysql => todo!(),
+            database::DatabaseType::Sqlite => todo!(),
             database::DatabaseType::Mongo => todo!(),
         };
 
         println!("Column Types: ");
         // loop through the column types and print them out
         for (index, column_type) in column_category_to_list.iter().enumerate() {
-            println!("{}. {}", index + 1, column_type);
+            println!("{}. {}", index + 1, column_type.0);
         }
-   
+
         // prompt the user for the column type
-        let mut column_type = rl
+        let column_type = rl
             // Ask the user for the column type and give them a list of available types
             .readline("Enter the type of the column: ")
             .unwrap_or_else(|why| {
                 panic!("Failed to read column type: {}", why.to_string());
             });
 
-        // match the column type to the available column types
-        match column_type.as_str() {
-            "1" => column_type = "String".to_owned(),
-            "2" => column_type = "Number".to_owned(),
-            "3" => column_type = "Boolean".to_owned(),
-            "4" => column_type = "Date".to_owned(),
-            "5" => column_type = "Time".to_owned(),
-            "6" => column_type = "DateTime".to_owned(),
-            "7" => column_type = "Binary".to_owned(),
-            "8" => column_type = "Json".to_owned(),
-            "9" => column_type = "Uuid".to_owned(),
-            "10" => column_type = "Array".to_owned(),
-            "11" => column_type = "Enum".to_owned(),
-            "12" => column_type = "Other".to_owned(),
+        // match the column type to the data type
+        let column_type_as_struct = match column_type.trim() {
+            "1" => DataTypeCategory::Boolean,
+            "2" => DataTypeCategory::Numeric,
+            "3" => DataTypeCategory::DateTime,
+            "4" => DataTypeCategory::Text,
+            "5" => DataTypeCategory::Geometric,
+            "6" => DataTypeCategory::NetworkAddress,
+            "7" => DataTypeCategory::Json,
+            "8" => DataTypeCategory::Search,
+            "9" => DataTypeCategory::Array,
+            "10" => DataTypeCategory::UUID,
+            "11" => DataTypeCategory::Monetary,
+            "12" => DataTypeCategory::BitString,
+            "13" => DataTypeCategory::Interval,
+            "14" => DataTypeCategory::Composite,
+            "15" => DataTypeCategory::Range,
+            "16" => DataTypeCategory::Other,
             _ => {
-                println!("Invalid column type");
-                return Ok("Invalid column type".to_string());
+                println!("Invalid input. Please enter a number between 1 and 16.");
+                continue; // Ask again if input is invalid
             }
+        };
+
+        // for the category that the user selected, get the data types for that category
+        let data_types_for_category =
+            column_type_as_struct.get_data_types_from_data_type_category(database_type.clone());
+
+        // loop through the data types for the category and print them out
+        // loop through the data types for the category and print them out
+        println!("Data Types: ");
+        for (index, data_type) in data_types_for_category.into_iter().enumerate() {
+            println!("{}. {}", index + 1, data_type);
         }
+
+        // prompt the user for the column type
+        let new_type = rl
+            // Ask the user for the column type and give them a list of available types
+            .readline("Enter the type of the column: ")
+            .unwrap_or_else(|why| panic!("Failed to read column type: {}", why.to_string()));
+
+        // match the column type to the data type
+        let column_type = match new_type.trim() {
+            "1" => "BOOLEAN",
+            "2" => "INTEGER",
+            "3" => "FLOAT",
+            "4" => "VARCHAR(255)",
+            "5" => "DATE",
+            "6" => "TIME",
+            "7" => "TIMESTAMP",
+            "8" => "JSON",
+            "9" => "ARRAY",
+            "10" => "UUID",
+            "11" => "MONEY",
+            "12" => "BITSTRING",
+            "13" => "INTERVAL",
+            "14" => "COMPOSITE",
+            "15" => "RANGE",
+            "16" => "OTHER",
+            _ => {
+                println!("Invalid input. Please enter a number between 1 and 16.");
+                continue; // Ask again if input is invalid
+            }
+        };
 
         // prompt the user for the column constraints
         let column_constraints = rl
@@ -200,7 +249,7 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
         };
 
         // validate the column type to sql type
-        match column_type.to_lowercase().as_str() {
+        match column_type {
             "varchar(255)" => {
                 // ask the user for the length of the string
                 let string_length = rl

@@ -197,8 +197,224 @@ impl DataTypeCategory {
 
                 types_for_database
             }
-            DatabaseType::Mysql => todo!(),
-            DatabaseType::Sqlite => todo!(),
+            DatabaseType::Mysql => {
+                let mut types_for_database = TypesForDatabase::new();
+
+                match self {
+                    DataTypeCategory::Array => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Json)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+
+                    DataTypeCategory::Boolean => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Boolean)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Numeric => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Decimal)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::DateTime => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::DateTime)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Text => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Geometric => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Point)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::NetworkAddress => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::BigInt)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Json => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Json)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Search => todo!(),
+                    DataTypeCategory::UUID => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::VarChar)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Monetary => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Float)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::BitString => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Bit)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Interval => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Int)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Composite => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Json)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Range => {
+                        types_for_database
+                            .add_mysql_type(self.to_string(), MySqlTypes::Json)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Other => todo!(),
+                }
+
+                types_for_database
+            }
+            DatabaseType::Sqlite => {
+                let mut types_for_database = TypesForDatabase::new();
+
+                match self {
+                    DataTypeCategory::Array => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+
+                    DataTypeCategory::Boolean => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Integer)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Numeric => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Real)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::DateTime => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Text => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Geometric => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Blob)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::NetworkAddress => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Json => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Search => todo!(),
+                    DataTypeCategory::UUID => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Monetary => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Real)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::BitString => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Interval => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Composite => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Range => {
+                        types_for_database
+                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
+                            .unwrap_or_else(|_| {
+                                panic!("Could not add {} to types_for_database", self.to_string())
+                            });
+                    }
+                    DataTypeCategory::Other => todo!(),
+                }
+
+                types_for_database
+            }
             DatabaseType::Mongo => todo!(),
         }
     }

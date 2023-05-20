@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::DataTypeCategory;
-
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash)]
 pub enum MySqlTypes {
     Bit,
     Boolean,
@@ -47,6 +47,8 @@ pub enum MySqlTypes {
     EnumInner,
     SetInner,
     GeometryInner,
+    /// Error type for when a type is not found in the database type map.
+    NotFound,
 }
 
 pub struct MySqlTypeMap {
@@ -100,6 +102,9 @@ impl MySqlTypes {
             MySqlTypes::EnumInner => DataTypeCategory::Other,
             MySqlTypes::SetInner => DataTypeCategory::Other,
             MySqlTypes::GeometryInner => DataTypeCategory::Other,
+            MySqlTypes::NotFound => DataTypeCategory::Other,
         }
+
+
     }
 }

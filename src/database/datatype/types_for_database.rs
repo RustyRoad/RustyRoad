@@ -1,4 +1,7 @@
-use std::collections::{hash_map::Entry, HashMap};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    fmt,
+};
 
 use crate::database::DatabaseType;
 
@@ -61,30 +64,113 @@ impl TypesForDatabase {
         }
     }
 
-    pub fn get_postgres_types<'a>(&'a self, category: &DataTypeCategory) -> impl Iterator {
+    pub fn get_postgres_types<'a>(&'a self, category: &'a DataTypeCategory) -> impl Iterator + 'a {
         let types_for_database =
             category.get_data_types_from_data_type_category(DatabaseType::Postgres);
 
-        let ite_types = types_for_database.postgres.types.into_iter();
+        types_for_database.postgres.types.into_iter()
 
-        ite_types
+
     }
 
-    pub fn get_mysql_types<'a>(&'a self, category: &DataTypeCategory) -> impl Iterator {
+    pub fn get_mysql_types<'a>(&'a self, category: &'a DataTypeCategory) -> impl Iterator + 'a {
         let types_for_database =
             category.get_data_types_from_data_type_category(DatabaseType::Mysql);
 
-        let ite_types = types_for_database.mysql.types.into_iter();
-
-        ite_types
+        types_for_database.mysql.types.into_iter()
     }
 
-    pub fn get_sqlite_types<'a>(&'a self, category: &DataTypeCategory) -> impl Iterator {
+    pub fn get_sqlite_types<'a>(&'a self, category: &'a DataTypeCategory) -> impl Iterator + 'a {
         let types_for_database =
             category.get_data_types_from_data_type_category(DatabaseType::Sqlite);
 
-        let ite_types = types_for_database.sqlite.types.into_iter();
+        types_for_database.sqlite.types.into_iter()
+    }
 
-        ite_types
+    /// Returns an iterator over the given datase type and category.
+    pub fn get_types<'a>(
+        &'a self,
+        database_type: &DatabaseType,
+        category: &DataTypeCategory,
+    ) -> Vec<PostgresTypes> {
+        let types_for_database =
+            category.get_data_types_from_data_type_category(database_type.clone());
+        let entries: Vec<PostgresTypes> = match database_type {
+            DatabaseType::Postgres => match types_for_database {
+                TypesForDatabase {
+                    postgres: PostgresTypesMap { types },
+                    ..
+                } => types
+                    .into_iter()
+                    .map(|(_, types)| types)
+                    .flatten()
+                    .collect()
+
+            },
+            DatabaseType::Mysql => {
+                // Assuming you'll have a similar structure for MySQL types
+                // Vec::new()
+                todo!()
+            }
+            DatabaseType::Sqlite => {
+                // Assuming you'll have a similar structure for SQLite types
+                // Vec::new()
+                todo!()
+            }
+            DatabaseType::Mongo => todo!(),
+        };
+
+        // This will not work unless you implement or derive PartialOrd for PostgresTypes
+        //entries.sort();
+        entries
+    }
+}
+impl fmt::Display for TypesForDatabase {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut string = String::new();
+
+        string.push_str("Postgres Types:\n");
+        for (category, types) in &self.postgres.types {
+            string.push_str(&format!("{}: {:?}\n", category, types));
+        }
+
+        string.push_str("\nMySQL Types:\n");
+        for (category, types) in &self.mysql.types {
+            string.push_str(&format!("{}: {:?}\n", category, types));
+        }
+
+        string.push_str("\nSQLite Types:\n");
+        for (category, types) in &self.sqlite.types {
+            string.push_str(&format!("{}: {:?}\n", category, types));
+        }
+
+        write!(f, "{}", string)
+    }
+}
+
+// Implement the IntoIterator trait for TypesForDatabase
+impl<'a> IntoIterator for &'a TypesForDatabase {
+    type Item = String;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let mut vec: Vec<Self::Item> = Vec::new();
+
+        vec.push("Postgres Types:".to_string());
+        for (category, types) in &self.postgres.types {
+            vec.push(format!("{}: {:?}\n", category, types));
+        }
+
+        vec.push("\nMySQL Types:".to_string());
+        for (category, types) in &self.mysql.types {
+            vec.push(format!("{}: {:?}\n", category, types));
+        }
+
+        vec.push("\nSQLite Types:".to_string());
+        for (category, types) in &self.sqlite.types {
+            vec.push(format!("{}: {:?}\n", category, types));
+        }
+
+        vec.into_iter()
     }
 }

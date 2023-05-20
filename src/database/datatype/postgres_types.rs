@@ -6,6 +6,7 @@ use super::DataTypeCategory;
 /// In addition, a column can be defined as a computed column, using an expression
 /// that evaluates to a value of scalar type.
 /// - https://www.postgresql.org/docs/12/datatype.html
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash)]
 pub enum PostgresTypes {
     /// A 2 byte signed integer.
     /// - Range: -32768 to +32767
@@ -535,6 +536,7 @@ pub enum PostgresTypes {
     Array(Box<PostgresTypes>),
 }
 
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq)]
 pub struct PostgresTypesMap {
     pub types: HashMap<String, Vec<PostgresTypes>>,
 }

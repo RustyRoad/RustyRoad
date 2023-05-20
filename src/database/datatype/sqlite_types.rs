@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::DataTypeCategory;
-
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash)]
 pub enum SqliteTypes {
     Integer,
     Real,
