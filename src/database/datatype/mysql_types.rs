@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, cmp::Ordering};
 
 use super::DataTypeCategory;
-#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
 pub enum MySqlTypes {
     Bit,
     Boolean,
@@ -50,7 +50,7 @@ pub enum MySqlTypes {
     /// Error type for when a type is not found in the database type map.
     NotFound,
 }
-
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq)]
 pub struct MySqlTypeMap {
     pub types: HashMap<String, Vec<MySqlTypes>>,
 }
@@ -104,7 +104,18 @@ impl MySqlTypes {
             MySqlTypes::GeometryInner => DataTypeCategory::Other,
             MySqlTypes::NotFound => DataTypeCategory::Other,
         }
+    }
+}
 
 
+impl Ord for MySqlTypeMap {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.types.len().cmp(&other.types.len())
+    }
+}
+
+impl PartialOrd for MySqlTypeMap {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
