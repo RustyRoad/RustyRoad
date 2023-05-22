@@ -131,14 +131,14 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
 
         let database_type = database.clone().database_type;
         // initalize data types
-        let column_types = DataTypeCategory::get_all_categories();
+        let mut column_types: Vec<DataTypeCategory> = DataTypeCategory::get_all_categories();
         // match the available column types to the database type
         // need to get the values from the enum of the database type
-
+        column_types.sort_by(|a, b| a.to_string().cmp(&b.to_string()));
         let column_category_to_list: HashMap<String, DataTypeCategory> = match database_type {
             database::DatabaseType::Postgres => column_types
-                .iter()
-                .map(|category| (category.to_string(), category.clone()))
+                .into_iter()
+                .map(|column_type| (column_type.to_string(), column_type))
                 .collect(),
             database::DatabaseType::Mysql => todo!(),
             database::DatabaseType::Sqlite => todo!(),
@@ -146,9 +146,12 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
         };
 
         println!("Column Types: ");
-        // loop through the column types and print them out
-        for (index, column_type) in column_category_to_list.iter().enumerate() {
-            println!("{}. {}", index + 1, column_type.0);
+        let mut i = 0;
+        while i < 10 {
+            for (index, column_type) in column_category_to_list.iter().enumerate() {
+                println!("{}. {}", index + 1, column_type.0);
+            }
+            i += 1;
         }
 
         // prompt the user for the column type
@@ -161,27 +164,30 @@ pub fn create_migration(name: &str) -> Result<String, std::io::Error> {
 
         // match the column type to the data type
         let column_type_as_struct = match column_type.trim() {
-            "1" => DataTypeCategory::Boolean,
-            "2" => DataTypeCategory::Numeric,
-            "3" => DataTypeCategory::DateTime,
+            "1" => DataTypeCategory::Numeric,
+            "2" => DataTypeCategory::Json,
+            "3" => DataTypeCategory::Boolean,
             "4" => DataTypeCategory::Text,
-            "5" => DataTypeCategory::Geometric,
-            "6" => DataTypeCategory::NetworkAddress,
-            "7" => DataTypeCategory::Json,
-            "8" => DataTypeCategory::Search,
-            "9" => DataTypeCategory::Array,
-            "10" => DataTypeCategory::UUID,
-            "11" => DataTypeCategory::Monetary,
-            "12" => DataTypeCategory::BitString,
-            "13" => DataTypeCategory::Interval,
+            "5" => DataTypeCategory::DateTime,
+            "6" => DataTypeCategory::Geometric,
+            "7" => DataTypeCategory::Array,
+            "8" => DataTypeCategory::UUID,
+            "9" => DataTypeCategory::Other,
+            "10" => DataTypeCategory::Interval,
+            "11" => DataTypeCategory::NetworkAddress,
+            "12" => DataTypeCategory::Search,
+            "13" => DataTypeCategory::Monetary,
             "14" => DataTypeCategory::Composite,
             "15" => DataTypeCategory::Range,
-            "16" => DataTypeCategory::Other,
+            "16" => DataTypeCategory::BitString,
             _ => {
                 println!("Invalid input. Please enter a number between 1 and 16.");
                 continue; // Ask again if input is invalid
             }
         };
+
+        //print what the user just selected
+        println!("You selected: {}", column_type_as_struct);
 
         // for the category that the user selected, get the data types for that category
         let data_types_for_category =
