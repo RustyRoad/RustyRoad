@@ -10,6 +10,8 @@ use super::{
     SqliteTypes,
 };
 
+/// A struct that holds the types for each database.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TypesForDatabase {
     pub postgres: PostgresTypesMap,
     pub mysql: MySqlTypeMap,
@@ -69,8 +71,6 @@ impl TypesForDatabase {
             category.get_data_types_from_data_type_category(DatabaseType::Postgres);
 
         types_for_database.postgres.types.into_iter()
-
-
     }
 
     pub fn get_mysql_types<'a>(&'a self, category: &'a DataTypeCategory) -> impl Iterator + 'a {
@@ -86,7 +86,7 @@ impl TypesForDatabase {
 
         types_for_database.sqlite.types.into_iter()
     }
-
+    // need to create a generic type for this function
     /// Returns an iterator over the given datase type and category.
     pub fn get_types<'a>(
         &'a self,
@@ -95,7 +95,7 @@ impl TypesForDatabase {
     ) -> Vec<PostgresTypes> {
         let types_for_database =
             category.get_data_types_from_data_type_category(database_type.clone());
-        let entries: Vec<PostgresTypes> = match database_type {
+        let mut entries: Vec<PostgresTypes> = match database_type {
             DatabaseType::Postgres => match types_for_database {
                 TypesForDatabase {
                     postgres: PostgresTypesMap { types },
@@ -104,8 +104,7 @@ impl TypesForDatabase {
                     .into_iter()
                     .map(|(_, types)| types)
                     .flatten()
-                    .collect()
-
+                    .collect(),
             },
             DatabaseType::Mysql => {
                 // Assuming you'll have a similar structure for MySQL types
@@ -121,10 +120,11 @@ impl TypesForDatabase {
         };
 
         // This will not work unless you implement or derive PartialOrd for PostgresTypes
-        //entries.sort();
+        entries.sort();
         entries
     }
 }
+
 impl fmt::Display for TypesForDatabase {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut string = String::new();
