@@ -32,12 +32,11 @@ use std::hash::Hash;
 /// - Composite
 /// - Range
 /// - Other
-#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
 pub enum DataTypeCategory {
     Boolean,
-    Numeric,
     DateTime,
-    Text,
+    Numeric,
     Geometric,
     NetworkAddress,
     Json,
@@ -49,6 +48,7 @@ pub enum DataTypeCategory {
     Interval,
     Composite,
     Range,
+    Text,
     Other,
 }
 
@@ -124,7 +124,7 @@ impl DataTypeCategory {
     }
 
     pub fn get_all_categories() -> Vec<DataTypeCategory> {
-        vec![
+        let mut categories = vec![
             DataTypeCategory::Boolean,
             DataTypeCategory::Numeric,
             DataTypeCategory::DateTime,
@@ -141,7 +141,11 @@ impl DataTypeCategory {
             DataTypeCategory::Composite,
             DataTypeCategory::Range,
             DataTypeCategory::Other,
-        ]
+        ];
+
+        categories.sort();
+
+        categories
     }
 
     pub fn get_data_types_from_data_type_category(
@@ -198,7 +202,8 @@ impl DataTypeCategory {
                 types_for_database
             }
             DatabaseType::Mysql => {
-                let mut types_for_database = TypesForDatabase::new();
+                let mut types_for_database =
+                    TypesForDatabase::get_types(self, &database_type, category);
 
                 match self {
                     DataTypeCategory::Array => {
