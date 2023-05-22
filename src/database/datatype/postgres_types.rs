@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
 use super::DataTypeCategory;
 
@@ -6,7 +6,7 @@ use super::DataTypeCategory;
 /// In addition, a column can be defined as a computed column, using an expression
 /// that evaluates to a value of scalar type.
 /// - https://www.postgresql.org/docs/12/datatype.html
-#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
 pub enum PostgresTypes {
     /// A 2 byte signed integer.
     /// - Range: -32768 to +32767
@@ -608,9 +608,27 @@ impl PostgresTypes {
             PostgresTypes::PathOpen => todo!(),
             PostgresTypes::Macaddr => todo!(),
             PostgresTypes::Macaddr8 => todo!(),
-
-
-       
         }
+    }
+
+    /// Orders the types by alphabetical order.
+    pub fn order_by_alphabetical_order(types: &mut Vec<PostgresTypes>) {
+        types.sort_by(|a, b| {
+            let a = format!("{:?}", a);
+            let b = format!("{:?}", b);
+            a.cmp(&b)
+        });
+    }
+}
+
+impl Ord for PostgresTypesMap {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.types.len().cmp(&other.types.len())
+    }
+}
+
+impl PartialOrd for PostgresTypesMap {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
