@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, cmp::Ordering};
 
 use super::DataTypeCategory;
 #[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash)]
@@ -14,7 +14,7 @@ pub enum SqliteTypes {
     Boolean,
     Null,
 }
-
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq)]
 pub struct SqliteTypeMap {
     pub types: HashMap<String, Vec<SqliteTypes>>,
 }
@@ -33,5 +33,17 @@ impl SqliteTypes {
             SqliteTypes::Boolean => DataTypeCategory::Other,
             SqliteTypes::Null => todo!(),
         }
+    }
+}
+
+impl Ord for SqliteTypeMap {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.types.len().cmp(&other.types.len())
+    }
+}
+
+impl PartialOrd for SqliteTypeMap {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
