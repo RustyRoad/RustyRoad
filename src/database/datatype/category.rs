@@ -34,22 +34,22 @@ use std::hash::Hash;
 /// - Other
 #[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
 pub enum DataTypeCategory {
-    Boolean,
-    DateTime,
-    Numeric,
-    Geometric,
-    NetworkAddress,
-    Json,
-    Search,
     Array,
-    UUID,
-    Monetary,
     BitString,
-    Interval,
+    Boolean,
     Composite,
-    Range,
-    Text,
+    DateTime,
+    Geometric,
+    Interval,
+    Json,
+    Money,
+    NetworkAddress,
+    Numeric,
     Other,
+    Range,
+    Search,
+    Text,
+    UUID,
 }
 
 impl Borrow<str> for DataTypeCategory {
@@ -65,7 +65,7 @@ impl Borrow<str> for DataTypeCategory {
             DataTypeCategory::Geometric => "geometric",
             DataTypeCategory::Interval => "interval",
             DataTypeCategory::Json => "json",
-            DataTypeCategory::Monetary => "monetary",
+            DataTypeCategory::Money => "money",
             DataTypeCategory::NetworkAddress => "network address",
             DataTypeCategory::Numeric => "numeric",
             DataTypeCategory::Other => "other",
@@ -90,7 +90,7 @@ impl fmt::Display for DataTypeCategory {
             DataTypeCategory::Search => write!(f, "Search"),
             DataTypeCategory::Array => write!(f, "Array"),
             DataTypeCategory::UUID => write!(f, "UUID"),
-            DataTypeCategory::Monetary => write!(f, "Monetary"),
+            DataTypeCategory::Money => write!(f, "Money"),
             DataTypeCategory::BitString => write!(f, "BitString"),
             DataTypeCategory::Interval => write!(f, "Interval"),
             DataTypeCategory::Composite => write!(f, "Composite"),
@@ -113,7 +113,7 @@ impl DataTypeCategory {
             "Search" => Some(DataTypeCategory::Search),
             "Array" => Some(DataTypeCategory::Array),
             "UUID" => Some(DataTypeCategory::UUID),
-            "Monetary" => Some(DataTypeCategory::Monetary),
+            "Monetary" => Some(DataTypeCategory::Money),
             "BitString" => Some(DataTypeCategory::BitString),
             "Interval" => Some(DataTypeCategory::Interval),
             "Composite" => Some(DataTypeCategory::Composite),
@@ -135,7 +135,7 @@ impl DataTypeCategory {
             DataTypeCategory::Search,
             DataTypeCategory::Array,
             DataTypeCategory::UUID,
-            DataTypeCategory::Monetary,
+            DataTypeCategory::Money,
             DataTypeCategory::BitString,
             DataTypeCategory::Interval,
             DataTypeCategory::Composite,
@@ -163,8 +163,10 @@ impl DataTypeCategory {
                     ),
                     DataTypeCategory::Boolean => types_for_database
                         .add_postgres_type(self.to_string(), PostgresTypes::Boolean),
-                    DataTypeCategory::Numeric => types_for_database
-                        .add_postgres_type(self.to_string(), PostgresTypes::Numeric),
+                    DataTypeCategory::Numeric => {
+                        types_for_database.add_postgres_type(self.to_string(), PostgresTypes::BigInt);
+                        types_for_database.add_postgres_type(self.to_string(), PostgresTypes::BigSerial)
+                    }
                     DataTypeCategory::DateTime => types_for_database
                         .add_postgres_type(self.to_string(), PostgresTypes::Timestamp),
                     DataTypeCategory::Text => {
@@ -184,7 +186,7 @@ impl DataTypeCategory {
                     DataTypeCategory::UUID => {
                         types_for_database.add_postgres_type(self.to_string(), PostgresTypes::Uuid)
                     }
-                    DataTypeCategory::Monetary => {
+                    DataTypeCategory::Money => {
                         types_for_database.add_postgres_type(self.to_string(), PostgresTypes::Money)
                     }
                     DataTypeCategory::BitString => {
@@ -201,226 +203,36 @@ impl DataTypeCategory {
 
                 types_for_database
             }
-            DatabaseType::Mysql => {
-                let mut types_for_database =
-                    TypesForDatabase::get_types(self, &database_type, category);
-
-                match self {
-                    DataTypeCategory::Array => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Json)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-
-                    DataTypeCategory::Boolean => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Boolean)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Numeric => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Decimal)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::DateTime => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::DateTime)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Text => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Geometric => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Point)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::NetworkAddress => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::BigInt)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Json => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Json)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Search => todo!(),
-                    DataTypeCategory::UUID => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::VarChar)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Monetary => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Float)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::BitString => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Bit)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Interval => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Int)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Composite => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Json)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Range => {
-                        types_for_database
-                            .add_mysql_type(self.to_string(), MySqlTypes::Json)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Other => todo!(),
-                }
-
-                types_for_database
-            }
-            DatabaseType::Sqlite => {
-                let mut types_for_database = TypesForDatabase::new();
-
-                match self {
-                    DataTypeCategory::Array => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-
-                    DataTypeCategory::Boolean => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Integer)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Numeric => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Real)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::DateTime => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Text => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Geometric => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Blob)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::NetworkAddress => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Json => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Search => todo!(),
-                    DataTypeCategory::UUID => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Monetary => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Real)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::BitString => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Interval => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Composite => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Range => {
-                        types_for_database
-                            .add_sqlite_type(self.to_string(), SqliteTypes::Text)
-                            .unwrap_or_else(|_| {
-                                panic!("Could not add {} to types_for_database", self.to_string())
-                            });
-                    }
-                    DataTypeCategory::Other => todo!(),
-                }
-
-                types_for_database
-            }
+            DatabaseType::Mysql => todo!(),
+            DatabaseType::Sqlite => todo!(),
             DatabaseType::Mongo => todo!(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_category_methods() {
+        let database_type = DatabaseType::Postgres;
+        let data_type_category = DataTypeCategory::Boolean;
+
+        let types_for_database =
+            data_type_category.get_data_types_from_data_type_category(database_type);
+
+        // assert that categories isn't null
+        assert!(!types_for_database.postgres.types.is_empty());
+
+        let postgres_types = types_for_database.get_postgres_types(&data_type_category);
+
+        assert_eq!(postgres_types, vec![PostgresTypes::Boolean]);
+
+        //print them
+        for i in postgres_types {
+            println!("Postgres Type: {:?}", i);
         }
     }
 }
