@@ -66,11 +66,25 @@ impl TypesForDatabase {
         }
     }
 
-    pub fn get_postgres_types<'a>(&'a self, category: &'a DataTypeCategory) -> impl Iterator + 'a {
+    pub fn get_postgres_types<'a>(&'a self, category: &'a DataTypeCategory) -> Vec<PostgresTypes> {
         let types_for_database =
             category.get_data_types_from_data_type_category(DatabaseType::Postgres);
 
-        types_for_database.postgres.types.into_iter()
+        let mut entries: Vec<PostgresTypes> = match types_for_database {
+            TypesForDatabase {
+                postgres: PostgresTypesMap { types },
+                ..
+            } => types
+                .into_iter()
+                .map(|(_, types)| types)
+                .flatten()
+                .collect(),
+        };
+
+        // This will not work unless you implement or derive PartialOrd for PostgresTypes
+        entries.sort();
+
+        entries
     }
 
     pub fn get_mysql_types<'a>(&'a self, category: &'a DataTypeCategory) -> impl Iterator + 'a {
