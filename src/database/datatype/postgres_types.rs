@@ -1,12 +1,12 @@
 use std::{cmp::Ordering, collections::HashMap};
-
+use strum_macros::Display;
 use super::DataTypeCategory;
 
 /// The PostgreSQL data types are used to define a type of a column of a table.
 /// In addition, a column can be defined as a computed column, using an expression
 /// that evaluates to a value of scalar type.
 /// - https://www.postgresql.org/docs/12/datatype.html
-#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Display, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
 pub enum PostgresTypes {
     /// A 2 byte signed integer.
     /// - Range: -32768 to +32767
@@ -119,7 +119,7 @@ pub enum PostgresTypes {
     /// - Alias: CHAR VARYING
     /// - Note: The varchar type is used when you want to store a string that can be up to 10485760 bytes long.
     /// - https://www.postgresql.org/docs/12/datatype-character.html#DATATYPE-VARCHAR
-    Varchar,
+    VarChar,
     /// A variable length character string.
     /// - Range: 1 to 10485760
     /// - Storage Size: 1 byte + the actual string
@@ -173,7 +173,7 @@ pub enum PostgresTypes {
     /// - Alias: -
     /// - Note: The bytea type is used when you want to store a string of bytes.
     /// - https://www.postgresql.org/docs/12/datatype-binary.html#DATATYPE-BYTEA
-    Bytea,
+    ByteA,
     /// Both date and time (no time zone).
     /// - Range: 4713 BC to 294276 AD
     /// - Storage Size: 8 bytes
@@ -362,7 +362,7 @@ pub enum PostgresTypes {
     /// - Alias: -
     /// - Note: The macaddr type is used when you want to store a MAC address.
     /// - https://www.postgresql.org/docs/12/datatype-net-types.html#DATATYPE-MACADDR
-    Macaddr,
+    MacAddr,
     /// The macaddr8 type is used when you want to store a MAC address (EUI-64 format).
     /// - Range: -
     /// - Storage Size: 8 bytes
@@ -371,7 +371,7 @@ pub enum PostgresTypes {
     /// - Alias: -
     /// - Note: The macaddr8 type is used when you want to store a MAC address (EUI-64 format).
     /// - https://www.postgresql.org/docs/12/datatype-net-types.html#DATATYPE-MACADDR8
-    Macaddr8,
+    MacAddr8,
     /// Bit strings are strings of 1's and 0's.
     /// - Range: -
     /// - Storage Size: 1 or 4 bytes + 1 byte for each 8 bits
@@ -536,29 +536,59 @@ pub enum PostgresTypes {
     Array(Box<PostgresTypes>),
 }
 
+#[derive(Debug, Display, Clone, PartialEq, std::cmp::Eq)]
+pub enum ConstraintType {
+    PrimaryKey,
+    Unique,
+    ForeignKey,
+    Check,
+    Default,
+    NotNull,
+    UniqueIndex,
+    CheckIndex,
+}
+
+
 #[derive(Debug, Clone, PartialEq, std::cmp::Eq)]
 pub struct PostgresTypesMap {
     pub types: HashMap<String, Vec<PostgresTypes>>,
 }
 
 impl PostgresTypes {
+    /// Returns the `DataTypeCategory` corresponding to a specific `PostgresTypes` variant.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustyroad::database::PostgresTypes;
+    /// use rustyroad::database::DataTypeCategory;
+    ///
+    /// let data_type = PostgresTypes::Boolean;
+    /// let category = data_type.category();
+    /// assert_eq!(category, DataTypeCategory::Numeric);
+    /// ```
     pub fn category(&self) -> DataTypeCategory {
+        // Match each variant of `PostgresTypes` and associate it with a `DataTypeCategory`.
         match self {
+            // Numeric category
             PostgresTypes::Boolean
             | PostgresTypes::Serial
             | PostgresTypes::Bit
             | PostgresTypes::BitVarying
             | PostgresTypes::Money => DataTypeCategory::Numeric,
 
+            // DateTime category
             PostgresTypes::TimeWithTimeZone
             | PostgresTypes::TimestampWithTimeZone
             | PostgresTypes::Interval => DataTypeCategory::DateTime,
 
+            // Text category
             PostgresTypes::Json
             | PostgresTypes::JsonB
             | PostgresTypes::Xml
             | PostgresTypes::Enum => DataTypeCategory::Text,
 
+            // Geometric category
             PostgresTypes::Point
             | PostgresTypes::Line
             | PostgresTypes::Lseg
@@ -567,14 +597,19 @@ impl PostgresTypes {
             | PostgresTypes::Polygon
             | PostgresTypes::Circle => DataTypeCategory::Geometric,
 
+            // NetworkAddress category
             PostgresTypes::Inet | PostgresTypes::Cidr => DataTypeCategory::NetworkAddress,
 
+            // Search category
             PostgresTypes::TsVector | PostgresTypes::TsQuery => DataTypeCategory::Search,
 
+            // Array category
             PostgresTypes::Array(_) => DataTypeCategory::Array,
 
+            // UUID category
             PostgresTypes::Uuid => DataTypeCategory::UUID,
 
+            // Range category
             PostgresTypes::PgSnapshot
             | PostgresTypes::TxidSnapshot
             | PostgresTypes::Int4Range
@@ -584,35 +619,60 @@ impl PostgresTypes {
             | PostgresTypes::TstzRange
             | PostgresTypes::PgLsn
             | PostgresTypes::DateRange => DataTypeCategory::Range,
-            PostgresTypes::Numeric => DataTypeCategory::Numeric,
-            PostgresTypes::SmallInt => DataTypeCategory::Numeric,
-            PostgresTypes::Integer => DataTypeCategory::Numeric,
-            PostgresTypes::BigInt => DataTypeCategory::Numeric,
-            PostgresTypes::Decimal => DataTypeCategory::Numeric,
-            PostgresTypes::Real => DataTypeCategory::Numeric,
-            PostgresTypes::DoublePrecision => DataTypeCategory::Numeric,
-            PostgresTypes::SmallSerial => DataTypeCategory::Numeric,
-            PostgresTypes::BigSerial => DataTypeCategory::Numeric,
-            PostgresTypes::Varchar => todo!(),
-            PostgresTypes::CharVarying => todo!(),
-            PostgresTypes::CharacterVarying => todo!(),
-            PostgresTypes::Char => todo!(),
-            PostgresTypes::Character => todo!(),
-            PostgresTypes::Text => todo!(),
-            PostgresTypes::Bytea => todo!(),
-            PostgresTypes::Timestamp => todo!(),
-            PostgresTypes::TimestampWithoutTimeZone => todo!(),
-            PostgresTypes::Date => todo!(),
-            PostgresTypes::Time => todo!(),
-            PostgresTypes::TimeWithoutTimeZone => todo!(),
-            PostgresTypes::PathOpen => todo!(),
-            PostgresTypes::Macaddr => todo!(),
-            PostgresTypes::Macaddr8 => todo!(),
+
+            // Numeric types
+            PostgresTypes::Numeric
+            | PostgresTypes::SmallInt
+            | PostgresTypes::Integer
+            | PostgresTypes::BigInt
+            | PostgresTypes::Decimal
+            | PostgresTypes::Real
+            | PostgresTypes::DoublePrecision
+            | PostgresTypes::SmallSerial
+            | PostgresTypes::BigSerial => DataTypeCategory::Numeric,
+
+            // Unhandled types (TODO)
+            PostgresTypes::VarChar
+            | PostgresTypes::CharVarying
+            | PostgresTypes::CharacterVarying
+            | PostgresTypes::Char
+            | PostgresTypes::Character
+            | PostgresTypes::Text
+            | PostgresTypes::ByteA
+            | PostgresTypes::Timestamp
+            | PostgresTypes::TimestampWithoutTimeZone
+            | PostgresTypes::Date
+            | PostgresTypes::Time
+            | PostgresTypes::TimeWithoutTimeZone
+            | PostgresTypes::PathOpen
+            | PostgresTypes::MacAddr
+            | PostgresTypes::MacAddr8 => DataTypeCategory::Other,
         }
     }
 
     /// Orders the types by alphabetical order.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustyroad::database::PostgresTypes;
+    ///
+    /// let mut types = vec![
+    ///     PostgresTypes::Text,
+    ///     PostgresTypes::Integer,
+    ///     PostgresTypes::Boolean,
+    /// ];
+    ///
+    /// PostgresTypes::order_by_alphabetical_order(&mut types);
+    ///
+    /// assert_eq!(types, vec![
+    ///     PostgresTypes::Boolean,
+    ///     PostgresTypes::Integer,
+    ///     PostgresTypes::Text,
+    /// ]);
+    /// ```
     pub fn order_by_alphabetical_order(types: &mut Vec<PostgresTypes>) {
+        // Sort the vector of `PostgresTypes` instances in alphabetical order.
         types.sort_by(|a, b| {
             let a = format!("{:?}", a);
             let b = format!("{:?}", b);
@@ -620,6 +680,7 @@ impl PostgresTypes {
         });
     }
 }
+
 
 impl Ord for PostgresTypesMap {
     fn cmp(&self, other: &Self) -> Ordering {
