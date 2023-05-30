@@ -1,6 +1,6 @@
 use super::database::Database;
-use crate::database::*;
 use crate::database::DataTypeCategory;
+use crate::database::*;
 use crate::generators::create_file;
 use crate::writers::write_to_file;
 use crate::Project;
@@ -45,7 +45,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
         .name("reductor".into())
         .stack_size(64 * 1024 * 1024); // 32MB of stack space
 
-    let handler = builder.spawn(move || -> Result<String, io::Error> {
+    let handler = builder.spawn(move || {
         let path = std::env::current_dir().unwrap();
 
         if std::fs::read_to_string(path.join("rustyroad.toml")).is_err() {
@@ -88,9 +88,9 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
         create_file(&format!("{}/up.sql", folder_name).to_string())
             .unwrap_or_else(|why| panic!("Couldn't create {}: {}", &name, why.to_string()));
 
-        // let up_file = format!("{}/up.sql", folder_name).to_string();
+        let up_file = format!("{}/up.sql", folder_name).to_string();
 
-        // let down_file = format!("{}/down.sql", folder_name).to_string();
+        let down_file = format!("{}/down.sql", folder_name).to_string();
 
         // Create the down.sql file
         create_file(&format!("{}/down.sql", folder_name).to_string())
@@ -100,16 +100,12 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
         let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
             panic!("Failed to create rustyline editor: {}", why.to_string());
         });
-        #[cfg(feature = "with-file-history")]
-        if rl.load_history("history.txt").is_err() {
-            println!("No previous history.");
-        }
 
         // // Prompt the user for SQL queries for the up.sql file
-        // let mut up_sql_contents = String::new();
-        // let mut down_sql_contents = String::new();
+        let mut up_sql_contents = String::new();
+        let mut down_sql_contents = String::new();
 
-        // let table_name = name.to_string();
+        let table_name = name.to_string();
 
         // ask the user how many columns they want to add
 
@@ -122,26 +118,29 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
         // loop through the number of columns and ask the user for the column name, type, and constraints
 
         for _ in 0..num_columns.parse::<i32>().unwrap() {
-            // let column_name = rl
-            //     .readline("Enter the name of the column: ")
-            //     .unwrap_or_else(|why| {
-            //         panic!("Failed to read column name: {}", why.to_string());
-            //     });
+            let column_name = rl
+                .readline("Enter the name of the column: ")
+                .unwrap_or_else(|why| {
+                    panic!("Failed to read column name: {}", why.to_string());
+                });
 
-            let database: Database = Database::get_database_from_rustyroad_toml()?.into();
-
-            
+            let database: Database = Database::get_database_from_rustyroad_toml()?;
 
             let database_type: DatabaseType = database.clone().database_type;
 
-            // initalize data types
-            let mut all_available_db_types_for_postgres: Vec<DataTypeCategory> = DataTypeCategory::get_all_categories();
+            // initialize data types
+            let mut all_available_db_types_for_postgres: Vec<DataTypeCategory> =
+                DataTypeCategory::get_all_categories();
             // match the available column types to the database type
             // need to get the values from the enum of the database type
             all_available_db_types_for_postgres.sort();
             println!("Column Types: ");
 
-            for (index, column_type) in all_available_db_types_for_postgres.clone().into_iter().enumerate() {
+            for (index, column_type) in all_available_db_types_for_postgres
+                .clone()
+                .into_iter()
+                .enumerate()
+            {
                 println!("{}. {}", index + 1, column_type);
             }
 
@@ -150,8 +149,10 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                 // Ask the user for the column type and give them a list of available types
                 .readline("Enter the type of the column: ")
                 .unwrap_or_else(|why| {
-                    panic!("Failed to read column type: {}", why.to_string());
+                    panic!("Failed to read column type: {}", why);
                 });
+
+
 
             // match the column type to the data type
             let data_type_category = match column_type.trim() {
@@ -182,236 +183,149 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
 
             // # Name: data_types_for_category
             // ### Description: Holds the types for the database and the selcted category
-            let data_types_for_category = data_type_category.get_data_types_from_data_type_category(database_type);
+            let data_types_for_category =
+                data_type_category.get_data_types_from_data_type_category(database_type);
 
-            let database_types = data_types_for_category.get_postgres_types(&data_type_category);
+            let database_types = TypesForDatabase::get_postgres_types(&data_types_for_category, &data_type_category);
 
-
-            // print the data types for the category
-            println!("Data Types: ");
-            for i in database_types {
-                println!("Postgres Type: {:?}", i);
+            // Print the available types for the selected category
+            println!("Available types for the selected category: ");
+            for (index, database_type) in database_types.clone().into_iter().enumerate() {
+                println!("{:#?}. {:#?}", index + 1, database_type);
             }
 
-            // loop through the data types for the category and print them out
-            // loop through the data types for the category and print them out
-            // println!("Data Types: ");
-            // for (index, data_type) in data_types_for_category.into_iter().enumerate() {
-            //     println!("{}. {}", index + 1, data_type);
-            // }
+            // prompt the user for the column type
+            let new_type = rl
+                // Ask the user for the column type and give them a list of available types
+                .readline("Enter the type of the column: ")
+                .unwrap_or_else(|why| panic!("Failed to read column type: {}", why.to_string()));
+//bug is here, this won't work because the category is dynamic .
 
-            // // prompt the user for the column type
-            // let new_type = rl
-            //     // Ask the user for the column type and give them a list of available types
-            //     .readline("Enter the type of the column: ")
-            //     .unwrap_or_else(|why| panic!("Failed to read column type: {}", why.to_string()));
+            // the item we are matching agaains is a subcategory not a main.
+            // Ie. VarChar is a subcategory of text.
+            // VarChar is the Postgres type, text is the category for rustyroad.
 
-            // // match the column type to the data type
-            // let column_type = match new_type.trim() {
-            //     "1" => "BOOLEAN",
-            //     "2" => "INTEGER",
-            //     "3" => "FLOAT",
-            //     "4" => "VARCHAR(255)",
-            //     "5" => "DATE",
-            //     "6" => "TIME",
-            //     "7" => "TIMESTAMP",
-            //     "8" => "JSON",
-            //     "9" => "ARRAY",
-            //     "10" => "UUID",
-            //     "11" => "MONEY",
-            //     "12" => "BITSTRING",
-            //     "13" => "INTERVAL",
-            //     "14" => "COMPOSITE",
-            //     "15" => "RANGE",
-            //     "16" => "OTHER",
-            //     _ => {
-            //         println!("Invalid input. Please enter a number between 1 and 16.");
-            //         continue; // Ask again if input is invalid
-            //     }
-            // };
+            // we need to match the number the user selectes against the database type
+            let column_type = match new_type.trim() {
+                "1" => database_types[0].clone(),
+                "2" => database_types[1].clone(),
+                "3" => database_types[2].clone(),
+                "4" => database_types[3].clone(),
+                "5" => database_types[4].clone(),
+                "6" => database_types[5].clone(),
+                "7" => database_types[6].clone(),
+                "8" => database_types[7].clone(),
+                "9" => database_types[8].clone(),
+                "10" => database_types[9].clone(),
+                "11" => database_types[10].clone(),
+                "12" => database_types[11].clone(),
+                "13" => database_types[12].clone(),
+                "14" => database_types[13].clone(),
+                "15" => database_types[14].clone(),
+                "16" => database_types[15].clone(),
+                _ => {
+                    println!("Invalid input. Please enter a number between 1 and 16.");
+                    continue; // Ask again if input is invalid
+                }
+            };
 
-            // // prompt the user for the column constraints
-            // let column_constraints = rl
-            //     .readline("Enter the constraints of the column: ")
-            //     .unwrap_or_else(|why| {
-            //         panic!("Failed to read column constraints: {}", why.to_string());
-            //     });
+            // print what the user just selected
+            println!("You selected: {}", column_type);
 
-            // // Ask if the column is nullable
-            // let nullable_input = rl
-            //     .readline("Is the column nullable? (y/n): ")
-            //     .unwrap_or_else(|why| {
-            //         panic!("Failed to read nullable: {}", why.to_string());
-            //     });
+            // prompt the user for the column constraints
+            let column_constraints = rl
+                .readline("Enter the constraints of the column: ")
+                .unwrap_or_else(|why| {
+                    panic!("Failed to read column constraints: {}", why.to_string());
+                });
 
-            // // Convert input to bool
-            // let nullable = match nullable_input.trim().to_lowercase().as_str() {
-            //     "y" => true,
-            //     "n" => false,
-            //     _ => {
-            //         println!("Invalid input. Please enter 'y' for yes or 'n' for no.");
-            //         continue; // Ask again if input is invalid
-            //     }
-            // };
+            // Ask if the column is nullable
+            let nullable_input = rl
+                .readline("Is the column nullable? (y/n): ")
+                .unwrap_or_else(|why| {
+                    panic!("Failed to read nullable: {}", why.to_string());
+                });
 
-            // // validate the column type to sql type
-            // match column_type {
-            //     "varchar(255)" => {
-            //         // ask the user for the length of the string
-            //         let string_length = rl
-            //             .readline("Enter the length of the string: ")
-            //             .unwrap_or_else(|why| {
-            //                 panic!("Failed to read string length: {}", why.to_string());
-            //             });
+            // Convert input to bool
+            let nullable = match nullable_input.trim().to_lowercase().as_str() {
+                "y" => true,
+                "n" => false,
+                _ => {
+                    println!("Invalid input. Please enter 'y' for yes or 'n' for no.");
+                    continue; // Ask again if input is invalid
+                }
+            };
 
-            //         match nullable {
-            //             true => {
-            //                 // add the column to the up.sql file
-            //                 up_sql_contents.push_str(&format!(
-            //                     "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) {};",
-            //                     table_name, column_name, string_length, column_constraints
-            //                 ));
-            //                 up_sql_contents.push('\n');
+            // validate the column type to sql type
+            match column_type {
+                postgres_types::PostgresTypes::VarChar => {
+                    // ask the user for the length of the string
+                    let string_length = rl
+                        .readline("Enter the length of the string: ")
+                        .unwrap_or_else(|why| {
+                            panic!("Failed to read string length: {}", why.to_string());
+                        });
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) NULL {};",
+                                table_name, column_name, string_length, column_constraints
+                            ));
 
-            //                 // add the column to the up.sql file
-            //                 down_sql_contents.push_str(&format!(
-            //                     "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) {};",
-            //                     table_name, column_name, string_length, column_constraints
-            //                 ));
-            //                 down_sql_contents.push('\n');
-            //             }
-            //             false => {
-            //                 // add the column to the up.sql file
-            //                 up_sql_contents.push_str(&format!(
-            //                     "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) NOT NULL {};",
-            //                     table_name, column_name, string_length, column_constraints
-            //                 ));
-            //                 up_sql_contents.push('\n');
+                            // mapp contraints to sql
 
-            //                 // add the column to the up.sql file
-            //                 down_sql_contents.push_str(&format!(
-            //                     "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) NOT NULL {};",
-            //                     table_name, column_name, string_length, column_constraints
-            //                 ));
-            //                 down_sql_contents.push('\n');
-            //             }
-            //         }
+                            up_sql_contents.push('\n');
 
-            //         // add the column to the up.sql file
-            //         down_sql_contents.push_str(&format!(
-            //             "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) {};",
-            //             table_name, column_name, string_length, column_constraints
-            //         ));
-            //         down_sql_contents.push('\n');
+                            // add the column to the down.sql file
+                            down_sql_contents.push_str(&format!(
+                              "DELETE FROM {} WHERE {} IS NULL;",
+                                table_name, column_name
+                            ));
+                            down_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) NOT NULL {};",
+                                table_name, column_name, string_length, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
 
-            //         // write the up.sql file
-            //         write_to_file(&up_file, up_sql_contents.as_bytes()).unwrap_or_else(|why| {
-            //             panic!("Couldn't write to up.sql: {}", why.to_string())
-            //         });
+                            // add the column to the up.sql file
+                            down_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) NOT NULL {};",
+                                table_name, column_name, string_length, column_constraints
+                            ));
+                            down_sql_contents.push('\n');
+                        }
+                    }
 
-            //         // write the down.sql file
-            //         down_sql_contents.push_str(&format!(
-            //             "ALTER TABLE {} DROP COLUMN {};",
-            //             table_name, column_name
-            //         ));
-            //         down_sql_contents.push('\n');
 
-            //         // write the down.sql file
-            //         write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
-            //             panic!("Couldn't write to down.sql: {}", why.to_string())
-            //         });
 
-            //         continue;
-            //     }
-            //     "integer" => {
-            //         // add the column to the down.sql file
-            //         down_sql_contents.push_str(&format!(
-            //             "ALTER TABLE {} ADD COLUMN {} INT {};",
-            //             table_name, column_name, column_constraints
-            //         ));
-            //         down_sql_contents.push('\n');
+                    // write the up.sql file
+                    write_to_file(&up_file, up_sql_contents.as_bytes()).unwrap_or_else(|why| {
+                        panic!("Couldn't write to up.sql: {}", why.to_string())
+                    });
 
-            //         // write the up.sql file
-            //         write_to_file(&up_file, up_sql_contents.as_bytes()).unwrap_or_else(|why| {
-            //             panic!("Couldn't write to up.sql: {}", why.to_string())
-            //         });
 
-            //         // write the down.sql file
-            //         write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
-            //             panic!("Couldn't write to down.sql: {}", why.to_string())
-            //         });
+                    // write the down.sql file
+                    write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
+                        panic!("Couldn't write to down.sql: {}", why.to_string())
+                    });
 
-            //         continue;
-            //     }
-            //     "float" => {
-            //         // add the column to the down.sql file
-            //         down_sql_contents.push_str(&format!(
-            //             "ALTER TABLE {} ADD COLUMN {} FLOAT {};",
-            //             table_name, column_name, column_constraints
-            //         ));
-            //         down_sql_contents.push('\n');
-
-            //         // write the up.sql file
-            //         write_to_file(&up_file, up_sql_contents.as_bytes()).unwrap_or_else(|why| {
-            //             panic!("Couldn't write to up.sql: {}", why.to_string())
-            //         });
-
-            //         // write the down.sql file
-            //         write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
-            //             panic!("Couldn't write to down.sql: {}", why.to_string())
-            //         });
-
-            //         continue;
-            //     }
-            //     "boolean" => {
-            //         // add the column to the down.sql file
-            //         down_sql_contents.push_str(&format!(
-            //             "ALTER TABLE {} ADD COLUMN {} BOOLEAN {};",
-            //             table_name, column_name, column_constraints
-            //         ));
-            //         down_sql_contents.push('\n');
-
-            //         // write the up.sql file
-            //         write_to_file(&up_file, up_sql_contents.as_bytes()).unwrap_or_else(|why| {
-            //             panic!("Couldn't write to up.sql: {}", why.to_string())
-            //         });
-
-            //         // write the down.sql file
-            //         write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
-            //             panic!("Couldn't write to down.sql: {}", why.to_string())
-            //         });
-
-            //         continue;
-            //     }
-            //     "date" => {
-            //         // add the column to the down.sql file
-            //         down_sql_contents.push_str(&format!(
-            //             "ALTER TABLE {} ADD COLUMN {} DATE {};",
-            //             table_name, column_name, column_constraints
-            //         ));
-            //         down_sql_contents.push('\n');
-
-            //         // write the up.sql file
-            //         write_to_file(&up_file, up_sql_contents.as_bytes()).unwrap_or_else(|why| {
-            //             panic!("Couldn't write to up.sql: {}", why.to_string())
-            //         });
-
-            //         // write the down.sql file
-            //         write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
-            //             panic!("Couldn't write to down.sql: {}", why.to_string())
-            //         });
-
-            //         continue;
-            //     }
-            //     _ => {
-            //         // let the user know that the data type is not supported
-            //         println!(
-            //             "The data type {} is not supported. Please try again.",
-            //             column_type
-            //         );
-            //         continue;
-            //     }
-            //}
+                    continue;
+                }
+              _ => {
+                    // let the user know that the data type is not supported
+                    println!(
+                        "The data type {} is not supported. Please try again.",
+                        column_type
+                    );
+                    continue;
+                }
+            }
         }
 
         Ok(name.clone().to_owned())
