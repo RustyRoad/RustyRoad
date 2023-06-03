@@ -199,7 +199,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                 // Ask the user for the column type and give them a list of available types
                 .readline("Enter the type of the column: ")
                 .unwrap_or_else(|why| panic!("Failed to read column type: {}", why.to_string()));
-//bug is here, this won't work because the category is dynamic .
+            //bug is here, this won't work because the category is dynamic .
 
             // the item we are matching agaains is a subcategory not a main.
             // Ie. VarChar is a subcategory of text.
@@ -277,13 +277,6 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // mapp contraints to sql
 
                             up_sql_contents.push('\n');
-
-                            // add the column to the down.sql file
-                            down_sql_contents.push_str(&format!(
-                              "DELETE FROM {} WHERE {} IS NULL;",
-                                table_name, column_name
-                            ));
-                            down_sql_contents.push('\n');
                         }
                         false => {
                             // add the column to the up.sql file
@@ -293,42 +286,681 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             ));
                             up_sql_contents.push('\n');
 
-                            // add the column to the up.sql file
-                            down_sql_contents.push_str(&format!(
-                                "ALTER TABLE {} ADD COLUMN {} VARCHAR({}) NOT NULL {};",
-                                table_name, column_name, string_length, column_constraints
-                            ));
-                            down_sql_contents.push('\n');
                         }
                     }
 
-
-
-                    // write the up.sql file
-                    write_to_file(&up_file, up_sql_contents.as_bytes()).unwrap_or_else(|why| {
-                        panic!("Couldn't write to up.sql: {}", why.to_string())
-                    });
-
-
-                    // write the down.sql file
-                    write_to_file(&down_file, down_sql_contents.as_bytes()).unwrap_or_else(|why| {
-                        panic!("Couldn't write to down.sql: {}", why.to_string())
-                    });
-
                     continue;
                 }
-              _ => {
-                    // let the user know that the data type is not supported
-                    println!(
-                        "The data type {} is not supported. Please try again.",
-                        column_type
-                    );
-                    continue;
+
+                PostgresTypes::SmallInt => {
+                  match nullable {
+                    true => {
+                        // add the sql and constraints to the up.sql file
+                        // if the column is nullable
+                        up_sql_contents.push_str(&format!(
+                            "ALTER TABLE {} ADD COLUMN {} SMALLINT NULL {};",
+                            table_name, column_name, column_constraints
+                        ));
+
+                        // mapp contraints to sql
+
+                        up_sql_contents.push('\n');
+                    }
+                    false => {
+                        // add the column to the up.sql file
+                        up_sql_contents.push_str(&format!(
+                            "ALTER TABLE {} ADD COLUMN {} SMALLINT NOT NULL {};",
+                            table_name, column_name, column_constraints
+                        ));
+                        up_sql_contents.push('\n');
+                    }
+                  }
                 }
+                PostgresTypes::Integer => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} INTEGER NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} INTEGER NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::BigInt => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} BIGINT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} BIGINT NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::Decimal => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} DECIMAL NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} DECIMAL NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::Real => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} REAL NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} REAL NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::DoublePrecision => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} DOUBLE PRECISION NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} DOUBLE PRECISION NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::Numeric => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} NUMERIC NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} NUMERIC NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::SmallSerial => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} SMALLSERIAL NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} SMALLSERIAL NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::Serial => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} SERIAL NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} SERIAL NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::BigSerial => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} BIGSERIAL NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} BIGSERIAL NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::Money => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} MONEY NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} MONEY NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::CharVarying => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} VARCHAR NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} VARCHAR NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::CharacterVarying => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} VARCHAR NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} VARCHAR NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::Char => {
+                    // add the column to the up.sql file
+                    up_sql_contents.push_str(&format!(
+                        "ALTER TABLE {} ADD COLUMN {} CHAR NOT NULL {};",
+                        table_name, column_name, column_constraints
+                    ));
+                    up_sql_contents.push('\n');
+                }
+                PostgresTypes::Character => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} CHAR NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} CHAR NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::Text => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} TEXT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+
+                            // mapp contraints to sql
+
+                            up_sql_contents.push('\n');
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} TEXT NOT NULL {};",
+                                table_name, column_name, column_constraints
+                            ));
+                            up_sql_contents.push('\n');
+                        }
+                    }
+                }
+                PostgresTypes::ByteA => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} BYTEA NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} BYTEA NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Timestamp => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIMESTAMP NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIMESTAMP NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::TimestampWithoutTimeZone => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIMESTAMP NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIMESTAMP NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::TimestampWithTimeZone => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIMESTAMP NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIMESTAMP NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Date => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} DATE NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} DATE NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Time => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIME NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIME NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::TimeWithoutTimeZone => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIME NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIME NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::TimeWithTimeZone => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIME NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} TIME NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Interval => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} INTERVAL NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} INTERVAL NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Boolean => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} BOOLEAN NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} BOOLEAN NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Enum => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable\zzzzzzz
+                }
+                PostgresTypes::Point => {}
+                PostgresTypes::Line => {}
+                PostgresTypes::Lseg => {}
+                PostgresTypes::Box => {}
+                PostgresTypes::Path => {}
+                PostgresTypes::PathOpen => {}
+                PostgresTypes::Polygon => {}
+                PostgresTypes::Circle => {}
+                PostgresTypes::Inet => {}
+                PostgresTypes::Cidr => {}
+                PostgresTypes::MacAddr => {}
+                PostgresTypes::MacAddr8 => {}
+                PostgresTypes::Bit => {}
+                PostgresTypes::BitVarying => {}
+                PostgresTypes::TsVector => {}
+                PostgresTypes::TsQuery => {}
+                PostgresTypes::Xml => {}
+                PostgresTypes::Json => {}
+                PostgresTypes::JsonB => {}
+                PostgresTypes::Uuid => {}
+                PostgresTypes::PgLsn => {}
+                PostgresTypes::PgSnapshot => {}
+                PostgresTypes::TxidSnapshot => {}
+                PostgresTypes::Int4Range => {}
+                PostgresTypes::Int8Range => {}
+                PostgresTypes::NumRange => {}
+                PostgresTypes::TsRange => {}
+                PostgresTypes::TstzRange => {}
+                PostgresTypes::DateRange => {}
+                PostgresTypes::Array(_) => {}
             }
+
+
         }
 
-        Ok(name.clone().to_owned())
+        // WRITE UP.SQL
+        write_to_file(&up_file, &up_sql_contents.into_bytes()).unwrap();
+
+        // Add Down.sql Statements to drop the table and the columns
+        // Add the drop table statement to the down.sql file
+         down_sql_contents.push_str(&format!("DROP TABLE {};", table_name));
+        write_to_file(&down_file, &down_sql_contents.into_bytes()).unwrap();
+
+
+        Ok(name.to_owned())
     })?;
 
     handler.join().unwrap()
