@@ -5,22 +5,21 @@ use crate::generators::create_file;
 use crate::writers::write_to_file;
 use crate::Project;
 use chrono::prelude::*;
-// Import Client from postgres crate
-use diesel_migrations::MigrationError;
 use rustyline::DefaultEditor;
-use sqlx::{postgres::PgPoolOptions, sqlite::SqlitePool};
-use std::error::Error as StdError;
+use sqlx::{Acquire, Connection, Executor, MySql, Postgres, postgres::PgPoolOptions, query, Transaction};
+use std::error::{Error as StdError, Error};
 use std::fmt;
 use std::fmt::Display;
 use std::fmt::Formatter;
-use std::fs::create_dir_all;
+use std::fs::{create_dir_all, DirEntry};
 use std::fs::{self};
 use std::io;
 use std::io::ErrorKind;
 use std::io::Read;
 use std::path::Path;
+use std::pin::Pin;
 use std::println;
-use std::thread;
+use std::sync::Arc;
 
 const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 
@@ -38,14 +37,10 @@ const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 ///
 /// create_migration("create_users_table").unwrap();
 /// ```
-pub fn create_migration(name: &str) -> Result<String, io::Error> {
-    let name = name.to_owned();
+pub fn create_migration(name: &str) -> Result<(), io::Error> {
+        let name = name.to_owned();
 
-    let builder = thread::Builder::new()
-        .name("reductor".into())
-        .stack_size(64 * 1024 * 1024); // 32MB of stack space
 
-    let handler = builder.spawn(move || {
         let path = std::env::current_dir().unwrap();
 
         if std::fs::read_to_string(path.join("rustyroad.toml")).is_err() {
@@ -81,7 +76,10 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
             Ok(_) => {}
             Err(_) => {
                 println!("Migration already exists");
-                return Ok("Migration already exists".to_string());
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "Migration already exists",
+                ));
             }
         }
 
@@ -151,8 +149,6 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                 .unwrap_or_else(|why| {
                     panic!("Failed to read column type: {}", why);
                 });
-
-
 
             // match the column type to the data type
             let data_type_category = match column_type.trim() {
@@ -666,7 +662,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // add the sql and constraints to the up.sql file
                             // if the column is nullable
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} BYTEA NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -676,7 +672,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                         false => {
                             // add the column to the up.sql file
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} BYTEA NOT NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -691,7 +687,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // add the sql and constraints to the up.sql file
                             // if the column is nullable
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIMESTAMP NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -701,7 +697,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                         false => {
                             // add the column to the up.sql file
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIMESTAMP NOT NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -716,7 +712,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // add the sql and constraints to the up.sql file
                             // if the column is nullable
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIMESTAMP NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -726,7 +722,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                         false => {
                             // add the column to the up.sql file
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIMESTAMP NOT NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -741,7 +737,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // add the sql and constraints to the up.sql file
                             // if the column is nullable
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIMESTAMP NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -751,7 +747,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                         false => {
                             // add the column to the up.sql file
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIMESTAMP NOT NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -766,7 +762,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // add the sql and constraints to the up.sql file
                             // if the column is nullable
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} DATE NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -776,7 +772,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                         false => {
                             // add the column to the up.sql file
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} DATE NOT NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -791,7 +787,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // add the sql and constraints to the up.sql file
                             // if the column is nullable
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIME NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -801,7 +797,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                         false => {
                             // add the column to the up.sql file
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIME NOT NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -816,7 +812,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // add the sql and constraints to the up.sql file
                             // if the column is nullable
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIME NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -826,7 +822,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                         false => {
                             // add the column to the up.sql file
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIME NOT NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -841,7 +837,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // add the sql and constraints to the up.sql file
                             // if the column is nullable
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIME NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -851,7 +847,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                         false => {
                             // add the column to the up.sql file
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} TIME NOT NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -866,7 +862,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // add the sql and constraints to the up.sql file
                             // if the column is nullable
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} INTERVAL NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -876,7 +872,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                         false => {
                             // add the column to the up.sql file
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} INTERVAL NOT NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -891,7 +887,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                             // add the sql and constraints to the up.sql file
                             // if the column is nullable
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} BOOLEAN NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -901,7 +897,7 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                         false => {
                             // add the column to the up.sql file
                             up_sql_contents.push_str(
-                                &format(
+                                &format!(
                                     "\
                                     ALTER TABLE {} ADD COLUMN {} BOOLEAN NOT NULL {};
                                     ",  &table_name, column_name, column_constraints
@@ -911,44 +907,609 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
                     }
                 }
                 PostgresTypes::Enum => {
+                  match nullable {
+                    true => {
+                        // add the sql and constraints to the up.sql file
+                        // if the column is nullable
+                        up_sql_contents.push_str(
+                            &format!(
+                                "\
+                                ALTER TABLE {} ADD COLUMN {} {} NULL {};
+                                ",  &table_name, column_name, column_type, column_constraints
+                            )
+                        );
+                    }
+                    false => {
+                        // add the column to the up.sql file
+                        up_sql_contents.push_str(
+                            &format!(
+                                "\
+                                ALTER TABLE {} ADD COLUMN {} {} NOT NULL {};
+                                ",  &table_name, column_name, column_type, column_constraints
+                            )
+                        );
+                    }
+                  }
+                }
+                PostgresTypes::Point => {
                     match nullable {
                         true => {
                             // add the sql and constraints to the up.sql file
-                            // if the column is nullable\zzzzzzz
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} POINT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} POINT NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
                 }
-                PostgresTypes::Point => {}
-                PostgresTypes::Line => {}
-                PostgresTypes::Lseg => {}
-                PostgresTypes::Box => {}
-                PostgresTypes::Path => {}
-                PostgresTypes::PathOpen => {}
-                PostgresTypes::Polygon => {}
-                PostgresTypes::Circle => {}
-                PostgresTypes::Inet => {}
-                PostgresTypes::Cidr => {}
-                PostgresTypes::MacAddr => {}
-                PostgresTypes::MacAddr8 => {}
-                PostgresTypes::Bit => {}
-                PostgresTypes::BitVarying => {}
-                PostgresTypes::TsVector => {}
-                PostgresTypes::TsQuery => {}
-                PostgresTypes::Xml => {}
-                PostgresTypes::Json => {}
-                PostgresTypes::JsonB => {}
-                PostgresTypes::Uuid => {}
-                PostgresTypes::PgLsn => {}
-                PostgresTypes::PgSnapshot => {}
-                PostgresTypes::TxidSnapshot => {}
-                PostgresTypes::Int4Range => {}
-                PostgresTypes::Int8Range => {}
-                PostgresTypes::NumRange => {}
-                PostgresTypes::TsRange => {}
-                PostgresTypes::TstzRange => {}
-                PostgresTypes::DateRange => {}
-                PostgresTypes::Array(_) => {}
+                PostgresTypes::Line => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} LINE NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} LINE NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Lseg => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} LSEG NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} LSEG NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Box => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} BOX NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} BOX NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Path => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} PATH NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} PATH NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::PathOpen => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} PATH OPEN NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} PATH OPEN NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Polygon => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} POLYGON NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} POLYGON NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Circle => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "\
+                                    ALTER TABLE {} ADD COLUMN {} CIRCLE NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!("\
+                                    ALTER TABLE {} ADD COLUMN {} CIRCLE NOT NULL {};
+                                    ",  &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Inet => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} INET NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} INET NOT NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                    }
+                }
+                PostgresTypes::Cidr => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} CIDR NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} CIDR NOT NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                    }
+                }
+                PostgresTypes::MacAddr => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} MACADDR NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} MACADDR NOT NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                    }
+                }
+                PostgresTypes::MacAddr8 => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} MACADDR8 NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} MACADDR8 NOT NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                    }
+                }
+                PostgresTypes::Bit => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} BIT NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} BIT NOT NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                    }
+                }
+                PostgresTypes::BitVarying => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} BIT VARYING NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} BIT VARYING NOT NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                    }
+                }
+                PostgresTypes::TsVector => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} TSVECTOR NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!(
+                                "ALTER TABLE {} ADD COLUMN {} TSVECTOR NOT NULL {};",
+                                &table_name, column_name, column_constraints
+                            ));
+                        }
+                    }
+                }
+                PostgresTypes::TsQuery => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} TSQUERY NULL {};", &table_name, column_name, column_constraints));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} TSQUERY NOT NULL {};", &table_name, column_name, column_constraints));
+                        }
+                    }
+                }
+                PostgresTypes::Xml => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "ALTER TABLE {} ADD COLUMN {} XML NULL {};",
+                                    &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "ALTER TABLE {} ADD COLUMN {} XML NOT NULL {};",
+                                    &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Json => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "ALTER TABLE {} ADD COLUMN {} JSON NULL {};",
+                                    &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "ALTER TABLE {} ADD COLUMN {} JSON NOT NULL {};",
+                                    &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::JsonB => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "ALTER TABLE {} ADD COLUMN {} JSONB NULL {};",
+                                    &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "ALTER TABLE {} ADD COLUMN {} JSONB NOT NULL {};",
+                                    &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Uuid => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "ALTER TABLE {} ADD COLUMN {} UUID NULL {};",
+                                    &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "ALTER TABLE {} ADD COLUMN {} UUID NOT NULL {};",
+                                    &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::PgLsn => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "ALTER TABLE {} ADD COLUMN {} PGLSN NULL {};",
+                                    &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!(
+                                    "ALTER TABLE {} ADD COLUMN {} PGLSN NOT NULL {};",
+                                    &table_name, column_name, column_constraints
+                                )
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::PgSnapshot => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!("ALTER TABLE {} ADD COLUMN {} PG_SNAPSHOT NULL {};", &table_name, column_name, column_constraints)
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!("ALTER TABLE {} ADD COLUMN {} PG_SNAPSHOT NOT NULL {};", &table_name, column_name, column_constraints)
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::TxidSnapshot => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(
+                                &format!("ALTER TABLE {} ADD COLUMN {} TXID_SNAPSHOT NULL {};", &table_name, column_name, column_constraints)
+                            );
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(
+                                &format!("ALTER TABLE {} ADD COLUMN {} TXID_SNAPSHOT NOT NULL {};", &table_name, column_name, column_constraints)
+                            );
+                        }
+                    }
+                }
+                PostgresTypes::Int4Range => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} INT4RANGE NULL {};", &table_name, column_name, column_constraints));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} INT4RANGE NOT NULL {};", &table_name, column_name, column_constraints));
+                        }
+                    }
+                }
+                PostgresTypes::Int8Range => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} INT8RANGE NULL {};", &table_name, column_name, column_constraints));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} INT8RANGE NOT NULL {};", &table_name, column_name, column_constraints));
+                        }
+                    }
+                }
+                PostgresTypes::NumRange => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} NUMRANGE NULL {};", &table_name, column_name, column_constraints));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} NUMRANGE NOT NULL {};", &table_name, column_name, column_constraints));
+                        }
+                    }
+                }
+
+                PostgresTypes::TsRange => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} TSRANGE NULL {};", &table_name, column_name, column_constraints));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} TSRANGE NOT NULL {};", &table_name, column_name, column_constraints));
+                        }
+                    }
+                }
+                PostgresTypes::TstzRange => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} TSTZRANGE NULL {};", &table_name, column_name, column_constraints));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} TSTZRANGE NOT NULL {};", &table_name, column_name, column_constraints));
+                        }
+                    }
+                }
+                PostgresTypes::DateRange => {
+                    match nullable {
+                        true => {
+                            // add the sql and constraints to the up.sql file
+                            // if the column is nullable
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} DATERANGE NULL {};", &table_name, column_name, column_constraints));
+                        }
+                        false => {
+                            // add the column to the up.sql file
+                            up_sql_contents.push_str(&format!("ALTER TABLE {} ADD COLUMN {} DATERANGE NOT NULL {};", &table_name, column_name, column_constraints));
+                        }
+                    }
+                }
+                PostgresTypes::Array(_) => {
+                   up_sql_contents = create_array(up_sql_contents.clone(), nullable).unwrap_or_else(
+                    |err| { panic!("Error creating array: {}", err) });
+                },
+
             }
-
-
         }
 
         // WRITE UP.SQL
@@ -960,11 +1521,10 @@ pub fn create_migration(name: &str) -> Result<String, io::Error> {
         write_to_file(&down_file, &down_sql_contents.into_bytes()).unwrap();
 
 
-        Ok(name.to_owned())
-    })?;
-
-    handler.join().unwrap()
+        Ok(())
 }
+
+
 /// ## Name: initialize_migration
 /// ### Description: Creates the initial migration directory and the up.sql and down.sql files for the initial migration
 /// ### Arguments:
@@ -1072,15 +1632,22 @@ impl From<Box<dyn StdError + Send + Sync>> for CustomMigrationError {
 /// run_migration("create_users_table").unwrap();
 /// ```
 pub async fn run_migration(
-    project: &Project,
-    migration_name: String,
-    database: Database,
+    migration_name: String
 ) -> Result<(), CustomMigrationError> {
-    // Generate the path to the migrations directory at runtime
-    let migrations_dir_path = format!("{}/{}", &project.migrations, &migration_name);
 
+    // get the database
+    let database: Database = Database::get_database_from_rustyroad_toml().unwrap();
+
+    let migrations_dir_path = format!("./config/database/migrations");
+    // find the folder that has the name of the migration in the migrations directory with the latest timestamp
+    let migration_dir_selected =find_migration_dir(migrations_dir_path.clone(), migration_name.clone()).unwrap_or_else(
+        |why| panic!("Couldn't find migration directory: {}", why.to_string())
+    );
+    // Generate the path to the migrations directory at runtime
+    let migration_dir = migrations_dir_path + &migration_dir_selected;
+    println!("Migration directory: {:?}", migration_dir);
     // Get migration files from the specified directory
-    let mut migration_files: Vec<_> = fs::read_dir(&migrations_dir_path)
+    let mut migration_files: Vec<_> = fs::read_dir(migration_dir)
         .unwrap_or_else(|why| panic!("Couldn't read migrations directory: {}", why.to_string()))
         .filter_map(Result::ok)
         .collect();
@@ -1088,132 +1655,258 @@ pub async fn run_migration(
     migration_files.sort_by_key(|entry| entry.file_name());
 
     // Print the path to the migration directory and the migration name
-    println!("Migration directory path: {:?}", migrations_dir_path);
+    println!("Migration directory path: {:?}", &migrations_dir_path);
     println!("Migration name: {:?}", &migration_name.clone());
 
+    // create the connection pool
+    let  connection = Database::create_database_connection(&database).await.unwrap_or_else(|why| {
+        panic!("Couldn't create database connection: {}", why.to_string())
+    });
+
     // Determine the type of database and run the migrations
-    match database.database_type {
-        database::DatabaseType::Sqlite => {
-            // Create a connection to the SQLite database
-            // Create a connection pool to the SQLite database
-            let pool = SqlitePool::connect(&project.config_dev_db)
-                .await
-                .unwrap_or_else(|why| panic!("Failed to connect to database: {}", why.to_string()));
+    match connection {
+        DatabaseConnection::Sqlite(mut connection) =>
+            execute_migration_with_connection(connection, migration_files).unwrap_or_else(|why| {
+                panic!("Couldn't execute migration: {}", why.to_string())
+            }),
 
-            for entry in migration_files {
-                let path = entry.path();
-                // Ignore non-SQL files
-                if path.extension() != Some(std::ffi::OsStr::new("sql")) {
-                    continue;
-                }
-                let mut file = fs::File::open(&path).unwrap_or_else(|why| {
-                    panic!("Failed to open migration file: {}", why.to_string())
-                });
-                let mut sql = String::new();
-                file.read_to_string(&mut sql).unwrap_or_else(|why| {
-                    panic!("Failed to read migration file: {}", why.to_string())
-                });
-
-                // Split the SQL statements and execute each one separately
-                let sql_statements: Vec<&str> = sql.split(';').collect();
-                for statement in sql_statements {
-                    if statement.trim().is_empty() {
-                        continue;
-                    }
-                    // Execute the SQL statement
-                    sqlx::query(statement)
-                        .execute(&pool)
-                        .await
-                        .unwrap_or_else(|why| {
-                            panic!("Failed to execute migration: {}", why.to_string())
-                        });
-                    println!("Applied migration: {:?}", path.file_name().unwrap());
-                }
-            }
+        DatabaseConnection::Pg(mut connection) => {
+            // Iterate over the migration files
+            for entry in migration_files
         }
-        database::DatabaseType::Postgres => {
-            // Create a connection pool to the PostgreSQL database
-            let pool = PgPoolOptions::new()
-                .max_connections(20)
-                .connect(&project.config_dev_db)
-                .await
-                .unwrap_or_else(|why| panic!("Failed to connect to database: {}", why.to_string()));
+        DatabaseConnection::MySql(mut connection) => {
 
-            for entry in migration_files {
-                let path = entry.path();
-                // Ignore non-SQL files
-                if path.extension() != Some(std::ffi::OsStr::new("sql")) {
-                    continue;
-                }
-                let mut file = fs::File::open(&path).unwrap_or_else(|why| {
-                    panic!("Failed to open migration file: {}", why.to_string())
-                });
-                let mut sql = String::new();
-                file.read_to_string(&mut sql).unwrap_or_else(|why| {
-                    panic!("Failed to read migration file: {}", why.to_string())
-                });
-
-                // Split the SQL statements and execute each one separately
-                let sql_statements: Vec<&str> = sql.split(';').collect();
-                for statement in sql_statements {
-                    if statement.trim().is_empty() {
-                        continue;
-                    }
-                    // Execute the SQL statement
-                    sqlx::query(statement)
-                        .execute(&pool)
-                        .await
-                        .unwrap_or_else(|why| {
-                            panic!("Failed to execute migration: {}", why.to_string())
-                        });
-                    println!("Applied migration: {:?}", path.file_name().unwrap());
-                }
-            }
-        }
-        database::DatabaseType::Mysql => {
-            // Create a connection pool to the MySQL database
-            // let pool = MySqlPool::connect(&database.config_dev_db).await?;
-            //
-            // for entry in migration_files {
-            //     let path = entry.path();
-            //     // Ignore non-SQL files
-            //     if path.extension() != Some(std::ffi::OsStr::new("sql")) {
-            //         continue;
-            //     }
-            //     let mut file = fs::File::open(&path)?;
-            //     let mut sql = String::new();
-            //     file.read_to_string(&mut sql)?;
-            //
-            //     // Execute the SQL statements from the migration file
-            //     sqlx::query(&sql).execute(&pool).await?;
-            //     println!("Applied migration: {:?}", path.file_name().unwrap());
-            // }
-            todo!("ya");
-        }
-        database::DatabaseType::Mongo => {
-            // Create a connection to the MongoDB database
-            // let client = mongodb::Client::with_uri_str(&database.config_dev_db).await?;
-            // let db = client.database("my_db"); // You need to specify the database name
-
-            // for entry in migration_files {
-            //     let path = entry.path();
-            //     // Ignore non-SQL files
-            //     if path.extension() != Some(std::ffi::OsStr::new("sql")) {
-            //         continue;
-            //     }
-            //     let mut file = fs::File::open(&path)?;
-            //     let mut sql = String::new();
-            //     file.read_to_string(&mut sql)?;
-
-            //     // Execute the SQL statements from the migration file
-            //     db.run_command(mongodb::bson::doc! { "eval": sql }, None).await?;
-            //     println!("Applied migration: {:?}", path.file_name().unwrap());
-            // }
-            // not implemented yet
-            todo!("MongoDB migrations are not implemented yet.");
         }
     }
 
     println!("Migration executed successfully");
     Ok(())
+}
+
+
+
+/// Create a new migration file
+/// # Arguments
+/// * `up_sql_contents` - The contents of the up.sql file
+///
+/// # Returns
+/// * `Result<String, Box<dyn Error>>` - The up_sql_content with Array column added or an error
+///
+/// # Example
+/// ```
+/// use rustyroad::RustyRoad;
+/// let nullable = false;
+/// let up_sql_contents = String::from("CREATE TABLE IF NOT EXISTS users (
+///    id SERIAL PRIMARY KEY,
+///   username VARCHAR(255) NOT NULL,
+///  password VARCHAR(255) NOT NULL,
+/// email VARCHAR(255) NOT NULL,
+/// created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+/// );
+/// ");
+/// let array = rustyroad::database::create_array(up_sql_contents, nullable);
+/// assert!(array.is_ok());
+/// ```
+///
+pub fn create_array(up_sql_contents: String, nullable: bool) -> Result<String, Box<dyn Error>> {
+    // ask the user how many dimensions the array should have
+    let  dimensions = String::new();
+    // Initialize the rustyline Editor with the default helper and in-memory history
+    let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
+        panic!("Failed to create rustyline editor: {}", why.to_string());
+    });
+    rl.readline_with_initial(
+        "How many dimensions should the array have? ",
+        (dimensions.as_str(), ""),
+    )
+        .unwrap_or_else(|why| panic!("Failed to read input: {}", why.to_string()));
+
+    // ask the user for the type of the array
+    let  array_type = String::new();
+    rl.readline_with_initial(
+        "What type should the array have? ",
+        (array_type.as_str(), ""),
+    )
+        .unwrap_or_else(|why| panic!("Failed to read input: {}", why.to_string()));
+
+    // ask the user for the name of the array
+    let  array_name = String::new();
+
+    rl.readline_with_initial(
+        "What should the name of the array be? ",
+        (array_name.as_str(), ""),
+    ).unwrap_or_else(|why| panic!("Failed to read input: {}", why.to_string()));
+
+    // ask the user for the size of the array
+    let  array_size = String::new();
+    rl.readline_with_initial(
+        "What should the size of the array be? ",
+        (array_size.as_str(), ""),
+    ).unwrap_or_else(|why| panic!("Failed to read input: {}", why.to_string()));
+
+    // add the array to the up_sql_contents
+    let mut up_sql_contents = up_sql_contents;
+
+    match nullable {
+        true => {
+            up_sql_contents.push_str(&format!(
+                "ALTER TABLE users ADD COLUMN {} {} ARRAY[{}] NULL;\n",
+                array_name, array_type, array_size
+            ));
+        }
+        false => {
+            up_sql_contents.push_str(&format!(
+                "ALTER TABLE users ADD COLUMN {} {} ARRAY[{}] NOT NULL;\n",
+                array_name, array_type, array_size
+            ));
+        }
+    }
+
+    Ok(up_sql_contents)
+}
+
+
+/// # Name: find_migration_dir
+/// ### Description: Find the migration directory of a given migration name
+/// ### This is used in case there are multiple migrations with the same name and different timestamps
+/// ### If there are multiple migrations with the same name and different timestamps, the user will be prompted to choose one
+/// ### If there is only one migration with the given name, the user will not be prompted to choose one
+/// Given: A migration name and a rustyroad project
+/// When: The user wants to execute a migration
+/// Then: The user will be prompted to choose a migration if there are multiple migrations with the same name and different timestamps
+/// Then: The user will not be prompted to choose a migration if there is only one migration with the given name
+/// Then: The path to the migration directory will be returned
+/// # Arguments
+/// * `migrations_dir_path` - The path to the migrations directory
+/// * `migration_name` - The name of the migration
+/// # Returns
+/// * `Result<String, Error>` - The path to the migration directory or an error
+pub fn find_migration_dir(migrations_dir_path: String, migration_name: String) -> Result<String, Box<dyn Error>> {
+    // Initialize the rustyline Editor with the default helper and in-memory history
+    let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
+        panic!("Failed to create rustyline editor: {}", why.to_string());
+    });
+
+    // get all the migration directories
+    let mut migration_dirs = Vec::new();
+    for entry in fs::read_dir(migrations_dir_path)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            migration_dirs.push(path);
+        }
+    }
+
+    // filter the migration directories by the migration name
+    let mut filtered_migration_dirs = Vec::new();
+    for migration_dir in migration_dirs {
+        let migration_dir_name = migration_dir.file_name()?.to_str().ok_or("Failed to convert OsStr to str")?;
+        if migration_dir_name.contains(&migration_name) {
+            filtered_migration_dirs.push(migration_dir);
+        }
+    }
+
+    // if there is only one migration directory with the given name, return it
+    if filtered_migration_dirs.len() == 1 {
+        return Ok(filtered_migration_dirs[0].to_str().unwrap().to_string());
+    }
+
+    // if there are multiple migration directories with the given name, prompt the user to choose one
+    if filtered_migration_dirs.len() > 1 {
+        let mut migration_dir_names = Vec::new();
+        for migration_dir in &filtered_migration_dirs {
+            let migration_dir_name = migration_dir.file_name().unwrap().to_str().unwrap();
+            migration_dir_names.push(migration_dir_name);
+        }
+        let mut migration_dir_name = rl.readline_with_initial(
+            "Which migration do you want to execute? ",
+            (migration_dir_names[0], ""),
+        ).unwrap_or_else(|why| panic!("Failed to read input: {}", why.to_string()));
+
+        print!("You chose: {}", migration_dir_name);
+
+        for migration_dir in filtered_migration_dirs {
+            let migration_dir_name_from_list = migration_dir.file_name()?.to_str().ok_or("Failed to convert OsStr to str")?;
+            if migration_dir_name == migration_dir_name_from_list {
+                return Ok(migration_dir.to_str().ok_or("Failed to convert PathBuf to str")?.to_string());
+            }
+        }
+
+    }
+
+    Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Failed to find migration directory")))
+}
+
+#[derive(Debug)]
+pub enum MigrationError {
+    Io(std::io::Error),
+    Sql(sqlx::Error),
+}
+
+impl From<std::io::Error> for MigrationError {
+    fn from(err: std::io::Error) -> MigrationError {
+        MigrationError::Io(err)
+    }
+}
+
+impl From<sqlx::Error> for MigrationError {
+    fn from(err: sqlx::Error) -> MigrationError {
+        MigrationError::Sql(err)
+    }
+}
+
+
+async fn execute_migration_with_connection(
+    connection: &DatabaseConnection,
+    migration_files: Vec<DirEntry>,
+) -> Result<String, MigrationError> {
+    for entry in migration_files {
+        let path = entry.path();
+        // Ignore non-SQL files
+        if path.extension() != Some(std::ffi::OsStr::new("sql")) {
+            continue;
+        }
+        let mut file = fs::File::open(&path)?;
+        let mut sql = String::new();
+        file.read_to_string(&mut sql)?;
+
+        // Split the SQL statements and execute each one separately
+        let sql_statements: Vec<&str> = sql.split(';').collect();
+        for statement in sql_statements {
+            if statement.trim().is_empty() {
+                continue;
+            }
+            // Execute the SQL statement
+            match connection {
+                DatabaseConnection::Pg(connection) => {
+                    let cloned_connection = Arc::clone(connection);
+                    cloned_connection.transaction(|connection| {
+                        Box::pin(async move {
+                            connection.execute(statement).await?;
+                            Ok(())
+                        }) as Pin<Box<dyn futures_util::Future<Output = Result<(), MigrationError>> + std::marker::Send>>
+                    }).await?;
+                }
+                DatabaseConnection::MySql(connection) => {
+                    let cloned_connection = Arc::clone(connection);
+                    cloned_connection.transaction(|connection| {
+                        Box::pin(async move {
+                            connection.execute(statement).await?;
+                            Ok(())
+                        }) as Pin<Box<dyn futures_util::Future<Output = Result<(), MigrationError>> + std::marker::Send>>
+                    }).await?;
+                }
+                DatabaseConnection::Sqlite(connection) => {
+                    let cloned_connection = Arc::clone(connection);
+                    cloned_connection.transaction(|connection| {
+                        Box::pin(async move {
+                            connection.execute(statement).await?;
+                            Ok(())
+                        }) as Pin<Box<dyn futures_util::Future<Output = Result<(), MigrationError>> + std::marker::Send>>
+                    }).await?;
+                }
+            }
+        }
+    }
+    Ok("Successfully executed migration".to_string())
 }
