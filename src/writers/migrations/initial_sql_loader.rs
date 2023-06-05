@@ -1,6 +1,3 @@
-use std::env;
-
-use sqlx::{Sqlite, SqlitePool};
 use crate::{database::Database, writers::write_to_file, Project};
 use bcrypt::{hash as new_hash, DEFAULT_COST};
 
@@ -93,10 +90,6 @@ pub async fn load_sql_for_new_project(
                     "INSERT OR IGNORE INTO Users (password, username, role_id) VALUES ('{hashed_admin_password}', 'admin', 1);"
                 ));
 
-            // Execute the migration
-            if let Err(e) = execute_sqlite_migration(project, statements.clone()).await {
-                panic!("Failed to execute migration: {e}");
-            }
 
             // create the down migration
             let mut down_statements = Vec::new();
@@ -340,22 +333,4 @@ CREATE TABLE Sessions (
     }
 
     Ok(statements)
-}
-
-pub async fn execute_sqlite_migration(
-    project: &Project,
-    statements: Vec<String>,
-) -> Result<(), sqlx::Error> {
-    // Set the DATABASE_URL environment variable
-    env::set_var("DATABASE_URL", &project.config_dev_db);
-
-    // Create a connection pool to the SQLite database
-    let pool = SqlitePool::connect(&project.config_dev_db).await?;
-
-    // Execute each SQL statement
-    for statement in statements {
-        sqlx::query::<Sqlite>(&statement).execute(&pool).await?;
-    }
-
-    Ok(())
 }

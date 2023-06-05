@@ -1,6 +1,12 @@
 // Add this import at the top of the `database.rs` file
 
+use std::error::Error;
 use std::fs;
+use std::future::Future;
+use std::pin::Pin;
+use std::str::FromStr;
+use futures_util::TryFutureExt;
+use sqlx::{postgres::*, sqlite::*, mysql::*, Connection};
 use toml::Value;
 
 #[derive(Debug, Clone, PartialEq, std::cmp::Eq)]
@@ -10,7 +16,7 @@ pub struct Database {
     pub password: String,
     pub host: String,
     pub port: String,
-    pub database_type: DatabaseType,
+    pub database_type: DatabaseType
 }
 /// # Name: Database
 /// ## Type: Struct
@@ -53,6 +59,81 @@ impl Database {
                 // this is defaulting, need to address the code running this line
                 _ => DatabaseType::Postgres,
             },
+
+        }
+    }
+
+    /// # Name: create_database_connection_string
+    /// ## Type: Function
+    /// ### Description
+    /// This function creates the connection string for the database.
+    /// This is used when creating a new project and the user wants to create a new database.
+    /// Example:
+    /// ```rust
+    /// use crate::database::Database;
+    /// let database = Database::new(
+    ///   "database_name".to_string(),
+    ///  "username".to_string(),
+    /// "password".to_string(),
+    /// "host".to_string(),
+    /// "port".to_string(),
+    /// "database_type".to_string(),
+    /// );
+    ///
+    /// let connection_string = database.create_database_connection_string(database);
+    ///
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// * `String` - Returns a string containing the connection string for the database.
+    ///
+    /// # Panics
+    ///
+    /// * If the database type is not supported, the function will print an error message and exit the process with status code 1.
+    pub fn create_database_connection(&self) -> Pin<Box<dyn Future<Output = Result<DatabaseConnection, Box<dyn Error + Send>>> + Send>> {
+        match self.database_type {
+            DatabaseType::Mysql => {
+                let connection_options = MySqlConnectOptions::new()
+                    .username(&self.username)
+                    .password(&self.password)
+                    .host(&self.host)
+                    .port(self.clone().port.parse::<u16>().unwrap())
+                    .database(&self.name);
+
+                let connection_mysql = MySqlConnection::connect_with(&connection_options)
+                    .map_ok(DatabaseConnection::MySql)
+                    .map_err(|e| Box::new(e) as Box<dyn Error + Send>);
+                Box::pin(connection_mysql)
+            },
+            DatabaseType::Postgres => {
+                let connection_options = PgConnectOptions::new()
+                    .username(&self.username)
+                    .password(&self.password)
+                    .host(&self.host)
+                    .port(self.clone().port.parse::<u16>().unwrap())
+                    .database(&self.name);
+
+                let connection = PgConnection::connect_with(&connection_options)
+                    .map_ok(DatabaseConnection::Pg)
+                    .map_err(|e| Box::new(e) as Box<dyn Error + Send>);
+                Box::pin(connection)
+            },
+            DatabaseType::Sqlite => {
+                let connection_options = SqliteConnectOptions::from_str(&format!(
+                    "sqlite://{}",
+                    self.name
+                ))
+                    .expect("Invalid SQLite connection string");
+
+                let connection = SqliteConnection::connect_with(&connection_options)
+                    .map_ok(DatabaseConnection::Sqlite)
+                    .map_err(|e| Box::new(e) as Box<dyn Error + Send>);
+                Box::pin(connection)
+            },
+            DatabaseType::Mongo => {
+                todo!("MongoDB is not yet supported");
+            }
         }
     }
 
@@ -121,3 +202,12 @@ pub enum DatabaseType {
     Sqlite,
     Mongo,
 }
+
+#[derive(Debug)]
+pub enum DatabaseConnection {
+    Pg(PgConnection),
+    MySql(MySqlConnection),
+    Sqlite(SqliteConnection),
+    // ... other database types
+}
+

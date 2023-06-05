@@ -35,9 +35,11 @@ use std::fs::create_dir;
 use std::io::Error;
 use std::{env, fs};
 use std::{fs::OpenOptions, io::Write};
+use rustyline::DefaultEditor;
+
 pub mod database;
 pub mod generators;
-use database::{create_migration, Database, DatabaseType};
+use database::*;
 pub mod writers;
 
 use crate::generators::create_directory;
@@ -931,6 +933,7 @@ static/styles.css
     pub async fn run() {
         let matches = Self::cli().get_matches();
         match matches.subcommand() {
+            // New Project Case
             Some(("new", matches)) => {
                 let name = matches.get_one::<String>("name").unwrap().to_string();
                 // ask what database they would like to use "postgres, mysql, sqlite, or none"
@@ -1118,6 +1121,7 @@ static/styles.css
                     }
                 };
             }
+            // Generate new routes, models, contollers and migrations
             Some(("generate", matches)) => {
                 match matches.subcommand() {
                     Some(("route", matches)) => {
@@ -1151,6 +1155,37 @@ static/styles.css
                     }
                     _ => {
                         println!("Invalid generate choice");
+                    }
+                }
+            }
+            // Migration Case - Can generate migrations, run migrations, and rollback migrations
+            Some(("migration", matches)) => {
+                match matches.subcommand() {
+                    Some(("generate", matches)) => {
+                        let name = matches.get_one::<String>("name").unwrap().to_string();
+                        match create_migration(&name) {
+                            Ok(_) => println!("Migration created!"),
+                            Err(e) => println!("Error creating migration: {}", e),
+                        }
+                    }
+                    Some(("run", _)) => {
+                        // Initialize the rustyline Editor with the default helper and in-memory history
+                        let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
+                            panic!("Failed to create rustyline editor: {}", why.to_string());
+                        });
+                        // Ask the user what migration they want to run
+                        let migration_name = rl
+                            .readline("What migration do you want to run? ")
+                            .unwrap();
+
+                        // Run the migration
+                        run_migration(migration_name);
+                    }
+                    Some(("rollback", _)) => {
+                       todo!("Rollback migrations");
+                    }
+                    _ => {
+                        println!("Invalid migration choice");
                     }
                 }
             }
