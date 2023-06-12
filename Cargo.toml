@@ -39,5 +39,6 @@ proc-macro2 = "1.0.56"
 bcrypt = "0.14.0"
 chrono = "0.4.24"
 strum_macros = "0.24.3"
+mysql_async = "0.32.2"
 [features]
 with-file-history = []
