@@ -15,7 +15,7 @@ mod tests {
             "postgres".to_owned(),
             "localhost".to_owned(),
             "5432".to_owned(),
-            "postgres".to_owned(),
+            "postgres".to_string().as_str(),
         );
         // Construct the database URL for the newly created database
         let database_url = format!(
