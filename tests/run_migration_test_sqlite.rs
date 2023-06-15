@@ -21,7 +21,7 @@ mod tests {
             "".to_owned(),
             "".to_owned(),
             "".to_owned(),
-            "sqlite".to_owned(),
+            "sqlite".to_string().as_str(),
         );
 
         // Create a new project with the desired name
