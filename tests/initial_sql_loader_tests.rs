@@ -15,7 +15,7 @@ async fn test_integration_load_sql_for_new_project() {
         "password".to_owned(),
         "localhost".to_owned(),
         "3306".to_owned(),
-        "sqlite".to_owned(),
+        "sqlite".to_sr().to_owned(),
     );
 
     // Create a sample project
