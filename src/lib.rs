@@ -881,13 +881,17 @@ static/styles.css
                     .subcommand_required(true),
             )
             .subcommand(
-                Command::new("migrate")
+                Command::new("migration")
                     .about("Runs migrations")
                     .subcommand(
-                        Command::new("up")
-                            .about("Runs all migrations")
+                        Command::new("generate")
+                            .about("Generates a migration")
                             .arg(arg!(<name> "The name of the migration")),
                     )
+                    .subcommand(
+                    Command::new("run all").about("Runs all the migrations in the migration directory"),
+                )
+                    .subcommand(Command::new("run").about("Run a specific migration by name").arg(arg!(<name> "The name of the migration to run.")))
                     .subcommand(
                         Command::new("down")
                             .about("Rolls back the last migration")
@@ -906,11 +910,6 @@ static/styles.css
                     .subcommand(
                         Command::new("status")
                             .about("Prints the status of all migrations")
-                            .arg(arg!(<name> "The name of the migration")),
-                    )
-                    .subcommand(
-                        Command::new("create")
-                            .about("Creates a new migration")
                             .arg(arg!(<name> "The name of the migration")),
                     )
                     .subcommand_help_heading("SUBCOMMANDS:")
@@ -998,7 +997,7 @@ static/styles.css
                             database_password,
                             database_host,
                             database_port.to_string(),
-                            database_choice.to_string(),
+                            database_choice.as_str(),
                         );
                         Self::create_new_project(name, database).await.err();
                     }
@@ -1042,7 +1041,7 @@ static/styles.css
                             database_password,
                             database_host,
                             database_port.to_string(),
-                            database_choice.to_string(),
+                            database_choice.as_str(),
                         );
                         Self::create_new_project(name, database).await.err();
                     }
@@ -1056,7 +1055,7 @@ static/styles.css
                             "Not Needed".to_string(),
                             "localhost".to_string(),
                             "Not Needed".to_string(),
-                            "sqlite".to_string(),
+                            "sqlite".trim_end(),
                         );
                         Self::create_new_project(name, database).await.err();
                     }
@@ -1100,7 +1099,7 @@ static/styles.css
                             database_username,
                             database_password,
                             database_port.to_string(),
-                            database_host,
+                            database_host.as_str(),
                         );
                         Self::create_new_project(name, database).await.err();
                     }
@@ -1112,7 +1111,7 @@ static/styles.css
                             "".to_string(),
                             "".to_string(),
                             "".to_string(),
-                            "".to_string(),
+                            "".to_string().as_str()
                         );
                         Self::create_new_project(name, database).await.err();
                     }
@@ -1121,7 +1120,7 @@ static/styles.css
                     }
                 };
             }
-            // Generate new routes, models, contollers and migrations
+            // Generate new routes, models, controllers and migrations
             Some(("generate", matches)) => {
                 match matches.subcommand() {
                     Some(("route", matches)) => {
@@ -1148,10 +1147,7 @@ static/styles.css
                     }
                     Some(("migration", matches)) => {
                         let name = matches.get_one::<String>("name").unwrap().to_string();
-                        match create_migration(&name) {
-                            Ok(_) => println!("Migration created!"),
-                            Err(e) => println!("Error creating migration: {}", e),
-                        }
+                     create_migration(&name).await.expect("Error creating migration");
                     }
                     _ => {
                         println!("Invalid generate choice");
@@ -1163,10 +1159,10 @@ static/styles.css
                 match matches.subcommand() {
                     Some(("generate", matches)) => {
                         let name = matches.get_one::<String>("name").unwrap().to_string();
-                        match create_migration(&name) {
-                            Ok(_) => println!("Migration created!"),
-                            Err(e) => println!("Error creating migration: {}", e),
-                        }
+                         create_migration(&name).await.expect("Error creating migration");
+                    }
+                    Some(("run all", _)) => {
+                        todo!("Implement this");
                     }
                     Some(("run", _)) => {
                         // Initialize the rustyline Editor with the default helper and in-memory history
@@ -1179,7 +1175,7 @@ static/styles.css
                             .unwrap();
 
                         // Run the migration
-                        run_migration(migration_name);
+                        run_migration(migration_name).await.expect("Error running migration");
                     }
                     Some(("rollback", _)) => {
                        todo!("Rollback migrations");
