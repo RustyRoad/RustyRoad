@@ -15,7 +15,7 @@ mod tests {
             "admin".to_owned(),
             "localhost".to_owned(),
             "3306".to_owned(),
-            "mysql".to_owned(),
+            "mysql".to_string().as_str(),
         );
         // Construct the database URL for the newly created database
         let database_url = format!(
