@@ -1,14 +1,14 @@
-use mysql_async::{Conn, Opts};
-use sqlx::Connection;
+use sqlx::mysql::{MySqlConnectOptions, MySqlPool};
 use std::error::Error;
 use std::fs;
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio_postgres::{Client, Config, Connection as Postgres_Connection, Error as PG_Connection_Error, NoTls};
 use tokio_postgres::tls::NoTlsStream;
 use toml::Value;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Database {
     pub name: String,
     pub username: String,
@@ -26,7 +26,6 @@ pub enum DatabaseType {
     Mongo,
 }
 
-
 #[derive(Debug, Clone)]
 pub enum DatabaseConnection {
     Pg(PgConnection),
@@ -37,9 +36,9 @@ pub enum DatabaseConnection {
 #[derive(Debug, Clone)]
 pub struct PgConnection(pub Arc<Client>);
 #[derive(Debug, Clone)]
-pub struct MySqlConnection(pub Arc<Conn>);
+pub struct MySqlConnection(pub Arc<MySqlPool>);
 #[derive(Debug, Clone)]
-pub struct SqliteConnection(pub Arc<sqlx::SqliteConnection>);
+pub struct SqliteConnection(pub Arc<sqlx::sqlite::SqlitePool>);
 
 impl Database {
     pub fn new(
@@ -91,44 +90,40 @@ impl Database {
         }
     }
 
-    async fn connect_raw(s: &str) -> Result<(Client, Postgres_Connection<TcpStream, NoTlsStream>), PG_Connection_Error> {
-        let socket = TcpStream::connect("127.0.0.1:5433").await.unwrap();
-        let config = s.parse::<Config>().unwrap();
-        config.connect_raw(socket, NoTls).await
-    }
-
-    async fn connect(s: &str) -> Client {
-        let (client, connection) = Self::connect_raw(s).await.unwrap();
-        tokio::spawn(connection);
-        client
-    }
-
     pub async fn create_database_connection(&self) -> Result<DatabaseConnection, Box<dyn Error + Send>> {
         match &self.database_type {
             DatabaseType::Mysql => {
                 let connection_url = self.create_database_connection_string();
-                let connection_options = Opts::from_url(&connection_url).expect("Database URL is invalid");
-                let connection = Conn::new(connection_options).await.expect("Failed to connect to MySQL");
-                Ok(DatabaseConnection::MySql(MySqlConnection(Arc::new(connection))))
+                let options = MySqlConnectOptions::from_str(&connection_url).expect("Failed to parse connection options");
+                let pool = MySqlPool::connect_with(options).await.expect("Failed to create connection pool.");
+                Ok(DatabaseConnection::MySql(MySqlConnection(Arc::new(pool))))
             }
             DatabaseType::Sqlite => {
                 let connection_url = self.create_database_connection_string();
-                let connection = sqlx::SqliteConnection::connect(&connection_url).await.expect("Failed to connect to SQLite");
-                Ok(DatabaseConnection::Sqlite(SqliteConnection(Arc::new(connection))))
+                let pool = sqlx::sqlite::SqlitePool::connect(&connection_url).await.expect("Could not connect to the SQLite database. Please check the documentation for more information.");
+                Ok(DatabaseConnection::Sqlite(SqliteConnection(Arc::new(pool))))
             }
             DatabaseType::Postgres => {
                 let connection_url = self.create_database_connection_string();
-                let client = Self::connect(&connection_url);
-                Ok(
-                    DatabaseConnection::Pg(
-                        PgConnection(Arc::new(client.await))
-                    )
-                )
+                let client = Self::connect(&connection_url).await.expect("Failed to connect to Postgres database. Please check the documentation for more information.");
+                Ok(DatabaseConnection::Pg(PgConnection(Arc::new(client))))
             }
             DatabaseType::Mongo => {
                 todo!("MongoDB is not yet supported");
             }
         }
+    }
+
+    async fn connect_raw(s: &str) -> Result<(Client, Postgres_Connection<TcpStream, NoTlsStream>), PG_Connection_Error> {
+        let socket = TcpStream::connect("127.0.0.1:5432").await.expect("Failed to create tcp connection.");
+        let config = s.parse::<Config>()?;
+        config.connect_raw(socket, NoTls).await
+    }
+
+    async fn connect(s: &str) -> Result<Client, PG_Connection_Error> {
+        let (client, connection) = Self::connect_raw(s).await?;
+        tokio::spawn(connection);
+        Ok(client)
     }
 
     pub async fn get_database_from_rustyroad_toml() -> Result<Database, std::io::Error> {
