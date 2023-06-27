@@ -1869,25 +1869,27 @@ async fn execute_migration_with_connection(
         let mut sql = String::new();
         file.read_to_string(&mut sql).expect("Failed to read migration file");
 
+        // Skip the migration if it is a down.sql file
+        if path.file_stem() == Some(std::ffi::OsStr::new("down")) {
+            continue;
+        }
         match connection.clone() {
             DatabaseConnection::Pg(connection) => {
-                let create_table_query = "CREATE TABLE IF NOT EXISTS my_table (
-                id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL
-            )";
-                let rows_affected = connection.0.execute(create_table_query, &[] ).await.expect("Could not execute the statement: {:?}");
+                println!("Executing query: {:?}", sql.clone().as_str());
+                let rows_affected = connection.0.query(sql.as_str(), &[] ).await.expect("Could not execute the statement: {:?}");
                 println!("{:?} rows affected", rows_affected);
             }
             DatabaseConnection::MySql(connection) => {
+                println!("Executing query: {:?}", sql);
                 let rows_affected = connection.0.execute(sql.as_str()).await?;
                 println!("{:?} rows affected", rows_affected);
             }
             DatabaseConnection::Sqlite(connection) => {
-               let rows_affected = connection.0.execute(sql.as_str()).await.expect("Could not execute SQLite connection, please check the documentation for more information.");
+                println!("Executing query: {:?}", sql);
+                let rows_affected = connection.0.execute(sql.as_str()).await.expect("Could not execute SQLite connection, please check the documentation for more information.");
                 println!("{:?} rows affected", rows_affected);
             }
         };
     }
     Ok(())
 }
-
