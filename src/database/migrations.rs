@@ -263,7 +263,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
             }
         };
 // Initialize an empty vector to store the column definitions
-        let mut column_definitions = Vec::new();
+       // let mut column_definitions = Vec::new();
 
         // validate the column type to sql type
         match column_type {
@@ -1678,7 +1678,7 @@ pub async fn run_migration(migration_name: String) -> Result<(), CustomMigration
 /// ```
 /// use rustyroad::RustyRoad;
 /// let nullable = false;
-/// let up_sql_contents = String::from("CREATE TABLE IF NOT EXISTSIF NOT EXISTS users (
+/// let up_sql_contents = String::from("CREATE TABLE IF NOT EXISTS users (
 ///    id SERIAL PRIMARY KEY,
 ///   username VARCHAR(255) NOT NULL,
 ///  password VARCHAR(255) NOT NULL,
@@ -1871,9 +1871,11 @@ async fn execute_migration_with_connection(
 
         match connection.clone() {
             DatabaseConnection::Pg(connection) => {
-                let rows_affected = connection.0.execute(sql.as_str(),
-                                                         &[]
-                ).await.expect("COuldn't connect to the database");
+                let create_table_query = "CREATE TABLE IF NOT EXISTS my_table (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL
+            )";
+                let rows_affected = connection.0.execute(create_table_query, &[] ).await.expect("Could not execute the statement: {:?}");
                 println!("{:?} rows affected", rows_affected);
             }
             DatabaseConnection::MySql(connection) => {
