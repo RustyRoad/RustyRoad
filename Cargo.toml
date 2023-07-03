@@ -39,5 +39,6 @@ bcrypt = "0.14.0"
 chrono = "0.4.24"
 strum_macros = "0.24.3"
 mysql_async = "0.32.2"
+dialoguer = "0.10.4"
 [features]
 with-file-history = []

@@ -60,7 +60,8 @@ impl Database {
                 "mysql" => DatabaseType::Mysql,
                 "sqlite" => DatabaseType::Sqlite,
                 "mongo" => DatabaseType::Mongo,
-                _ => DatabaseType::Postgres,
+
+                _ => DatabaseType::Mongo
             },
         }
     }
@@ -130,8 +131,11 @@ impl Database {
         let database: Database = match fs::read_to_string("rustyroad.toml") {
             Ok(file) => {
                 let toml: Value = toml::from_str(&file).unwrap();
+                println!("Toml: {:?}", toml);
 
                 let database_table = toml["database"].as_table().unwrap();
+
+                println!("Toml Database Type: {:?}", &database_table["database_type"]);
                 Database::new(
                     database_table["database_name"]
                         .as_str()
@@ -164,6 +168,7 @@ impl Database {
                 std::process::exit(1);
             }
         };
+        println!("Database Type: {:?}", database.database_type);
 
         Ok(database)
     }

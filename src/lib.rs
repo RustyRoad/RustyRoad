@@ -35,7 +35,8 @@ use std::fs::create_dir;
 use std::io::Error;
 use std::{env, fs};
 use std::{fs::OpenOptions, io::Write};
-use rustyline::DefaultEditor;
+use dialoguer::Confirm;
+use tokio::io;
 
 pub mod database;
 pub mod generators;
@@ -989,7 +990,7 @@ static/styles.css
                             .read_line(&mut database_host)
                             .expect("Failed to read line");
                         let database_host = database_host.trim().to_string();
-                        database_choice = "Postgres".to_string();
+                        database_choice = "postgres".to_string();
                         // create a new project with the name and database information
                         let database: Database = Database::new(
                             database_name,
@@ -1091,7 +1092,7 @@ static/styles.css
                             .read_line(&mut database_host)
                             .expect("Failed to read line");
                         let database_host = database_host.trim().to_string();
-                        database_choice = "MongoDB".to_string();
+                        database_choice = "mongodb".to_string();
                         // create a new project with the name and database information
                         let database: Database = Database::new(
                             database_choice.to_string(),
@@ -1164,18 +1165,24 @@ static/styles.css
                     Some(("run all", _)) => {
                         todo!("Implement this");
                     }
-                    Some(("run", _)) => {
+                    Some(("run", matches)) => {
                         // Initialize the rustyline Editor with the default helper and in-memory history
-                        let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
-                            panic!("Failed to create rustyline editor: {}", why.to_string());
-                        });
-                        // Ask the user what migration they want to run
-                        let migration_name = rl
-                            .readline("What migration do you want to run? ")
-                            .unwrap();
+                        let name = matches.get_one::<String>("name").unwrap().to_string();
 
-                        // Run the migration
-                        run_migration(migration_name).await.expect("Error running migration");
+
+                        // Create a confirmation prompt
+                        let confirmation = Confirm::new()
+                            .with_prompt("Are you sure you want to execute the name migration?")
+                            .interact()
+                            .map_err(|err| io::Error::new(io::ErrorKind::Other, err)).expect("Error executing migration: ");
+
+                        if confirmation {
+                            println!("Executing the name migration...");
+                            run_migration(name).await.expect("Error running migration");
+                            println!("Name migration completed successfully!");
+                        } else {
+                            println!("Name migration canceled by user.");
+                        }
                     }
                     Some(("rollback", _)) => {
                        todo!("Rollback migrations");

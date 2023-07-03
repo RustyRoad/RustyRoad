@@ -6,10 +6,10 @@ use crate::writers::write_to_file;
 use crate::Project;
 use chrono::prelude::*;
 use rustyline::DefaultEditor;
-use sqlx::{ Executor};
+use sqlx::Executor;
 use std::error::{Error as StdError, Error};
-use std::{ fmt};
-use std::fmt::Display;
+use std::fmt;
+use std::fmt::{Debug, Display};
 use std::fmt::Formatter;
 use std::fs::{self};
 use std::fs::{create_dir_all, DirEntry};
@@ -20,7 +20,6 @@ use std::path::Path;
 use std::println;
 
 use strum_macros::Display;
-
 
 const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 
@@ -262,8 +261,8 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                 continue; // Ask again if input is invalid
             }
         };
-// Initialize an empty vector to store the column definitions
-       // let mut column_definitions = Vec::new();
+        // Initialize an empty vector to store the column definitions
+        // let mut column_definitions = Vec::new();
 
         // validate the column type to sql type
         match column_type {
@@ -279,7 +278,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} VARCHAR({}) NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR({}) NULL);",
                             table_name, column_name, string_length
                         ));
 
@@ -289,7 +288,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} VARCHAR({}) NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR({}) NOT NULL);",
                             table_name, column_name, string_length
                         ));
                         up_sql_contents.push('\n');
@@ -305,7 +304,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} SMALLINT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} SMALLINT NULL);",
                             table_name, column_name
                         ));
 
@@ -316,7 +315,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} SMALLINT NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} SMALLINT NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -329,7 +328,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} INTEGER NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} INTEGER NULL);",
                             table_name, column_name
                         ));
 
@@ -340,7 +339,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} INTEGER NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} INTEGER NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -353,7 +352,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} BIGINT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} BIGINT NULL);",
                             table_name, column_name
                         ));
 
@@ -364,7 +363,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} BIGINT NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} BIGINT NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -377,7 +376,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} DECIMAL NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} DECIMAL NULL);",
                             table_name, column_name
                         ));
 
@@ -388,7 +387,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} DECIMAL NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} DECIMAL NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -401,7 +400,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} REAL NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} REAL NULL);",
                             table_name, column_name
                         ));
 
@@ -412,7 +411,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} REAL NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} REAL NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -425,7 +424,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} DOUBLE PRECISION NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} DOUBLE PRECISION NULL);",
                             table_name, column_name
                         ));
 
@@ -436,7 +435,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} DOUBLE PRECISION NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} DOUBLE PRECISION NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -449,7 +448,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} NUMERIC NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} NUMERIC NULL);",
                             table_name, column_name
                         ));
 
@@ -460,7 +459,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} NUMERIC NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} NUMERIC NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -473,7 +472,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} SMALLSERIAL NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} SMALLSERIAL NULL);",
                             table_name, column_name
                         ));
 
@@ -484,7 +483,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} SMALLSERIAL NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} SMALLSERIAL NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -497,7 +496,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} SERIAL NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} SERIAL NULL);",
                             table_name, column_name
                         ));
 
@@ -508,7 +507,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} SERIAL NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} SERIAL NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -521,7 +520,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} BIGSERIAL NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} BIGSERIAL NULL);",
                             table_name, column_name
                         ));
 
@@ -532,7 +531,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} BIGSERIAL NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} BIGSERIAL NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -545,7 +544,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} MONEY NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} MONEY NULL);",
                             table_name, column_name
                         ));
 
@@ -556,7 +555,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} MONEY NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} MONEY NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -569,7 +568,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} VARCHAR NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NULL);",
                             table_name, column_name
                         ));
 
@@ -580,7 +579,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} VARCHAR NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -593,7 +592,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} VARCHAR NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NULL);",
                             table_name, column_name
                         ));
 
@@ -604,7 +603,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} VARCHAR NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -614,7 +613,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
             PostgresTypes::Char => {
                 // add the column to the up.sql file
                 up_sql_contents.push_str(&format!(
-                    "CREATE TABLE IF NOT EXISTS{} ({} CHAR NOT NULL);",
+                    "CREATE TABLE IF NOT EXISTS {} ({} CHAR NOT NULL);",
                     table_name, column_name
                 ));
                 up_sql_contents.push('\n');
@@ -625,7 +624,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} CHAR NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} CHAR NULL);",
                             table_name, column_name
                         ));
 
@@ -636,7 +635,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} CHAR NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} CHAR NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -649,7 +648,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TEXT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TEXT NULL);",
                             table_name, column_name
                         ));
 
@@ -660,7 +659,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TEXT NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TEXT NOT NULL);",
                             table_name, column_name
                         ));
                         up_sql_contents.push('\n');
@@ -674,7 +673,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} BYTEA NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} BYTEA NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -683,7 +682,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} BYTEA NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} BYTEA NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -697,7 +696,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIMESTAMP NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -706,7 +705,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIMESTAMP NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -720,7 +719,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIMESTAMP NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -729,7 +728,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIMESTAMP NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -743,7 +742,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIMESTAMP NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -752,7 +751,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIMESTAMP NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -766,7 +765,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} DATE NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} DATE NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -775,7 +774,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} DATE NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} DATE NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -789,7 +788,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIME NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIME NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -798,7 +797,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIME NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIME NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -812,7 +811,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIME NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIME NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -821,7 +820,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIME NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIME NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -835,7 +834,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIME NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIME NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -844,7 +843,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} TIME NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} TIME NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -858,7 +857,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} INTERVAL NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} INTERVAL NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -867,7 +866,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} INTERVAL NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} INTERVAL NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -881,7 +880,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} BOOLEAN NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} BOOLEAN NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -890,7 +889,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} BOOLEAN NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} BOOLEAN NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -904,7 +903,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                CREATE TABLE IF NOT EXISTS{} ({} {:?} NULL);
+                                CREATE TABLE IF NOT EXISTS {} ({} {:?} NULL);
                                 ",
                             &table_name, column_name, column_type
                         ));
@@ -913,7 +912,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                CREATE TABLE IF NOT EXISTS{} ({} {:?} NOT NULL);
+                                CREATE TABLE IF NOT EXISTS {} ({} {:?} NOT NULL);
                                 ",
                             &table_name, column_name, column_type
                         ));
@@ -927,7 +926,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} POINT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} POINT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -936,7 +935,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} POINT NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} POINT NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -950,7 +949,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} LINE NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} LINE NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -959,7 +958,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} LINE NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} LINE NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -973,7 +972,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} LSEG NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} LSEG NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -982,7 +981,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} LSEG NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} LSEG NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -996,7 +995,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} BOX NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} BOX NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -1005,7 +1004,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} BOX NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} BOX NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -1019,7 +1018,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} PATH NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} PATH NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -1028,7 +1027,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} PATH NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} PATH NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -1042,7 +1041,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} PATH OPEN NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} PATH OPEN NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -1051,7 +1050,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} PATH OPEN NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} PATH OPEN NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -1065,7 +1064,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} POLYGON NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} POLYGON NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -1074,7 +1073,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} POLYGON NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} POLYGON NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -1088,7 +1087,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} CIRCLE NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} CIRCLE NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -1097,7 +1096,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "\
-                                    CREATE TABLE IF NOT EXISTS{} ({} CIRCLE NOT NULL);
+                                    CREATE TABLE IF NOT EXISTS {} ({} CIRCLE NOT NULL);
                                     ",
                             &table_name, column_name
                         ));
@@ -1110,14 +1109,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} INET NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} INET NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} INET NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} INET NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1129,14 +1128,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} CIDR NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} CIDR NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} CIDR NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} CIDR NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1148,14 +1147,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} MACADDR NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} MACADDR NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} MACADDR NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} MACADDR NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1167,14 +1166,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} MACADDR8 NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} MACADDR8 NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} MACADDR8 NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} MACADDR8 NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1186,14 +1185,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} BIT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} BIT NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} BIT NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} BIT NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1205,14 +1204,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} BIT VARYING NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} BIT VARYING NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} BIT VARYING NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} BIT VARYING NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1224,14 +1223,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TSVECTOR NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TSVECTOR NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TSVECTOR NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TSVECTOR NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1243,14 +1242,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TSQUERY NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TSQUERY NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TSQUERY NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TSQUERY NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1262,14 +1261,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} XML NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} XML NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} XML NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} XML NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1281,14 +1280,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} JSON NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} JSON NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} JSON NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} JSON NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1300,14 +1299,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} JSONB NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} JSONB NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} JSONB NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} JSONB NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1319,14 +1318,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} UUID NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} UUID NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} UUID NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} UUID NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1338,14 +1337,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} PGLSN NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} PGLSN NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} PGLSN NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} PGLSN NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1357,14 +1356,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} PG_SNAPSHOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} PG_SNAPSHOT NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} PG_SNAPSHOT NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} PG_SNAPSHOT NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1376,14 +1375,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TXID_SNAPSHOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TXID_SNAPSHOT NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TXID_SNAPSHOT NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TXID_SNAPSHOT NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1395,14 +1394,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} INT4RANGE NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} INT4RANGE NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} INT4RANGE NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} INT4RANGE NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1414,14 +1413,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} INT8RANGE NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} INT8RANGE NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} INT8RANGE NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} INT8RANGE NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1433,14 +1432,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} NUMRANGE NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} NUMRANGE NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} NUMRANGE NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} NUMRANGE NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1453,14 +1452,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TSRANGE NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TSRANGE NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TSRANGE NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TSRANGE NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1472,14 +1471,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TSTZRANGE NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TSTZRANGE NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} TSTZRANGE NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} TSTZRANGE NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1491,14 +1490,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         // add the sql and constraints to the up.sql file
                         // if the column is nullable
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} DATERANGE NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} DATERANGE NULL);",
                             &table_name, column_name
                         ));
                     }
                     false => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS{} ({} DATERANGE NOT NULL);",
+                            "CREATE TABLE IF NOT EXISTS {} ({} DATERANGE NOT NULL);",
                             &table_name, column_name
                         ));
                     }
@@ -1633,14 +1632,27 @@ impl From<Box<dyn StdError + Send + Sync>> for CustomMigrationError {
 pub async fn run_migration(migration_name: String) -> Result<(), CustomMigrationError> {
     // get the database
     let database: Database = Database::get_database_from_rustyroad_toml().await.expect("Couldn't parse the rustyroad.toml file. Please check the documentation for a proper implementation.");
-
+    match database.database_type {
+        database::DatabaseType::Postgres => {
+            println!("Database Type: PostGres");
+        },
+        database::DatabaseType::Mysql => {
+            println!("Database Type: MySql");
+        },
+        database::DatabaseType::Sqlite => {
+            println!("Database Type: Sqlite");
+        },
+        _ => {
+            println!("coming soon");
+        }
+    }
     let migrations_dir_path = format!("./config/database/migrations");
     // find the folder that has the name of the migration in the migrations directory with the latest timestamp
     let migration_dir_selected =
         find_migration_dir(migrations_dir_path.clone(), migration_name.clone())
             .unwrap_or_else(|why| panic!("Couldn't find migration directory: {}", why.to_string()));
     // Generate the path to the migrations directory at runtime
-    let migration_dir =  &migration_dir_selected;
+    let migration_dir = &migration_dir_selected;
     println!("Migration directory: {:?}", migration_dir);
     // Get migration files from the specified directory
     let mut migration_files: Vec<_> = fs::read_dir(migration_dir.clone())
@@ -1787,7 +1799,8 @@ pub fn find_migration_dir(
     let mut filtered_migration_dirs = Vec::new();
     for migration_dir in migration_dirs {
         let migration_dir_name = migration_dir
-            .file_name().expect("Failed to get file name")
+            .file_name()
+            .expect("Failed to get file name")
             .to_str()
             .ok_or("Failed to convert OsStr to str")?;
         if migration_dir_name.contains(&migration_name) {
@@ -1818,7 +1831,8 @@ pub fn find_migration_dir(
 
         for migration_dir in filtered_migration_dirs {
             let migration_dir_name_from_list = migration_dir
-                .file_name().expect("Failed to get file name")
+                .file_name()
+                .expect("Failed to get file name")
                 .to_str()
                 .ok_or("Failed to convert OsStr to str")?;
             if migration_dir_name == migration_dir_name_from_list {
@@ -1854,7 +1868,6 @@ impl From<sqlx::Error> for MigrationError {
     }
 }
 
-
 async fn execute_migration_with_connection(
     connection: DatabaseConnection,
     migration_files: Vec<DirEntry>,
@@ -1867,7 +1880,8 @@ async fn execute_migration_with_connection(
         }
         let mut file = fs::File::open(&path).expect("Failed to open migration file");
         let mut sql = String::new();
-        file.read_to_string(&mut sql).expect("Failed to read migration file");
+        file.read_to_string(&mut sql)
+            .expect("Failed to read migration file");
 
         // Skip the migration if it is a down.sql file
         if path.file_stem() == Some(std::ffi::OsStr::new("down")) {
@@ -1876,7 +1890,11 @@ async fn execute_migration_with_connection(
         match connection.clone() {
             DatabaseConnection::Pg(connection) => {
                 println!("Executing query: {:?}", sql.clone().as_str());
-                let rows_affected = connection.0.query(sql.as_str(), &[] ).await.expect("Could not execute the statement: {:?}");
+                let rows_affected = connection
+                    .0
+                    .query(sql.as_str(), &[])
+                    .await
+                    .expect("Could not execute the statement: {:?}");
                 println!("{:?} rows affected", rows_affected);
             }
             DatabaseConnection::MySql(connection) => {

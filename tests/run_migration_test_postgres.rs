@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-
+    use std::time::SystemTime;
     use sqlx::postgres::PgConnectOptions;
     use sqlx::ConnectOptions;
 
@@ -9,14 +9,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_run_migration() -> Result<(), Box<dyn std::error::Error>> {
+
         let database_data = Database::new(
-            "test".to_owned(),
+            "test111".to_owned(),
             "postgres".to_owned(),
             "postgres".to_owned(),
             "localhost".to_owned(),
             "5432".to_owned(),
             "postgres".to_string().as_str(),
         );
+
+
         // Construct the database URL for the newly created database
         let database_url = format!(
             "postgres://{}:{}@{}:{}/{}",
@@ -24,7 +27,7 @@ mod tests {
             database_data.password,
             database_data.host,
             database_data.port,
-            database_data.name
+            database_data.name.clone()
         );
         std::env::set_var("DATABASE_URL", &database_url);
 
@@ -44,7 +47,7 @@ mod tests {
             .password(&database_data.password)
             .host(&database_data.host)
             .port(database_data.port.parse::<u16>()?)
-            .database(&database_data.name)
+            .database(&database_data.name.clone())
             .connect()
             .await?;
 
