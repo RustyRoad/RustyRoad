@@ -376,6 +376,8 @@ impl DataTypeCategory {
 #[cfg(test)]
 mod tests {
 
+    use crate::database::postgres_types::PostgresTypes;
+
     use super::*;
 
     #[test]
