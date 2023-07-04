@@ -1,24 +1,21 @@
 #[cfg(test)]
 mod tests {
-    use std::time::SystemTime;
     use sqlx::postgres::PgConnectOptions;
     use sqlx::ConnectOptions;
 
-    use rustyroad::database::Database;
+    use rustyroad::database::{DatabaseType, Database};
     use rustyroad::Project;
 
     #[tokio::test]
     async fn test_run_migration() -> Result<(), Box<dyn std::error::Error>> {
-
         let database_data = Database::new(
-            "test111".to_owned(),
+            "test112".to_owned(),
             "postgres".to_owned(),
             "postgres".to_owned(),
             "localhost".to_owned(),
             "5432".to_owned(),
-            "postgres".to_string().as_str(),
+            DatabaseType::Postgres.to_string().as_str(),
         );
-
 
         // Construct the database URL for the newly created database
         let database_url = format!(
