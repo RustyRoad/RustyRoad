@@ -3,7 +3,10 @@ use std::env;
 use actix_files::Files;
 use actix_session::storage::CookieSessionStore;
 use actix_web::cookie::Key;
-use actix_web::{web, App, HttpServer};
+use actix_web::{
+    web::{self},
+    App, HttpServer,
+};
 use tera::Tera;
 mod models;
 mod routes;
@@ -29,6 +32,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         // Load tera templates from the specified directory
+        let tera = Tera::new("templates/**/*").unwrap();
         println!("Initializing Actix web application...");
 
         App::new()
@@ -41,9 +45,13 @@ async fn main() -> std::io::Result<()> {
                 CookieSessionStore::default(),
                 get_secret_key().expect("Failed to generate secret key"),
             ))
+            .app_data(web::Data::new(tera.clone())) // Updated line
             .service(routes::index::index)
-            .service(Files::new("/static", "./static").show_files_listing())
-            .service(Files::new("/vite", "./client/dist/client").show_files_listing())
+            .service(routes::dashboard::dashboard_route)
+            .service(routes::login::login_route)
+            .service(routes::login::login_function)
+             .service(routes::login::user_logout)
+            .service(Files::new("/static", "./static")) // Add this line
     })
     .bind("127.0.0.1:8000")?
     .run()

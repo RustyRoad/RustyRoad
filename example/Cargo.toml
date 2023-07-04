@@ -16,18 +16,13 @@ env_logger = "0.10.0"
 local-ip-address = "0.5.0"
 futures = "0.3.23"
 tera = "1.17.1"
-reqwest =  { version = "0.11", features = ["json", "native-tls", "tokio-rustls"] }
-rustyroad = { path = "../../Rusty-Road" }
+reqwest = "0.11"
+rustyroad = "0.1.7"
 rand = "0.8.5"
 chrono = "0.4.24"
 base64 = "0.21.0"
 dotenv = "0.15.0"
 bcrypt = "0.14.0"
-ssr_rs = "0.2.3"
-v8 = "0.71.0"
-deno_core = "0.185.0"
-deno_ast = "0.26.0"
-url = "2.3.1"
 [dependencies.sqlx]
 features = ["mysql", "macros", "chrono", "json", "uuid", "offline"]
 version = "0.6.2"
