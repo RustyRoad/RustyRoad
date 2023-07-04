@@ -1,11 +1,14 @@
 use sqlx::mysql::{MySqlConnectOptions, MySqlPool};
 use std::error::Error;
+use std::fmt::{Display, Formatter, self};
 use std::fs;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::net::TcpStream;
-use tokio_postgres::{Client, Config, Connection as Postgres_Connection, Error as PG_Connection_Error, NoTls};
 use tokio_postgres::tls::NoTlsStream;
+use tokio_postgres::{
+    Client, Config, Connection as Postgres_Connection, Error as PG_Connection_Error, NoTls,
+};
 use toml::Value;
 
 #[derive(Debug, Clone)]
@@ -24,6 +27,18 @@ pub enum DatabaseType {
     Mysql,
     Sqlite,
     Mongo,
+}
+
+impl Display for DatabaseType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let database_type = match *self {
+            DatabaseType::Postgres => "postgres",
+            DatabaseType::Mysql => "mysql",
+            DatabaseType::Sqlite => "sqlite",
+            DatabaseType::Mongo => "mongo",
+        };
+        write!(f, "{}", database_type)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -61,7 +76,7 @@ impl Database {
                 "sqlite" => DatabaseType::Sqlite,
                 "mongo" => DatabaseType::Mongo,
 
-                _ => DatabaseType::Mongo
+                _ => DatabaseType::Mongo,
             },
         }
     }
@@ -91,12 +106,17 @@ impl Database {
         }
     }
 
-    pub async fn create_database_connection(&self) -> Result<DatabaseConnection, Box<dyn Error + Send>> {
+    pub async fn create_database_connection(
+        &self,
+    ) -> Result<DatabaseConnection, Box<dyn Error + Send>> {
         match &self.database_type {
             DatabaseType::Mysql => {
                 let connection_url = self.create_database_connection_string();
-                let options = MySqlConnectOptions::from_str(&connection_url).expect("Failed to parse connection options");
-                let pool = MySqlPool::connect_with(options).await.expect("Failed to create connection pool.");
+                let options = MySqlConnectOptions::from_str(&connection_url)
+                    .expect("Failed to parse connection options");
+                let pool = MySqlPool::connect_with(options)
+                    .await
+                    .expect("Failed to create connection pool.");
                 Ok(DatabaseConnection::MySql(MySqlConnection(Arc::new(pool))))
             }
             DatabaseType::Sqlite => {
@@ -115,8 +135,12 @@ impl Database {
         }
     }
 
-    async fn connect_raw(s: &str) -> Result<(Client, Postgres_Connection<TcpStream, NoTlsStream>), PG_Connection_Error> {
-        let socket = TcpStream::connect("127.0.0.1:5432").await.expect("Failed to create tcp connection.");
+    async fn connect_raw(
+        s: &str,
+    ) -> Result<(Client, Postgres_Connection<TcpStream, NoTlsStream>), PG_Connection_Error> {
+        let socket = TcpStream::connect("127.0.0.1:5432")
+            .await
+            .expect("Failed to create tcp connection.");
         let config = s.parse::<Config>()?;
         config.connect_raw(socket, NoTls).await
     }
@@ -157,10 +181,7 @@ impl Database {
                         .as_str()
                         .unwrap()
                         .to_string(),
-                    &database_table["database_type"]
-                        .as_str()
-                        .unwrap(),
-
+                    &database_table["database_type"].as_str().unwrap(),
                 )
             }
             Err(_) => {
