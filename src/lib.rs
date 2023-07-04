@@ -31,11 +31,11 @@ use sqlx::postgres::PgConnectOptions;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
 
+use dialoguer::Confirm;
 use std::fs::create_dir;
 use std::io::Error;
 use std::{env, fs};
 use std::{fs::OpenOptions, io::Write};
-use dialoguer::Confirm;
 use tokio::io;
 
 pub mod database;
@@ -199,14 +199,14 @@ database_user = \"{}\"
 database_password = \"{}\"
 database_host = \"{}\"
 database_port = \"{}\"
-database_type = \"{:?}\"",
+database_type = \"{}\"",
             self.name,
             database_data.clone().name,
             database_data.username,
             database_data.password,
             database_data.host,
             database_data.port,
-            database_data.database_type
+            database_data.database_type.to_string().to_ascii_lowercase()
         );
         file.write_all(config.as_bytes())?;
         Ok(())
@@ -890,9 +890,14 @@ static/styles.css
                             .arg(arg!(<name> "The name of the migration")),
                     )
                     .subcommand(
-                    Command::new("run all").about("Runs all the migrations in the migration directory"),
-                )
-                    .subcommand(Command::new("run").about("Run a specific migration by name").arg(arg!(<name> "The name of the migration to run.")))
+                        Command::new("run all")
+                            .about("Runs all the migrations in the migration directory"),
+                    )
+                    .subcommand(
+                        Command::new("run")
+                            .about("Run a specific migration by name")
+                            .arg(arg!(<name> "The name of the migration to run.")),
+                    )
                     .subcommand(
                         Command::new("down")
                             .about("Rolls back the last migration")
@@ -1112,7 +1117,7 @@ static/styles.css
                             "".to_string(),
                             "".to_string(),
                             "".to_string(),
-                            "".to_string().as_str()
+                            "".to_string().as_str(),
                         );
                         Self::create_new_project(name, database).await.err();
                     }
@@ -1148,7 +1153,9 @@ static/styles.css
                     }
                     Some(("migration", matches)) => {
                         let name = matches.get_one::<String>("name").unwrap().to_string();
-                     create_migration(&name).await.expect("Error creating migration");
+                        create_migration(&name)
+                            .await
+                            .expect("Error creating migration");
                     }
                     _ => {
                         println!("Invalid generate choice");
@@ -1160,7 +1167,9 @@ static/styles.css
                 match matches.subcommand() {
                     Some(("generate", matches)) => {
                         let name = matches.get_one::<String>("name").unwrap().to_string();
-                         create_migration(&name).await.expect("Error creating migration");
+                        create_migration(&name)
+                            .await
+                            .expect("Error creating migration");
                     }
                     Some(("run all", _)) => {
                         todo!("Implement this");
@@ -1169,12 +1178,12 @@ static/styles.css
                         // Initialize the rustyline Editor with the default helper and in-memory history
                         let name = matches.get_one::<String>("name").unwrap().to_string();
 
-
                         // Create a confirmation prompt
                         let confirmation = Confirm::new()
                             .with_prompt("Are you sure you want to execute the name migration?")
                             .interact()
-                            .map_err(|err| io::Error::new(io::ErrorKind::Other, err)).expect("Error executing migration: ");
+                            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+                            .expect("Error executing migration: ");
 
                         if confirmation {
                             println!("Executing the name migration...");
@@ -1185,7 +1194,7 @@ static/styles.css
                         }
                     }
                     Some(("rollback", _)) => {
-                       todo!("Rollback migrations");
+                        todo!("Rollback migrations");
                     }
                     _ => {
                         println!("Invalid migration choice");
