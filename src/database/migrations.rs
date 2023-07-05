@@ -9,8 +9,8 @@ use rustyline::DefaultEditor;
 use sqlx::Executor;
 use std::error::{Error as StdError, Error};
 use std::fmt;
-use std::fmt::{Debug, Display};
 use std::fmt::Formatter;
+use std::fmt::{Debug, Display};
 use std::fs::{self};
 use std::fs::{create_dir_all, DirEntry};
 use std::io;
@@ -124,6 +124,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
         };
     };
 
+    // loop through the number of columns and ask the user for the column name and type
     for _ in 0..num_columns {
         let column_name = rl
             .readline("Enter the name of the column: ")
@@ -133,21 +134,17 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
 
         let database: Database = Database::get_database_from_rustyroad_toml().await.expect("Couldn't read rustyroad.toml Please check the documentation for the proper file format.");
 
-        let database_type = database.database_type;
+        let mut database_type = database.database_type;
 
         // initialize data types
-        let mut all_available_db_types_for_postgres: Vec<DataTypeCategory> =
+        let mut all_available_db_types: Vec<DataTypeCategory> =
             DataTypeCategory::get_all_categories();
         // match the available column types to the database type
         // need to get the values from the enum of the database type
-        all_available_db_types_for_postgres.sort();
+        all_available_db_types.sort();
         println!("Column Types: ");
 
-        for (index, column_type) in all_available_db_types_for_postgres
-            .clone()
-            .into_iter()
-            .enumerate()
-        {
+        for (index, column_type) in all_available_db_types.clone().into_iter().enumerate() {
             println!("{}. {}", index + 1, column_type);
         }
 
@@ -191,8 +188,16 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
         let data_types_for_category =
             data_type_category.get_data_types_from_data_type_category(database_type);
 
-        let database_types =
-            TypesForDatabase::get_postgres_types(&data_types_for_category, &data_type_category);
+        // Create an instance of the specific database type
+
+        let database_types = if database_type == DatabaseType::Postgres {
+            PostgresDatabaseType.get_database_types(&data_types_for_category, &data_type_category)
+        } else if database_type == DatabaseType::Mysql {
+            MySqlDatabaseType.get_database_types(&data_types_for_category, &data_type_category)
+        } else {
+            database_type == DatabaseType::Sqlite;
+            SqliteDatabaseType.get_database_types(&data_types_for_category, &data_type_category)
+        };
 
         // Print the available types for the selected category
         println!("Available types for the selected category: ");
@@ -263,376 +268,357 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
         };
         // Initialize an empty vector to store the column definitions
         // let mut column_definitions = Vec::new();
-
+        let types_for_database = TypesForDatabase::new();
         // validate the column type to sql type
-        match column_type {
-            PostgresTypes::VarChar => {
-                // ask the user for the length of the string
-                let string_length = rl
-                    .readline("Enter the length of the string: ")
-                    .unwrap_or_else(|why| {
-                        panic!("Failed to read string length: {}", why.to_string());
-                    });
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR({}) NULL);",
-                            table_name, column_name, string_length
-                        ));
+        match types_for_database.get_types(&data_type_category, database_type) {
+            postgres_types => {
+                // match the column type to the sql type
+                match column_type {
+                    // match the types to the column types
+                    PostgresTypes::VarChar => {
+                        // ask the user for the length of the string
+                        let string_length = rl
+                            .readline("Enter the length of the string: ")
+                            .unwrap_or_else(|why| {
+                                panic!("Failed to read string length: {}", why.to_string());
+                            });
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR({}) NULL);",
+                                    table_name, column_name, string_length
+                                ));
 
-                        // map contraints to sql
-                        up_sql_contents.push('\n');
+                                // map contraints to sql
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR({}) NOT NULL);",
+                                    table_name, column_name, string_length
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
+
+                        continue;
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR({}) NOT NULL);",
-                            table_name, column_name, string_length
-                        ));
-                        up_sql_contents.push('\n');
+                    PostgresTypes::SmallInt => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} SMALLINT NULL);",
+                                    table_name, column_name
+                                ));
+
+                                // mapp contraints to sql
+
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} SMALLINT NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                }
+                    PostgresTypes::Integer => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} INTEGER NULL);",
+                                    table_name, column_name
+                                ));
 
-                continue;
-            }
+                                // mapp contraints to sql
 
-            PostgresTypes::SmallInt => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} SMALLINT NULL);",
-                            table_name, column_name
-                        ));
-
-                        // mapp contraints to sql
-
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} INTEGER NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} SMALLINT NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::Integer => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} INTEGER NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::BigInt => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} BIGINT NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} BIGINT NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} INTEGER NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::BigInt => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} BIGINT NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::Decimal => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} DECIMAL NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} DECIMAL NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} BIGINT NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::Decimal => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} DECIMAL NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::Real => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} REAL NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} REAL NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} DECIMAL NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::Real => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} REAL NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::DoublePrecision => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} DOUBLE PRECISION NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} DOUBLE PRECISION NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} REAL NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::DoublePrecision => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} DOUBLE PRECISION NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::Numeric => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} NUMERIC NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} NUMERIC NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} DOUBLE PRECISION NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::Numeric => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} NUMERIC NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::SmallSerial => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} SMALLSERIAL NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} SMALLSERIAL NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} NUMERIC NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::SmallSerial => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} SMALLSERIAL NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::Serial => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} SERIAL NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} SERIAL NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} SMALLSERIAL NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::Serial => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} SERIAL NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::BigSerial => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} BIGSERIAL NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} BIGSERIAL NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} SERIAL NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::BigSerial => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} BIGSERIAL NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::Money => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} MONEY NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} MONEY NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} BIGSERIAL NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::Money => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} MONEY NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::CharVarying => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} MONEY NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::CharVarying => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::CharacterVarying => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::CharacterVarying => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NULL);",
-                            table_name, column_name
-                        ));
-
-                        // mapp contraints to sql
-
-                        up_sql_contents.push('\n');
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} VARCHAR NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
-                    }
-                }
-            }
-            PostgresTypes::Char => {
-                // add the column to the up.sql file
-                up_sql_contents.push_str(&format!(
-                    "CREATE TABLE IF NOT EXISTS {} ({} CHAR NOT NULL);",
-                    table_name, column_name
-                ));
-                up_sql_contents.push('\n');
-            }
-            PostgresTypes::Character => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} CHAR NULL);",
-                            table_name, column_name
-                        ));
-
-                        // mapp contraints to sql
-
-                        up_sql_contents.push('\n');
-                    }
-                    false => {
+                    PostgresTypes::Char => {
                         // add the column to the up.sql file
                         up_sql_contents.push_str(&format!(
                             "CREATE TABLE IF NOT EXISTS {} ({} CHAR NOT NULL);",
@@ -640,884 +626,940 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
                         ));
                         up_sql_contents.push('\n');
                     }
-                }
-            }
-            PostgresTypes::Text => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TEXT NULL);",
-                            table_name, column_name
-                        ));
+                    PostgresTypes::Character => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} CHAR NULL);",
+                                    table_name, column_name
+                                ));
 
-                        // mapp contraints to sql
+                                // mapp contraints to sql
 
-                        up_sql_contents.push('\n');
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} CHAR NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TEXT NOT NULL);",
-                            table_name, column_name
-                        ));
-                        up_sql_contents.push('\n');
+                    PostgresTypes::Text => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TEXT NULL);",
+                                    table_name, column_name
+                                ));
+
+                                // mapp contraints to sql
+
+                                up_sql_contents.push('\n');
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TEXT NOT NULL);",
+                                    table_name, column_name
+                                ));
+                                up_sql_contents.push('\n');
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::ByteA => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::ByteA => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} BYTEA NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} BYTEA NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Timestamp => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Timestamp => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::TimestampWithoutTimeZone => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::TimestampWithoutTimeZone => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::TimestampWithTimeZone => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::TimestampWithTimeZone => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIMESTAMP NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Date => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Date => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} DATE NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} DATE NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Time => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Time => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIME NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIME NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::TimeWithoutTimeZone => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::TimeWithoutTimeZone => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIME NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIME NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::TimeWithTimeZone => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::TimeWithTimeZone => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIME NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} TIME NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Interval => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Interval => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} INTERVAL NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} INTERVAL NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Boolean => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Boolean => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} BOOLEAN NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} BOOLEAN NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Enum => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Enum => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                 CREATE TABLE IF NOT EXISTS {} ({} {:?} NULL);
                                 ",
-                            &table_name, column_name, column_type
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name, column_type
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                 CREATE TABLE IF NOT EXISTS {} ({} {:?} NOT NULL);
                                 ",
-                            &table_name, column_name, column_type
-                        ));
+                                    &table_name, column_name, column_type
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Point => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Point => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} POINT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} POINT NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Line => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Line => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} LINE NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} LINE NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Lseg => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Lseg => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} LSEG NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} LSEG NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Box => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Box => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} BOX NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} BOX NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Path => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Path => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} PATH NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} PATH NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::PathOpen => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::PathOpen => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} PATH OPEN NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} PATH OPEN NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Polygon => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Polygon => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} POLYGON NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} POLYGON NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
                     }
-                }
-            }
-            PostgresTypes::Circle => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "\
+                    PostgresTypes::Circle => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} CIRCLE NULL);
                                     ",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "\
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "\
                                     CREATE TABLE IF NOT EXISTS {} ({} CIRCLE NOT NULL);
                                     ",
-                            &table_name, column_name
-                        ));
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::Inet => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} INET NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} INET NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::Cidr => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} CIDR NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} CIDR NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::MacAddr => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} MACADDR NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} MACADDR NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::MacAddr8 => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} MACADDR8 NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} MACADDR8 NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::Bit => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} BIT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} BIT NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::BitVarying => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} BIT VARYING NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} BIT VARYING NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::TsVector => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TSVECTOR NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TSVECTOR NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::TsQuery => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TSQUERY NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TSQUERY NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::Xml => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} XML NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} XML NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::Json => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} JSON NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} JSON NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::JsonB => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} JSONB NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} JSONB NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::Uuid => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} UUID NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} UUID NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::PgLsn => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} PGLSN NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} PGLSN NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::PgSnapshot => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} PG_SNAPSHOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} PG_SNAPSHOT NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::TxidSnapshot => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TXID_SNAPSHOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TXID_SNAPSHOT NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::Int4Range => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} INT4RANGE NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} INT4RANGE NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::Int8Range => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} INT8RANGE NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} INT8RANGE NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::NumRange => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} NUMRANGE NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} NUMRANGE NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::TsRange => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TSRANGE NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TSRANGE NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::TstzRange => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TSTZRANGE NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} TSTZRANGE NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::DateRange => {
+                        match nullable {
+                            true => {
+                                // add the sql and constraints to the up.sql file
+                                // if the column is nullable
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} DATERANGE NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                            false => {
+                                // add the column to the up.sql file
+                                up_sql_contents.push_str(&format!(
+                                    "CREATE TABLE IF NOT EXISTS {} ({} DATERANGE NOT NULL);",
+                                    &table_name, column_name
+                                ));
+                            }
+                        }
+                    }
+                    PostgresTypes::Array(_) => {
+                        up_sql_contents = create_array(up_sql_contents.clone(), nullable)
+                            .unwrap_or_else(|err| panic!("Error creating array: {}", err));
                     }
                 }
-            }
-            PostgresTypes::Inet => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} INET NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} INET NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::Cidr => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} CIDR NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} CIDR NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::MacAddr => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} MACADDR NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} MACADDR NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::MacAddr8 => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} MACADDR8 NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} MACADDR8 NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::Bit => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} BIT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} BIT NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::BitVarying => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} BIT VARYING NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} BIT VARYING NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::TsVector => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TSVECTOR NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TSVECTOR NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::TsQuery => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TSQUERY NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TSQUERY NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::Xml => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} XML NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} XML NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::Json => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} JSON NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} JSON NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::JsonB => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} JSONB NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} JSONB NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::Uuid => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} UUID NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} UUID NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::PgLsn => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} PGLSN NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} PGLSN NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::PgSnapshot => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} PG_SNAPSHOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} PG_SNAPSHOT NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::TxidSnapshot => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TXID_SNAPSHOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TXID_SNAPSHOT NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::Int4Range => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} INT4RANGE NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} INT4RANGE NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::Int8Range => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} INT8RANGE NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} INT8RANGE NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::NumRange => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} NUMRANGE NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} NUMRANGE NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-
-            PostgresTypes::TsRange => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TSRANGE NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TSRANGE NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::TstzRange => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TSTZRANGE NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} TSTZRANGE NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::DateRange => {
-                match nullable {
-                    true => {
-                        // add the sql and constraints to the up.sql file
-                        // if the column is nullable
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} DATERANGE NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                    false => {
-                        // add the column to the up.sql file
-                        up_sql_contents.push_str(&format!(
-                            "CREATE TABLE IF NOT EXISTS {} ({} DATERANGE NOT NULL);",
-                            &table_name, column_name
-                        ));
-                    }
-                }
-            }
-            PostgresTypes::Array(_) => {
-                up_sql_contents = create_array(up_sql_contents.clone(), nullable)
-                    .unwrap_or_else(|err| panic!("Error creating array: {}", err));
             }
         }
+
+        // WRITE UP.SQL
+        write_to_file(&up_file, &up_sql_contents.into_bytes()).unwrap();
+
+        // CREATE DOWN.SQL
+
+        for column in &columns {
+            let column_name = &column.column_name;
+            let column_type = &column.column_type;
+            let nullable = &column.nullable;
+            let default = &column.default;
+            let unique = &column.unique;
+            let primary_key = &column.primary_key;
+            let foreign_key = &column.foreign_key;
+            let references = &column.references;
+            let on_delete = &column.on_delete;
+            let on_update = &column.on_update;
+            let check = &column.check;
+            let expression = &column.expression;
+            let table_name = &table_name;
+            let mut down_sql_contents = String::new();
+
+            var = format!("{} {}", column_name, column_type);
+            down_sql_contents.push_str(&format!(
+                "ALTER TABLE {} DROP COLUMN {};",
+                table_name, column_name
+            ));
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+            down_sql_contents.push_str("\n");
+
+            write_to_file(&down_file, &down_sql_contents.into_bytes()).unwrap();
+        }
     }
-
-    // WRITE UP.SQL
-    write_to_file(&up_file, &up_sql_contents.into_bytes()).unwrap();
-
-    // Add Down.sql Statements to drop the table and the columns
-    // Add the drop table statement to the down.sql file
-    down_sql_contents.push_str(&format!("DROP TABLE {};", table_name));
-    write_to_file(&down_file, &down_sql_contents.into_bytes()).unwrap();
-
     Ok(())
 }
 
@@ -1629,19 +1671,22 @@ impl From<Box<dyn StdError + Send + Sync>> for CustomMigrationError {
 ///
 /// run_migration("create_users_table".to_string()).unwrap();
 /// ```
-pub async fn run_migration(migration_name: String) -> Result<(), CustomMigrationError> {
+pub async fn run_migration(
+    migration_name: String,
+    direction: MigrationDirection,
+) -> Result<(), CustomMigrationError> {
     // get the database
     let database: Database = Database::get_database_from_rustyroad_toml().await.expect("Couldn't parse the rustyroad.toml file. Please check the documentation for a proper implementation.");
     match database.database_type {
-        database::DatabaseType::Postgres => {
+        DatabaseType::Postgres => {
             println!("Database Type: PostGres");
-        },
-        database::DatabaseType::Mysql => {
+        }
+        DatabaseType::Mysql => {
             println!("Database Type: MySql");
-        },
-        database::DatabaseType::Sqlite => {
+        }
+        DatabaseType::Sqlite => {
             println!("Database Type: Sqlite");
-        },
+        }
         _ => {
             println!("coming soon");
         }
@@ -1671,11 +1716,14 @@ pub async fn run_migration(migration_name: String) -> Result<(), CustomMigration
         .await
         .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why.to_string()));
 
-    execute_migration_with_connection(connection, migration_files)
+    execute_migration_with_connection(connection, migration_files, direction.clone())
         .await
         .unwrap_or_else(|why| panic!("Couldn't execute migration: {:?}", why));
 
-    println!("Migration executed successfully");
+    match direction {
+        MigrationDirection::Up => println!("Migration applied successfully"),
+        MigrationDirection::Down => println!("Migration rolled back successfully"),
+    }
     Ok(())
 }
 
@@ -1868,9 +1916,16 @@ impl From<sqlx::Error> for MigrationError {
     }
 }
 
+#[derive(PartialEq, Clone, Copy, Debug, Display)]
+pub enum MigrationDirection {
+    Up,
+    Down,
+}
+
 async fn execute_migration_with_connection(
     connection: DatabaseConnection,
     migration_files: Vec<DirEntry>,
+    direction: MigrationDirection,
 ) -> Result<(), MigrationError> {
     for entry in migration_files {
         let path = entry.path();
@@ -1883,8 +1938,11 @@ async fn execute_migration_with_connection(
         file.read_to_string(&mut sql)
             .expect("Failed to read migration file");
 
-        // Skip the migration if it is a down.sql file
-        if path.file_stem() == Some(std::ffi::OsStr::new("down")) {
+        // Skip the migration if it is a down.sql file and we're migrating up, or vice versa
+        let is_down_file = path.file_stem() == Some(std::ffi::OsStr::new("down"));
+        if (direction == MigrationDirection::Up && is_down_file)
+            || (direction == MigrationDirection::Down && !is_down_file)
+        {
             continue;
         }
         match connection.clone() {

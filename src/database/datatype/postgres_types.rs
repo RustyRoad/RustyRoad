@@ -1,12 +1,26 @@
 use std::{cmp::Ordering, collections::HashMap};
-use strum_macros::Display;
+
+use strum_macros::{Display, EnumIter};
+
 use super::DataTypeCategory;
 
 /// The PostgreSQL data types are used to define a type of a column of a table.
 /// In addition, a column can be defined as a computed column, using an expression
 /// that evaluates to a value of scalar type.
 /// - https://www.postgresql.org/docs/12/datatype.html
-#[derive(Debug, Display, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    Clone,
+    Display,
+    Debug,
+    PartialEq,
+    std::cmp::Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    serde::Serialize,
+    serde::Deserialize,
+    EnumIter,
+)]
 pub enum PostgresTypes {
     /// A 2 byte signed integer.
     /// - Range: -32768 to +32767
@@ -548,7 +562,6 @@ pub enum ConstraintType {
     CheckIndex,
 }
 
-
 #[derive(Debug, Clone, PartialEq, std::cmp::Eq)]
 pub struct PostgresTypesMap {
     pub types: HashMap<String, Vec<PostgresTypes>>,
@@ -681,7 +694,6 @@ impl PostgresTypes {
     }
 }
 
-
 impl Ord for PostgresTypesMap {
     fn cmp(&self, other: &Self) -> Ordering {
         self.types.len().cmp(&other.types.len())
@@ -691,5 +703,11 @@ impl Ord for PostgresTypesMap {
 impl PartialOrd for PostgresTypesMap {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl Default for PostgresTypes {
+    fn default() -> Self {
+        PostgresTypes::Integer
     }
 }

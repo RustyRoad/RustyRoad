@@ -1,6 +1,5 @@
 use sqlx::mysql::{MySqlConnectOptions, MySqlPool};
 use std::error::Error;
-use std::fmt::{Display, Formatter, self};
 use std::fs;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -11,6 +10,8 @@ use tokio_postgres::{
 };
 use toml::Value;
 
+use super::databasetype::DatabaseType;
+
 #[derive(Debug, Clone)]
 pub struct Database {
     pub name: String,
@@ -19,26 +20,6 @@ pub struct Database {
     pub host: String,
     pub port: String,
     pub database_type: DatabaseType,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DatabaseType {
-    Postgres,
-    Mysql,
-    Sqlite,
-    Mongo,
-}
-
-impl Display for DatabaseType {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let database_type = match *self {
-            DatabaseType::Postgres => "postgres",
-            DatabaseType::Mysql => "mysql",
-            DatabaseType::Sqlite => "sqlite",
-            DatabaseType::Mongo => "mongo",
-        };
-        write!(f, "{}", database_type)
-    }
 }
 
 #[derive(Debug, Clone)]

@@ -3,7 +3,7 @@ mod tests {
     use sqlx::postgres::PgConnectOptions;
     use sqlx::ConnectOptions;
 
-    use rustyroad::database::{DatabaseType, Database};
+    use rustyroad::database::{Database, DatabaseType};
     use rustyroad::Project;
 
     #[tokio::test]

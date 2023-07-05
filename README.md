@@ -94,12 +94,27 @@ Because Rusty Road uses the actix web framework, the architecture is not exactly
 ## 🎈 Current Features <a name="features"></a>
 
 - Database migrations
+  - Create Migrations
+     -  ``` 
+        rustyroad migration generate [migration name]
+        ```
+  - Run Migrations
+    -  ``` 
+        rustyroad migration run
+        ```
+  - Rollback Migrations
+    -  ``` 
+        rustyroad migration rollback
+        ```
 - Database seeds
+  - Part of new project generation
 - Support for PostgreSQL
 - Support for MySQL
 - Support for SQLite
 - Support for MongoDB (Planned)
 - Routing (actix)
+- Basic Authentication
+- Session Management (Via Cookies)
 - Templating (Tera)
 - CSS Framework (Tailwind CSS)
 
@@ -112,9 +127,13 @@ Because Rusty Road uses the actix web framework, the architecture is not exactly
 ## 🚀 Future Scope <a name = "future_scope"></a>
 
 - Add support for more database adapters.
-- Add support for react.
-- Add support for GraphQL.
-- Add support for API based microservices.
+- Split into separate crates.
+  - Create an API crate.
+    - Add support for GraphQL.
+    - Add support for API based microservices.
+  - Create a web crate.
+    -  Add support for react.
+  - Convert RustyRoad into a CLI library that each crate can use.
 - Add support for more asset pipelines.
 - One click deployment to AWS, GCP, Azure, and Digital Ocean or provide a docker image.
 - Add support for more authentication frameworks.

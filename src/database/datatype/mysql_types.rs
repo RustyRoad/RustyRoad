@@ -1,7 +1,20 @@
-use std::{collections::HashMap, cmp::Ordering};
+use std::{cmp::Ordering, collections::HashMap};
+
+use strum_macros::{EnumIter,Display};
 
 use super::DataTypeCategory;
-#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    Clone,
+    Display,
+    PartialEq,
+    std::cmp::Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    serde::Serialize,
+    serde::Deserialize,
+    EnumIter,
+)]
 pub enum MySqlTypes {
     Bit,
     Boolean,
@@ -106,7 +119,6 @@ impl MySqlTypes {
         }
     }
 }
-
 
 impl Ord for MySqlTypeMap {
     fn cmp(&self, other: &Self) -> Ordering {

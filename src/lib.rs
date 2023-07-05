@@ -1163,46 +1163,66 @@ static/styles.css
                 }
             }
             // Migration Case - Can generate migrations, run migrations, and rollback migrations
-            Some(("migration", matches)) => {
-                match matches.subcommand() {
-                    Some(("generate", matches)) => {
-                        let name = matches.get_one::<String>("name").unwrap().to_string();
-                        create_migration(&name)
+            Some(("migration", matches)) => match matches.subcommand() {
+                Some(("generate", matches)) => {
+                    let name = matches.get_one::<String>("name").unwrap().to_string();
+                    create_migration(&name)
+                        .await
+                        .expect("Error creating migration");
+                }
+                Some(("run all", _)) => {
+                    todo!("Implement this");
+                }
+                Some(("run", matches)) => {
+                    let name = matches.get_one::<String>("name").unwrap().to_string();
+
+                    let confirmation = Confirm::new()
+                        .with_prompt(&format!(
+                            "Are you sure you want to execute the '{}' migration?",
+                            name.clone()
+                        ))
+                        .interact()
+                        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+                        .expect("Error executing migration: ");
+
+                    if confirmation {
+                        println!("Executing the '{}' migration...", name.clone());
+                        run_migration(name.clone(), MigrationDirection::Up)
                             .await
-                            .expect("Error creating migration");
-                    }
-                    Some(("run all", _)) => {
-                        todo!("Implement this");
-                    }
-                    Some(("run", matches)) => {
-                        // Initialize the rustyline Editor with the default helper and in-memory history
-                        let name = matches.get_one::<String>("name").unwrap().to_string();
-
-                        // Create a confirmation prompt
-                        let confirmation = Confirm::new()
-                            .with_prompt("Are you sure you want to execute the name migration?")
-                            .interact()
-                            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
-                            .expect("Error executing migration: ");
-
-                        if confirmation {
-                            println!("Executing the name migration...");
-                            run_migration(name).await.expect("Error running migration");
-                            println!("Name migration completed successfully!");
-                        } else {
-                            println!("Name migration canceled by user.");
-                        }
-                    }
-                    Some(("rollback", _)) => {
-                        todo!("Rollback migrations");
-                    }
-                    _ => {
-                        println!("Invalid migration choice");
+                            .expect("Error running migration");
+                        println!("'{}' migration completed successfully!", name.clone());
+                    } else {
+                        println!("'{}' migration canceled by user.", name);
                     }
                 }
-            }
+                Some(("rollback", matches)) => {
+                    let name = matches.get_one::<String>("name").unwrap().to_string();
+                    // Create a confirmation prompt
+                    let confirmation = Confirm::new()
+                        .with_prompt(&format!(
+                            "Are you sure you want to rollback the '{}' migration?",
+                            name
+                        ))
+                        .interact()
+                        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+                        .expect("Error rolling back migration: ");
+
+                    if confirmation {
+                        println!("Rolling back the '{}' migration...", name.clone());
+                        run_migration(name.clone(), MigrationDirection::Down)
+                            .await
+                            .expect("Error rolling back migration");
+                        println!("'{}' migration rollback completed successfully!", name.clone());
+                    } else {
+                        println!("'{}' migration rollback canceled by user.", name);
+                    }
+                }
+                _ => {
+                    println!("Invalid migration choice");
+                }
+            },
             _ => {
-                println!("Invalid project choice");
+                println!("Invalid choice");
             }
         }
     }

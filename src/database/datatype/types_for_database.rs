@@ -202,11 +202,23 @@ impl TypesForDatabase {
     /// let category = &DataTypeCategory::Text;
     /// let mysql_types = types_for_db.get_mysql_types(category);
     /// ```
-    pub fn get_mysql_types<'a>(&'a self, category: &'a DataTypeCategory) -> impl Iterator + 'a {
+    pub fn get_mysql_types<'a>(&'a self, category: &'a DataTypeCategory) -> Vec<MySqlTypes> {
         let types_for_database =
             category.get_data_types_from_data_type_category(DatabaseType::Mysql);
 
-        types_for_database.mysql.types.into_iter()
+        let TypesForDatabase {
+            mysql: MySqlTypeMap { types },
+            ..
+        } = types_for_database;
+
+        let mut entries: Vec<MySqlTypes> = types
+            .into_values()
+            .flatten()
+            .collect();
+
+        entries.sort();
+
+        entries
     }
 
     /// Retrieves the SQLite types for a given `DataTypeCategory`.
@@ -229,11 +241,23 @@ impl TypesForDatabase {
     /// let category = &DataTypeCategory::DateTime;
     /// let sqlite_types = types_for_db.get_sqlite_types(category);
     /// ```
-    pub fn get_sqlite_types<'a>(&'a self, category: &'a DataTypeCategory) -> impl Iterator + 'a {
+    pub fn get_sqlite_types<'a>(&'a self, category: &'a DataTypeCategory) -> Vec<SqliteTypes> {
         let types_for_database =
             category.get_data_types_from_data_type_category(DatabaseType::Sqlite);
 
-        types_for_database.sqlite.types.into_iter()
+        let TypesForDatabase {
+            sqlite: SqliteTypeMap { types },
+            ..
+        } = types_for_database;
+
+        let mut entries: Vec<SqliteTypes> = types
+            .into_values()
+            .flatten()
+            .collect();
+
+        entries.sort();
+
+        entries
     }
 
     /// Retrieves the types for a given `DataTypeCategory` and `DatabaseType`.

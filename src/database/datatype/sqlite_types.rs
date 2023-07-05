@@ -1,7 +1,7 @@
 use std::{collections::HashMap, cmp::Ordering};
 
 use super::DataTypeCategory;
-#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
 pub enum SqliteTypes {
     Integer,
     Real,
@@ -45,5 +45,19 @@ impl Ord for SqliteTypeMap {
 impl PartialOrd for SqliteTypeMap {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_numeric_sql_types() {
+        let expected_category = DataTypeCategory::Numeric;
+        
+        assert_eq!(SqliteTypes::Integer.category(), expected_category);
+        assert_eq!(SqliteTypes::Real.category(), expected_category);
+        assert_eq!(SqliteTypes::Numeric.category(), expected_category);
     }
 }
