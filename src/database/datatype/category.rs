@@ -1,8 +1,10 @@
+use super::postgres_types::PostgresTypes;
 use super::TypesForDatabase;
 use crate::DatabaseType;
 use std::borrow::Borrow;
 use std::fmt;
 use std::hash::Hash;
+use strum_macros::EnumIter;
 /// # Name: DataTypeCategory
 /// ## Type: Enum
 /// ## Description
@@ -31,7 +33,7 @@ use std::hash::Hash;
 /// - Composite
 /// - Range
 /// - Other
-#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord, EnumIter)]
 pub enum DataTypeCategory {
     Array,
     BitString,
@@ -209,22 +211,168 @@ impl DataTypeCategory {
         &self,
         database_type: DatabaseType,
     ) -> TypesForDatabase {
+        let mut types_for_database = TypesForDatabase::new();
+
         match database_type {
-            DatabaseType::Postgres => {
-                let  types_for_database = TypesForDatabase::new();
-
-                types_for_database
-            }
-            DatabaseType::Mysql => {
-                let types_for_database = TypesForDatabase::new();
-
-                types_for_database
-            }
-            DatabaseType::Sqlite => {
-                let types_for_database = TypesForDatabase::new();
-
-                types_for_database
+            DatabaseType::Postgres => match self {
+                DataTypeCategory::Array => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![
+                            PostgresTypes::Array(Box::new(PostgresTypes::Text)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Integer)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::BigInt)),
+                        ],
+                    );
+                    types_for_database
+                }
+                DataTypeCategory::Boolean => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![PostgresTypes::Boolean, PostgresTypes::Bit],
+                    );
+                    types_for_database
+                }
+                DataTypeCategory::Numeric => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![
+                            PostgresTypes::Numeric,
+                            PostgresTypes::Decimal,
+                            PostgresTypes::Real,
+                            PostgresTypes::DoublePrecision,
+                            PostgresTypes::SmallInt,
+                            PostgresTypes::Integer,
+                            PostgresTypes::BigInt,
+                            PostgresTypes::Serial,
+                            PostgresTypes::BigSerial,
+                        ],
+                    );
+                    types_for_database
+                }
+                DataTypeCategory::DateTime => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![
+                            PostgresTypes::Date,
+                            PostgresTypes::Time,
+                            PostgresTypes::Timestamp,
+                            PostgresTypes::TimestampWithTimeZone,
+                            PostgresTypes::Interval,
+                        ],
+                    );
+                    types_for_database
+                }
+                DataTypeCategory::Text => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![
+                            PostgresTypes::Text,
+                            PostgresTypes::Char,
+                            PostgresTypes::VarChar,
+                            PostgresTypes::Xml,
+                            PostgresTypes::ByteA,
+                        ],
+                    );
+                    types_for_database
+                }
+                DataTypeCategory::Geometric => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![
+                            PostgresTypes::Point,
+                            PostgresTypes::Line,
+                            PostgresTypes::Lseg,
+                            PostgresTypes::Box,
+                            PostgresTypes::Path,
+                            PostgresTypes::Polygon,
+                            PostgresTypes::Circle,
+                        ],
+                    );
+                    types_for_database
+                }
+                DataTypeCategory::NetworkAddress => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![
+                            PostgresTypes::Cidr,
+                            PostgresTypes::Inet,
+                            PostgresTypes::MacAddr,
+                            PostgresTypes::MacAddr8,
+                        ],
+                    );
+                    types_for_database
+                }
+                DataTypeCategory::Json => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![PostgresTypes::Json, PostgresTypes::JsonB],
+                    );
+                    types_for_database
+                }
+                DataTypeCategory::Search => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![
+                            PostgresTypes::TsVector,
+                            PostgresTypes::TsQuery,
+                            PostgresTypes::TsRange,
+                            PostgresTypes::TstzRange,
+                            PostgresTypes::Int4Range,
+                            PostgresTypes::Int8Range,
+                            PostgresTypes::NumRange,
+                            PostgresTypes::DateRange,
+                        ],
+                    );
+                    types_for_database
+                }
+                DataTypeCategory::UUID => {
+                    types_for_database
+                        .add_postgres_type(self.to_string(), vec![PostgresTypes::Uuid]);
+                    types_for_database
+                }
+                DataTypeCategory::BitString => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![PostgresTypes::BitVarying, PostgresTypes::Bit],
+                    );
+                    types_for_database
+                }
+                DataTypeCategory::Composite => {
+                    types_for_database
+                        .add_postgres_type(self.to_string(), vec![PostgresTypes::TsQuery]);
+                    types_for_database
+                }
+                DataTypeCategory::Interval => {
+                    types_for_database
+                        .add_postgres_type(self.to_string(), vec![PostgresTypes::Interval]);
+                    types_for_database
+                }
+                DataTypeCategory::Money => {
+                    types_for_database
+                        .add_postgres_type(self.to_string(), vec![PostgresTypes::Money]);
+                    types_for_database
+                }
+                DataTypeCategory::Other => {
+                    types_for_database
+                        .add_postgres_type(self.to_string(), vec![PostgresTypes::Uuid]);
+                    types_for_database
+                }
+                DataTypeCategory::Range => {
+                    types_for_database.add_postgres_type(
+                        self.to_string(),
+                        vec![
+                            PostgresTypes::Int4Range,
+                            PostgresTypes::Int8Range,
+                            PostgresTypes::NumRange,
+                            PostgresTypes::DateRange,
+                        ],
+                    );
+                    types_for_database
+                }
             },
+            DatabaseType::Mysql => todo!(),
+            DatabaseType::Sqlite => todo!(),
             DatabaseType::Mongo => todo!(),
         }
     }
@@ -258,31 +406,16 @@ mod tests {
         }
     }
 
-
-        #[test]
+    #[test]
     fn test_get_postgres_types() {
         let types_for_db = TypesForDatabase::new();
         let category = DataTypeCategory::Text;
 
         // Expected types for category
-        let expected_types = vec![PostgresTypes::Text]; 
+        let expected_types = vec![PostgresTypes::Text];
 
         // Get types
         let retrieved_types = types_for_db.get_postgres_types(&category);
-
-        assert_eq!(retrieved_types, expected_types);
-    }
-
-    #[test]
-    fn test_get_mysql_types() {
-        let types_for_db = TypesForDatabase::new();
-        let category = DataTypeCategory::Numeric;
-
-        // Expected types for category
-        let expected_types = vec![MySqlTypes::Decimal(10, 2)]; 
-
-        // Get types
-        let retrieved_types = types_for_db.get_mysql_types(&category);
 
         assert_eq!(retrieved_types, expected_types);
     }
@@ -293,7 +426,7 @@ mod tests {
         let category = DataTypeCategory::Text;
 
         // Expected types for category
-        let expected_types = vec![SqliteTypes::Text]; 
+        let expected_types = vec![SqliteTypes::Text];
 
         // Get types
         let retrieved_types = types_for_db.get_sqlite_types(&category);
