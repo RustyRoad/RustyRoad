@@ -1,7 +1,6 @@
 use std::{cmp::Ordering, collections::HashMap};
 
 use strum_macros::{Display, EnumIter};
-
 use super::DataTypeCategory;
 
 /// The PostgreSQL data types are used to define a type of a column of a table.
@@ -19,7 +18,7 @@ use super::DataTypeCategory;
     Ord,
     serde::Serialize,
     serde::Deserialize,
-    EnumIter,
+    EnumIter
 )]
 pub enum PostgresTypes {
     /// A 2 byte signed integer.
