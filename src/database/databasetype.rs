@@ -1,6 +1,6 @@
-use super::{
-    category::DataTypeCategory, mysql_types::MySqlTypes, types_for_database::TypesForDatabase,
-};
+use strum::IntoEnumIterator;
+
+use super::{category::DataTypeCategory, types_for_database::TypesForDatabase};
 use crate::database::PostgresTypes;
 use std::fmt::{self, Display, Formatter};
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -49,70 +49,43 @@ impl DatabaseTypeTrait for PostgresDatabaseType {
         data_types_for_category: &Self::DataType,
         data_type_category: &Self::DataTypeCategory,
     ) -> Vec<TypesForDatabase> {
-        let mut database_types = Vec::new();
-        match self {
-            PostgresDatabaseType => {
-                let postgres_types = data_types_for_category.get_postgres_types(data_type_category);
-                for postgres_type in postgres_types {
-                    let mut types_for_database = TypesForDatabase::new();
-                    types_for_database
-                        .add_postgres_type(data_type_category.to_string(), vec![postgres_type]);
-                    database_types.push(types_for_database);
-                }
-            }
+        let data_types = PostgresTypes::iter();
+
+        let mut types_for_database = TypesForDatabase::new();
+
+        for data_type in data_types {
+            let _data_type = data_type.to_string();
+            let _data_type =
+                data_type_category.get_data_types_from_data_type_category(DatabaseType::Postgres);
+            let data_type = data_types_for_category.get_postgres_types(data_type_category);
+            types_for_database.add_postgres_type(data_type_category.to_string(), data_type);
         }
-        database_types
+
+        let types_for_database = vec![types_for_database];
+        types_for_database
     }
 }
 
-impl DatabaseTypeTrait for MySqlDatabaseType {
-    type DatabaseType = MySqlTypes;
-    type DataType = TypesForDatabase;
-    type DataTypeCategory = DataTypeCategory;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    fn get_database_types(
-        &self,
-        data_types_for_category: &Self::DataType,
-        data_type_category: &Self::DataTypeCategory,
-    ) -> Vec<TypesForDatabase> {
-        let mut database_types = Vec::new();
-        match self {
-            MySqlDatabaseType => {
-                let mysql_types = data_types_for_category.get_mysql_types(data_type_category);
-                for mysql_type in mysql_types {
-                    let mut types_for_database = TypesForDatabase::new();
-                    types_for_database
-                        .add_mysql_type(data_type_category.to_string(), vec![mysql_type]);
-                    database_types.push(types_for_database);
-                }
-            }
-        }
-        database_types
-    }
-}
+    #[test]
+    fn test_postgres_database_type() {
+        let postgres_db_type = PostgresDatabaseType;
 
-impl DatabaseTypeTrait for SqliteDatabaseType {
-    type DatabaseType = String;
-    type DataType = TypesForDatabase;
-    type DataTypeCategory = DataTypeCategory;
+        let data_types_for_category = TypesForDatabase::new();
+        let data_type_category = DataTypeCategory::Text;
 
-    fn get_database_types(
-        &self,
-        data_types_for_category: &Self::DataType,
-        data_type_category: &Self::DataTypeCategory,
-    ) -> Vec<TypesForDatabase> {
-        let mut database_types = Vec::new();
-        match self {
-            SqliteDatabaseType => {
-                let sqlite_types = data_types_for_category.get_sqlite_types(data_type_category);
-                for sqlite_type in sqlite_types {
-                    let mut types_for_database = TypesForDatabase::new();
-                    types_for_database
-                        .add_sqlite_type(data_type_category.to_string(), vec![sqlite_type]);
-                    database_types.push(types_for_database);
-                }
-            }
-        }
-        database_types
+        let result =
+            postgres_db_type.get_database_types(&data_types_for_category, &data_type_category);
+
+        // Assert that the result is not empty
+        assert!(!result.is_empty());
+
+        println!("{:?}", result);
+
+        // Assert that the result contains only one element
+        assert_eq!(result.len(), 1);
     }
 }
