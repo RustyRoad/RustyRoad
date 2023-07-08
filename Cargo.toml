@@ -41,5 +41,6 @@ strum_macros = "0.24.3"
 mysql_async = "0.32.2"
 dialoguer = "0.10.4"
 strum = "0.25.0"
+maplit = "1.0.2"
 [features]
 with-file-history = []
