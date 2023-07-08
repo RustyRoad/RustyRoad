@@ -1,10 +1,12 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::{cmp::Ordering, collections::HashMap};
-
-use strum_macros::{EnumIter,Display};
+use strum_macros::{Display, EnumIter};
 
 use super::DataTypeCategory;
 #[derive(
     Clone,
+    Debug,
     Display,
     PartialEq,
     std::cmp::Eq,
@@ -63,9 +65,17 @@ pub enum MySqlTypes {
     /// Error type for when a type is not found in the database type map.
     NotFound,
 }
-#[derive(Debug, Clone, PartialEq, std::cmp::Eq)]
+#[derive(Debug, Clone, PartialEq, std::cmp::Eq, serde::Serialize, serde::Deserialize)]
 pub struct MySqlTypeMap {
     pub types: HashMap<String, Vec<MySqlTypes>>,
+}
+
+impl Hash for MySqlTypeMap {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let hasher = DefaultHasher::new();
+        self.types.hasher();
+        hasher.finish().hash(state);
+    }
 }
 
 impl MySqlTypes {
