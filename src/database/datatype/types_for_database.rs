@@ -3,6 +3,8 @@ use std::{
     fmt,
 };
 
+use maplit::hashmap;
+
 use crate::database::DatabaseType;
 
 use super::{
@@ -172,10 +174,7 @@ impl TypesForDatabase {
             ..
         } = types_for_database;
 
-        let mut entries: Vec<PostgresTypes> = types
-            .into_values()
-            .flatten()
-            .collect();
+        let mut entries: Vec<PostgresTypes> = types.into_values().flatten().collect();
 
         entries.sort();
 
@@ -211,10 +210,7 @@ impl TypesForDatabase {
             ..
         } = types_for_database;
 
-        let mut entries: Vec<MySqlTypes> = types
-            .into_values()
-            .flatten()
-            .collect();
+        let mut entries: Vec<MySqlTypes> = types.into_values().flatten().collect();
 
         entries.sort();
 
@@ -250,10 +246,7 @@ impl TypesForDatabase {
             ..
         } = types_for_database;
 
-        let mut entries: Vec<SqliteTypes> = types
-            .into_values()
-            .flatten()
-            .collect();
+        let mut entries: Vec<SqliteTypes> = types.into_values().flatten().collect();
 
         entries.sort();
 
@@ -287,36 +280,68 @@ impl TypesForDatabase {
         &self,
         category: &DataTypeCategory,
         database_type: DatabaseType,
-    ) -> Vec<PostgresTypes> {
+    ) -> Vec<TypesForDatabase> {
         let types_for_database =
             category.get_data_types_from_data_type_category(database_type.clone());
 
-        let mut entries: Vec<PostgresTypes> = match database_type {
-            DatabaseType::Postgres => {
-                let TypesForDatabase {
-                    postgres: PostgresTypesMap { types },
-                    ..
-                } = types_for_database;
-                types
-                    .into_iter()
-                    .map(|(_, types)| types)
-                    .flatten()
-                    .collect()
-            }
-            DatabaseType::Mysql => {
-                // Assuming you'll have a similar structure for MySQL types
-                // Vec::new()
-                todo!()
-            }
-            DatabaseType::Sqlite => {
-                // Assuming you'll have a similar structure for SQLite types
-                // Vec.new()
-                todo!()
-            }
+        let TypesForDatabase {
+            postgres: PostgresTypesMap { types: postgres },
+            mysql: MySqlTypeMap { types: mysql },
+            sqlite: SqliteTypeMap { types: sqlite },
+        } = types_for_database;
+
+        let mut entries: Vec<TypesForDatabase> = match database_type {
+            DatabaseType::Postgres => postgres
+                .into_values()
+                .flatten()
+                .map(|ty| TypesForDatabase {
+                    postgres: PostgresTypesMap {
+                        // hashmap expects (String, Vec<PostgresTypes>).
+                        types: hashmap! { category.to_string() => vec![ty] },
+                    },
+                    mysql: MySqlTypeMap {
+                        types: hashmap! { category.to_string() => vec![] },
+                    },
+                    sqlite: SqliteTypeMap {
+                        types: hashmap! { category.to_string() => vec![] },
+                    },
+                })
+                .collect(),
+            DatabaseType::Mysql => mysql
+                .into_values()
+                .flatten()
+                .map(|ty| TypesForDatabase {
+                    postgres: PostgresTypesMap {
+                        types: hashmap! { category.to_string() => vec![] },
+                    },
+                    mysql: MySqlTypeMap {
+                        types: hashmap! { category.to_string() => vec![ty] },
+                    },
+                    sqlite: SqliteTypeMap {
+                        types: hashmap! { category.to_string() => vec![] },
+                    },
+                })
+                .collect(),
+            DatabaseType::Sqlite => sqlite
+                .into_values()
+                .flatten()
+                .map(|ty| TypesForDatabase {
+                    postgres: PostgresTypesMap {
+                        types: hashmap! { category.to_string() => vec![] },
+                    },
+                    mysql: MySqlTypeMap {
+                        types: hashmap! { category.to_string() => vec![] },
+                    },
+                    sqlite: SqliteTypeMap {
+                        types: hashmap! { category.to_string() => vec![ty] },
+                    },
+                })
+                .collect(),
             DatabaseType::Mongo => todo!(),
         };
 
         entries.sort();
+
         entries
     }
 }
@@ -369,4 +394,8 @@ impl<'a> IntoIterator for &'a TypesForDatabase {
 
         vec.into_iter()
     }
+}
+
+pub trait GetAllTypes {
+    fn get_all_types(&self) -> Vec<DatabaseType>;
 }
