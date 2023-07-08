@@ -3,7 +3,10 @@ mod tests {
     use sqlx::postgres::PgConnectOptions;
     use sqlx::ConnectOptions;
 
-    use rustyroad::database::{Database, DatabaseType};
+    use rustyroad::database::{
+        DataTypeCategory, Database, DatabaseType, DatabaseTypeTrait, PostgresDatabaseType,
+        TypesForDatabase,
+    };
     use rustyroad::Project;
 
     #[tokio::test]
@@ -75,5 +78,39 @@ mod tests {
         );
 
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_postgres_database_type_get_database_types() {
+        let postgres_database_type = PostgresDatabaseType;
+        let data_type_category = DataTypeCategory::Numeric;
+        let data_types_for_category = TypesForDatabase::new();
+
+        let result = postgres_database_type
+            .get_database_types(&data_types_for_category, &data_type_category);
+
+        assert_eq!(result.len(), 1);
+        let types_for_database: &TypesForDatabase = &result[0];
+
+        for postgres_type in types_for_database.clone().postgres.types {
+            println!("{:?}", postgres_type);
+        }
+
+        println!("{:?}", types_for_database.postgres.types.len());
+
+        assert_eq!(types_for_database.postgres.types.len(), 6);
+        assert_eq!(types_for_database.mysql.types.len(), 0);
+        assert_eq!(types_for_database.sqlite.types.len(), 0);
+
+        let expected_data_types = vec![
+            "smallint", "integer", "bigint", "decimal", "numeric", "real",
+        ];
+
+        for data_type in expected_data_types {
+            assert!(types_for_database
+                .postgres
+                .types
+                .contains_key(&data_type.to_string()));
+        }
     }
 }
