@@ -194,7 +194,7 @@ impl DataTypeCategory {
     /// # Examples
     ///
     /// ```rust
-    /// use rustyroad::database::datatype::category::{DataTypeCategory, PostgresTypes, TypesForDatabase};
+    /// use rustyroad::database::datatype::category::TypesForDatabase;
     /// use rustyroad::database::DatabaseType;
     ///
     /// let category = DataTypeCategory::Array;
@@ -216,12 +216,29 @@ impl DataTypeCategory {
         match database_type {
             DatabaseType::Postgres => match self {
                 DataTypeCategory::Array => {
-                    types_for_database.add_postgres_type(
+                     types_for_database.add_postgres_type(
                         self.to_string(),
                         vec![
                             PostgresTypes::Array(Box::new(PostgresTypes::Text)),
                             PostgresTypes::Array(Box::new(PostgresTypes::Integer)),
                             PostgresTypes::Array(Box::new(PostgresTypes::BigInt)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Boolean)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Numeric)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Real)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::DoublePrecision)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::SmallInt)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Serial)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::BigSerial)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Date)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Timestamp)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::TimestampWithTimeZone)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Time)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::TimeWithTimeZone)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Interval)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Json)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Uuid)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Money)),
+                            PostgresTypes::Array(Box::new(PostgresTypes::Bit)),
                         ],
                     );
                     types_for_database
@@ -371,9 +388,9 @@ impl DataTypeCategory {
                     types_for_database
                 }
             },
-            DatabaseType::Mysql => todo!(),
-            DatabaseType::Sqlite => todo!(),
-            DatabaseType::Mongo => todo!(),
+          _ => {
+              types_for_database
+          }
         }
     }
 }
