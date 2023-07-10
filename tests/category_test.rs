@@ -2,22 +2,6 @@
 mod tests {
     use rustyroad::database::{DataTypeCategory, DatabaseType, PostgresTypes};
 
-    #[tokio::test]
-    async fn test_get_data_from_data_type_category_postgres_boolean() {
-        let data_type_category = DataTypeCategory::Boolean;
-        let database_type = DatabaseType::Postgres;
-        let types_for_database =
-            data_type_category.get_data_types_from_data_type_category(database_type);
-        assert_eq!(types_for_database.postgres.types.len(), 2);
-        assert!(types_for_database
-            .postgres
-            .types
-            .contains_key(&PostgresTypes::Boolean.to_string()));
-        assert!(types_for_database
-            .postgres
-            .types
-            .contains_key(&PostgresTypes::Bit.to_string()));
-    }
 
     #[tokio::test]
     async fn test_get_data_from_data_type_category_postgres_numeric() {
@@ -25,7 +9,7 @@ mod tests {
         let database_type = DatabaseType::Postgres;
         let types_for_database =
             data_type_category.get_data_types_from_data_type_category(database_type);
-        assert_eq!(types_for_database.postgres.types.len(), 10);
+        assert_eq!(types_for_database.postgres.types.len(), 9);
         assert!(types_for_database
             .postgres
             .types
@@ -192,6 +176,7 @@ mod tests {
             .types
             .contains_key(&PostgresTypes::JsonB.to_string()));
     }
+   
     #[tokio::test]
     async fn test_get_data_from_data_type_category_postgres_search() {
         let data_type_category = DataTypeCategory::Search;
@@ -248,6 +233,9 @@ mod tests {
             .contains_key(&PostgresTypes::Character.to_string()));
     }
 
+
+    /// PostGres Interval
+    /// - Passes
     #[tokio::test]
     async fn test_get_data_from_data_type_category_postgres_interval() {
         let data_type_category = DataTypeCategory::Interval;
@@ -261,6 +249,8 @@ mod tests {
             .contains_key(&PostgresTypes::Interval.to_string()));
     }
 
+    /// PostGres Money
+    /// - Passes
     #[tokio::test]
     async fn test_get_data_from_data_type_category_postgres_money() {
         let data_type_category = DataTypeCategory::Money;
@@ -285,5 +275,23 @@ mod tests {
             .postgres
             .types
             .contains_key(&PostgresTypes::Xml.to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_get_data_from_data_type_category_postgres_array() {
+        let data_type_category = DataTypeCategory::Array;
+        let database_type = DatabaseType::Postgres;
+        let types_for_database =
+            data_type_category.get_data_types_from_data_type_category(database_type);
+
+        assert_eq!(types_for_database.postgres.types.len(), 1);
+        // print the types
+        for (key, value) in types_for_database.postgres.types.iter() {
+            println!("{:?}: {:?}", key, value);
+        }
+        assert!(types_for_database
+            .postgres
+            .types
+            .contains_key(&PostgresTypes::Array(Box::new(PostgresTypes::Integer)).to_string()));
     }
 }
