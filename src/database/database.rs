@@ -56,8 +56,7 @@ impl Database {
                 "mysql" => DatabaseType::Mysql,
                 "sqlite" => DatabaseType::Sqlite,
                 "mongo" => DatabaseType::Mongo,
-
-                _ => DatabaseType::Mongo,
+                _ => DatabaseType::Mysql,
             },
         }
     }
@@ -132,15 +131,11 @@ impl Database {
         Ok(client)
     }
 
-    pub async fn get_database_from_rustyroad_toml() -> Result<Database, std::io::Error> {
+    pub  fn get_database_from_rustyroad_toml() -> Result<Database, std::io::Error> {
         let database: Database = match fs::read_to_string("rustyroad.toml") {
             Ok(file) => {
                 let toml: Value = toml::from_str(&file).unwrap();
-                println!("Toml: {:?}", toml);
-
                 let database_table = toml["database"].as_table().unwrap();
-
-                println!("Toml Database Type: {:?}", &database_table["database_type"]);
                 Database::new(
                     database_table["database_name"]
                         .as_str()
@@ -162,7 +157,10 @@ impl Database {
                         .as_str()
                         .unwrap()
                         .to_string(),
-                    &database_table["database_type"].as_str().unwrap(),
+                    database_table["database_type"]
+                        .as_str()
+                        .unwrap()
+                    ,
                 )
             }
             Err(_) => {
@@ -170,7 +168,6 @@ impl Database {
                 std::process::exit(1);
             }
         };
-        println!("Database Type: {:?}", database.database_type);
 
         Ok(database)
     }
