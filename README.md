@@ -235,9 +235,8 @@ rustyroad generate route users
 
 - [Rust](https://www.rust-lang.org/) - Programming Language
 - [actix](https://actix.rs/) - Web Framework
-- [Diesel](https://diesel.rs/) - ORM
+- [Sqlx](https://github.com/launchbadge/sqlx) - Database Adapter
 - [Tera](https://tera.netlify.app/) - Template Engine
-- [PostgreSQL](https://www.postgresql.org/) - Database
 - [Cucumber Rust](https://github.com/cucumber-rs) - Testing
 
 ## ✍️ Authors <a name = "authors"></a>
