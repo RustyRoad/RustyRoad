@@ -1,0 +1,8 @@
+[database]
+name = "example"
+database_name = "example_db"
+database_user = "postgres"
+database_password = "postgres"
+database_host = "192.168.50.70"
+database_port = "5432"
+database_type = "postgres"
