@@ -80,12 +80,14 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
         }
     }
 
+    let mut down_sql_contents = String::new();
+
+    let up_file = format!("{}/up.sql", folder_name).to_string();
+
+    let down_file = format!("{}/down.sql", folder_name).to_string();
+
     create_file(&format!("{}/up.sql", folder_name).to_string())
         .unwrap_or_else(|why| panic!("Couldn't create {}: {}", &name, why.to_string()));
-
-    let _up_file = format!("{}/up.sql", folder_name).to_string();
-
-    let _down_file = format!("{}/down.sql", folder_name).to_string();
 
     // Create the down.sql file
     create_file(&format!("{}/down.sql", folder_name).to_string())
@@ -96,14 +98,9 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
         panic!("Failed to create rustyline editor: {}", why.to_string());
     });
 
-    // // Prompt the user for SQL queries for the up.sql file
-    let _up_sql_contents = String::new();
-    let _down_sql_contents = String::new();
-
     let table_name = name.to_string();
 
     // ask the user how many columns they want to add
-
     let mut num_columns_str = rl
         .readline("Enter the number of columns: ")
         .unwrap_or_else(|why| {
@@ -125,7 +122,18 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
     };
 
     // loop through the number of columns and ask the user for the column name and type
-    let _ = column_loop(num_columns, table_name).await;
+    let up_sql_contents = column_loop(num_columns, table_name.clone())
+        .expect("Failed to loop through columns and add them to the up.sql file. Please see documentation for more information.");
+
+    down_sql_contents.push_str(&format!("DROP TABLE {};", table_name));
+
+    write_to_file(&up_file, &up_sql_contents.as_bytes()).unwrap_or_else(|why| {
+        panic!("Failed to write to {}: {}", &up_file, why.to_string());
+    });
+
+    write_to_file(&down_file, &down_sql_contents.as_bytes()).unwrap_or_else(|why| {
+        panic!("Failed to write to {}: {}", &down_file, why.to_string());
+    });
 
     Ok(())
 }
@@ -234,16 +242,17 @@ impl From<Box<dyn StdError + Send + Sync>> for CustomMigrationError {
 ///
 /// ### Example:
 /// ```rust
+/// use rustyroad::database::MigrationDirection;
 /// use rustyroad::database::migrations::run_migration;
 ///
-/// run_migration("create_users_table".to_string()).unwrap();
+/// run_migration("create_users_table".to_string(), MigrationDirection::Up);
 /// ```
 pub async fn run_migration(
     migration_name: String,
     direction: MigrationDirection,
 ) -> Result<(), CustomMigrationError> {
     // get the database
-    let database: Database = Database::get_database_from_rustyroad_toml().await.expect("Couldn't parse the rustyroad.toml file. Please check the documentation for a proper implementation.");
+    let database: Database = Database::get_database_from_rustyroad_toml().expect("Couldn't parse the rustyroad.toml file. Please check the documentation for a proper implementation.");
     match database.database_type {
         DatabaseType::Postgres => {
             println!("Database Type: PostGres");
