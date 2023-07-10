@@ -57,15 +57,7 @@ impl TypesForDatabase {
     /// types_for_db.add_postgres_type("Text".to_string(), vec![PostgresTypes::Text]);
     /// ```
     pub fn add_postgres_type(&mut self, category: String, ty: Vec<PostgresTypes>) {
-        match self.postgres.types.entry(category) {
-            Entry::Occupied(entry) => {
-                let types = entry.into_mut();
-                types.extend(ty);
-            }
-            Entry::Vacant(entry) => {
-                entry.insert(ty);
-            }
-        }
+       self.postgres.types.insert(category, ty);
     }
 
     /// Adds a MySQL type to the `TypesForDatabase` instance.
