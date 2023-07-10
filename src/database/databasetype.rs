@@ -44,6 +44,32 @@ impl DatabaseTypeTrait for PostgresDatabaseType {
     type DataType = TypesForDatabase;
     type DataTypeCategory = DataTypeCategory;
 
+    /// # Name: get_database_types
+    /// ## Description
+    /// This function returns a vector of all the database types for the given data type category.
+    /// ## Parameters
+    /// * `data_types_for_category` - A reference to a vector of data types for the given data type category.
+    /// * `data_type_category` - A reference to the data type category.
+    /// ## Returns
+    /// A vector of all the database types for the given data type category.
+    /// ## Example
+    /// ```
+    /// use rustyroad::database::{DatabaseTypeTrait, PostgresDatabaseType, types_for_database::TypesForDatabase, category::DataTypeCategory, databasetype::DatabaseType};
+    /// let postgres_database_type = PostgresDatabaseType;
+    /// let data_types_for_category = TypesForDatabase::new();
+    /// let data_type_category = DataTypeCategory::new("Text");
+    ///
+    /// match data_type_category {
+    ///    Some(data_type_category) => {
+    ///       let database_types = postgres_database_type.get_database_types(&data_types_for_category, &data_type_category);
+    ///      assert_eq!(database_types.len(), 1);
+    ///     assert_eq!(database_types[0].get_postgres_types(&data_type_category).len(), 5);
+    ///   },
+    ///  None => {
+    ///    println!("No data type category found");
+    /// }
+    /// }
+    /// ```
     fn get_database_types(
         &self,
         data_types_for_category: &Self::DataType,
@@ -84,8 +110,19 @@ mod tests {
         assert!(!result.is_empty());
 
         println!("{:?}", result);
-
+        let types_for_database = &result[0].postgres.types;
         // Assert that the result contains only one element
-        assert_eq!(result.len(), 1);
+        if let Some(text_types) = types_for_database.get("Text") {
+            // text_types is a reference to the Vec of types for "Text"
+            for text_type in text_types {
+                println!("{:?}", text_type);
+            }
+
+            assert_eq!(text_types.len(), 5);
+        } else {
+            println!("No types found for \"Text\"");
+        }
+        assert!(types_for_database.contains_key("Text"));
+        assert_eq!(types_for_database.len(), 1);
     }
 }
