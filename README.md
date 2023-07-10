@@ -109,8 +109,12 @@ Because Rusty Road uses the actix web framework, the architecture is not exactly
 - Database seeds
   - Part of new project generation
 - Support for PostgreSQL
+ - Project creation
+  - Database migrations
 - Support for MySQL
+  - Project creation
 - Support for SQLite
+  - Project creation
 - Support for MongoDB (Planned)
 - Routing (actix)
 - Basic Authentication
