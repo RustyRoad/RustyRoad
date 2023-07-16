@@ -100,7 +100,7 @@ impl UserLogin {
 
                             // Insert the new session into the database
                             let result = sqlx::query(
-                                "INSERT INTO Sessions (user_id, session_token, expiration_date) VALUES ((SELECT id FROM Users WHERE username = ?), ?, ?)",
+                                "INSERT INTO Sessions (user_id, session_token, expiration_date) VALUES ((SELECT id FROM Users WHERE username = $1), $2, $3)",
                             )
                             .bind(&self.username)
                             .bind(&session_token)

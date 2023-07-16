@@ -1,7 +1,8 @@
-use crate::{Project, writers::write_to_routes_mod::write_to_models_mod};
-use std::{io::{Error, Write}, fs::OpenOptions};
-
-
+use crate::{writers::write_to_routes_mod::write_to_models_mod, Project};
+use std::{
+    fs::OpenOptions,
+    io::{Error, Write},
+};
 
 // Write to models/users.rs
 pub fn write_to_mysql_user_models(project: &Project) -> Result<(), Error> {
@@ -112,7 +113,7 @@ impl UserLogin {
 
                             // Insert the new session into the database
                             let result = sqlx::query(
-                                "INSERT INTO Sessions (user_id, session_token, expiration_date) VALUES ((SELECT id FROM Users WHERE username = ?), ?, ?)",
+                                "INSERT INTO Sessions (user_id, session_token, expiration_date) VALUES ((SELECT id FROM Users WHERE username = $1), $2, $3)",
                             )
                             .bind(&self.username)
                             .bind(&session_token)
@@ -213,7 +214,6 @@ impl UserLogin {
 
     Ok(())
 }
-
 
 // Write to models/users.rs
 pub fn write_to_postgres_user_models(project: &Project) -> Result<(), Error> {
@@ -324,7 +324,7 @@ impl UserLogin {
 
                             // Insert the new session into the database
                             let result = sqlx::query(
-                                "INSERT INTO Sessions (user_id, session_token, expiration_date) VALUES ((SELECT id FROM Users WHERE username = ?), ?, ?)",
+                                "INSERT INTO Sessions (user_id, session_token, expiration_date) VALUES ((SELECT id FROM Users WHERE username = $1), $2, $3)",
                             )
                             .bind(&self.username)
                             .bind(&session_token)
@@ -432,7 +432,6 @@ impl UserLogin {
     Ok(())
 }
 
-
 // Write to models/users.rs
 pub fn write_to_sqlite_user_models(project: &Project) -> Result<(), Error> {
     let mut file = OpenOptions::new()
@@ -537,7 +536,7 @@ pub async fn user_login(
 
                             // Insert the new session into the database
                             let result = sqlx::query(
-                                "INSERT INTO Sessions (user_id, session_token, expiration_date) VALUES ((SELECT id FROM Users WHERE username = ?), ?, ?)",
+                                "INSERT INTO Sessions (user_id, session_token, expiration_date) VALUES ((SELECT id FROM Users WHERE username = $1), $2, $3)",
                             )
                             .bind(&self.username)
                             .bind(&session_token)
