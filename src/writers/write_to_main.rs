@@ -24,12 +24,17 @@ pub fn write_to_main_rs(project: &Project) -> Result<(), Error> {
 
 use actix_files::Files;
 use actix_session::storage::CookieSessionStore;
+use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
 use actix_web::{
     web::{self},
     App, HttpServer,
 };
+
+use actix_identity::IdentityMiddleware;
+use rustyroad::database::Database;
 use tera::Tera;
+mod controllers;
 mod models;
 mod routes;
 
@@ -50,6 +55,8 @@ async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
 
+    let database = web::Data::new(Database::get_database_from_rustyroad_toml().unwrap());
+
     println!("Starting Actix web server...");
 
     HttpServer::new(move || {
@@ -57,28 +64,38 @@ async fn main() -> std::io::Result<()> {
         let tera = Tera::new("templates/**/*").unwrap();
         println!("Initializing Actix web application...");
 
+        let secret_key = get_secret_key().unwrap();
+
+        let session_mw = SessionMiddleware::builder(CookieSessionStore::default(), secret_key)
+            // disable secure cookie for local testing
+            .cookie_secure(false)
+            .build();
+
         App::new()
             .wrap(
                 actix_web::middleware::Logger::default()
                     .exclude("/static")
                     .exclude("/favicon.ico"),
             )
-            .wrap(actix_session::SessionMiddleware::new(
-                CookieSessionStore::default(),
-                get_secret_key().expect("Failed to generate secret key"),
-            ))
+            .wrap(IdentityMiddleware::default())
+            .app_data(database.clone())
+            .wrap(session_mw)
             .app_data(web::Data::new(tera.clone())) // Updated line
             .service(routes::index::index)
             .service(routes::dashboard::dashboard_route)
             .service(routes::login::login_route)
             .service(routes::login::login_function)
-             .service(routes::login::user_logout)
+            .service(routes::login::user_logout)
+            .service(routes::not_found::not_found)
             .service(Files::new("/static", "./static")) // Add this line
     })
-    .bind("127.0.0.1:8000")?
+    .bind(("127.0.0.1", 8080))
+    .unwrap()
+    .workers(2)
     .run()
     .await
-}"#;
+}
+"#;
 
     // Write the contents to the main.rs file
     // The write_to_file function is assumed to be a function that takes a path and a byte slice and writes the bytes to the file at the path
