@@ -151,6 +151,7 @@ pub struct Project {
     pub initial_migration_down: String,
     pub user_test: String,
     pub user_route: String,
+    pub not_found_route: String,
     pub index_route: String,
     pub login_route: String,
     pub signup_route: String,
