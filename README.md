@@ -20,6 +20,8 @@
 
 > Note: Rusty Road is still in development. Please use the release candidate or the cargo crate. Do not use master for production purposes. It is still under heavy development and is not ready for production use.
 
+This version is 0.1.8-beta. It is a release candidate. It contains fixes for the database connection strings specfially PostgreSQL. It should now work on any database conection including a remote one.
+
 <p align="center">
   Rusty Road is a powerful and reliable web framework for the Rust programming language, inspired by Ruby on Rails. Combining the familiar conventions and ease of use of Rails with the performance and efficiency of Rust, Rusty Road empowers developers to build cutting-edge web applications with confidence.
   <br>
@@ -100,7 +102,7 @@ Because Rusty Road uses the actix web framework, the architecture is not exactly
         ```
   - Run Migrations
     -  ``` 
-        rustyroad migration run
+        rustyroad migration run [migration name]
         ```
   - Rollback Migrations
     -  ``` 
@@ -154,7 +156,26 @@ Rust is required to build and run Rusty Road. You can install Rust using rustup.
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
+#### Windows
+If you are using Windows, you will need to install the Visual C++ build tools. You can install them using the following command:
 
+```
+rustup toolchain install stable-x86_64-pc-windows-msvc
+```
+
+#### Linux
+If you are using Linux, you will need to install the following dependencies:
+
+```
+sudo apt-get install build-essential libssl-dev libpq-dev libsqlite3-dev pkg-config openssl sqlite3 postgresql postgresql-contrib 
+```
+
+#### Mac
+If you are using Mac, you will need to install the following dependencies:
+
+```
+brew install openssl sqlite3
+```
 
 ### Installing
 
@@ -241,7 +262,6 @@ rustyroad generate route users
 - [actix](https://actix.rs/) - Web Framework
 - [Sqlx](https://github.com/launchbadge/sqlx) - Database Adapter
 - [Tera](https://tera.netlify.app/) - Template Engine
-- [Cucumber Rust](https://github.com/cucumber-rs) - Testing
 
 ## ✍️ Authors <a name = "authors"></a>
 
