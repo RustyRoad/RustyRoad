@@ -20,7 +20,7 @@ mod tests {
             "".to_owned(),
             "".to_owned(),
             "".to_owned(),
-            "".to_owned(),
+            0,
             "sqlite".to_string().as_str(),
         );
 

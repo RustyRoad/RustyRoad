@@ -16,7 +16,7 @@ mod tests {
             "postgres".to_owned(),
             "postgres".to_owned(),
             "localhost".to_owned(),
-            "5432".to_owned(),
+            5432,
             DatabaseType::Postgres.to_string().as_str(),
         );
 
@@ -46,7 +46,7 @@ mod tests {
             .username(&database_data.username)
             .password(&database_data.password)
             .host(&database_data.host)
-            .port(database_data.port.parse::<u16>()?)
+            .port(database_data.port)
             .database(&database_data.name.clone())
             .connect()
             .await?;

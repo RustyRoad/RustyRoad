@@ -14,7 +14,7 @@ mod tests {
             "admin".to_owned(),
             "admin".to_owned(),
             "localhost".to_owned(),
-            "3306".to_owned(),
+            3306,
             DatabaseType::Mysql.to_string().as_str(),
         );
         // Construct the database URL for the newly created database
@@ -43,7 +43,7 @@ mod tests {
             .username(&database_data.username)
             .password(&database_data.password)
             .host(&database_data.host)
-            .port(database_data.port.parse::<u16>()?)
+            .port(database_data.port)
             .database(&database_data.name)
             .connect()
             .await?;
