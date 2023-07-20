@@ -7,7 +7,7 @@ use crate::writers::write_to_file;
 
 pub fn write_to_route_name_html(route_name: String) -> Result<(), Error> {
     let contents = format!(
-        r#"{{% extends 'base' %}}
+        r#"{{% extends 'base.html.tera' %}}
 {{% block title %}}Index{{% endblock title %}}
 {{% block head %}}
 {{{{ super() }}}}
