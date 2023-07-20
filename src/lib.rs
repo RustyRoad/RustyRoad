@@ -597,7 +597,7 @@ static/styles.css
                     .username(&database_data.username)
                     .password(&database_data.password)
                     .host(&database_data.host)
-                    .port(database_data.port.parse::<u16>().unwrap())
+                    .port(database_data.port.to_string().parse::<u16>().unwrap())
                     .database(&database_data.name)
                     .connect()
                     .await;
@@ -672,7 +672,7 @@ static/styles.css
                     .username(&database_data.username)
                     .password(&database_data.password)
                     .host(&database_data.host)
-                    .port(database_data.port.parse::<u16>().unwrap())
+                    .port(database_data.port)
                     .database(&database_data.name)
                     .connect()
                     .await;
@@ -988,7 +988,7 @@ static/styles.css
                         std::io::stdin()
                             .read_line(&mut database_port)
                             .expect("Failed to read line");
-                        let database_port = database_port.trim().parse::<u32>().unwrap();
+                        let database_port = database_port.trim().parse::<u16>().unwrap();
                         println!("What is the database host?");
                         let mut database_host = String::new();
                         std::io::stdin()
@@ -1002,7 +1002,7 @@ static/styles.css
                             database_username,
                             database_password,
                             database_host,
-                            database_port.to_string(),
+                            database_port,
                             database_choice.as_str(),
                         );
                         Self::create_new_project(name, database).await.err();
@@ -1032,7 +1032,7 @@ static/styles.css
                         std::io::stdin()
                             .read_line(&mut database_port)
                             .expect("Failed to read line");
-                        let database_port = database_port.trim().parse::<u32>().unwrap();
+                        let database_port = database_port.trim().parse::<u16>().unwrap();
                         println!("What is the database host?");
                         let mut database_host = String::new();
                         std::io::stdin()
@@ -1046,7 +1046,7 @@ static/styles.css
                             database_username,
                             database_password,
                             database_host,
-                            database_port.to_string(),
+                            database_port,
                             database_choice.as_str(),
                         );
                         Self::create_new_project(name, database).await.err();
@@ -1060,7 +1060,7 @@ static/styles.css
                             "Sqlite Local DB".to_string(),
                             "Not Needed".to_string(),
                             "localhost".to_string(),
-                            "Not Needed".to_string(),
+                            0,
                             "sqlite".trim_end(),
                         );
                         Self::create_new_project(name, database).await.err();
@@ -1090,7 +1090,7 @@ static/styles.css
                         std::io::stdin()
                             .read_line(&mut database_port)
                             .expect("Failed to read line");
-                        let database_port = database_port.trim().parse::<u32>().unwrap();
+                        let database_port = database_port.trim().parse::<u16>().unwrap();
                         println!("What is the database host?");
                         let mut database_host = String::new();
                         std::io::stdin()
@@ -1104,7 +1104,7 @@ static/styles.css
                             database_name,
                             database_username,
                             database_password,
-                            database_port.to_string(),
+                            database_port,
                             database_host.as_str(),
                         );
                         Self::create_new_project(name, database).await.err();
@@ -1116,7 +1116,7 @@ static/styles.css
                             "".to_string(),
                             "".to_string(),
                             "".to_string(),
-                            "".to_string(),
+                            0,
                             "".to_string().as_str(),
                         );
                         Self::create_new_project(name, database).await.err();
@@ -1212,7 +1212,10 @@ static/styles.css
                         run_migration(name.clone(), MigrationDirection::Down)
                             .await
                             .expect("Error rolling back migration");
-                        println!("'{}' migration rollback completed successfully!", name.clone());
+                        println!(
+                            "'{}' migration rollback completed successfully!",
+                            name.clone()
+                        );
                     } else {
                         println!("'{}' migration rollback canceled by user.", name);
                     }
