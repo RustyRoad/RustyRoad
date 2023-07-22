@@ -275,7 +275,6 @@ pub fn column_loop_test(num_columns: i32, migration_name: String) -> Result<Stri
 mod tests {
     use crate::database::migrations::column_loop;
 
-
     #[tokio::test]
     async fn test_column_loop() {
         // Set the number of columns and migration name

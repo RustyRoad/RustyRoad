@@ -25,6 +25,7 @@ pub fn create_files(project: &Project) -> Result<(), Error> {
         &project.tailwind_css,
         &project.tailwind_config,
         &project.postcss_config,
+        &project.not_found_route,
         &project.not_found_html,
         &project.server_error_html,
         &project.favicon_ico,
