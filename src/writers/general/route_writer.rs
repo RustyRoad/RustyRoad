@@ -2,7 +2,6 @@ use std::fs;
 use std::io::Error;
 use std::path::PathBuf;
 
-
 use crate::writers::write_to_file;
 
 pub fn write_to_route_name_html(route_name: String) -> Result<(), Error> {
@@ -37,7 +36,6 @@ pub fn write_to_route_name_html(route_name: String) -> Result<(), Error> {
     Ok(())
 }
 
-
 /// This function writes a new Actix Web route handler function to a Rust source file.
 ///
 /// # Arguments
@@ -66,7 +64,7 @@ async fn {}(tmpl: web::Data<Tera>) -> impl Responder {{
     );
 
     // Define the path to the file
-    let path = format!("./src/routes/{}.rs", route_name);
+    let path = format!("./src/routes/{}/{}.rs", route_name, route_name);
 
     // Write the contents to the file
     // The write_to_file function is assumed to be a function that takes a path and a byte slice and writes the bytes to the file at the path
