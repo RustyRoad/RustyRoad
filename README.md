@@ -18,7 +18,7 @@
 
 <!-- Alert letting the user know to use the release candidate or the cargo crate. Not to use master as it is still in development -->
 
-> Note: Rusty Road is still in development. Please use the release candidate or the cargo crate. Do not use master for production purposes. It is still under heavy development and is not ready for production use.
+> Note: Rusty Road is still in development. Please use the release candidate or the cargo crate. Do not use main for production purposes. It is still under heavy development and is not ready for production use.
 
 This version is 0.1.8-beta. It is a release candidate. It contains fixes for the database connection strings specfially PostgreSQL. It should now work on any database conection including a remote one.
 
