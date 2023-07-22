@@ -1,13 +1,9 @@
 use sqlx::mysql::{MySqlConnectOptions, MySqlPool};
+use sqlx::postgres::{PgConnectOptions, PgPool};
+use sqlx::sqlite::SqlitePool;
 use std::error::Error;
 use std::fs;
-use std::str::FromStr;
 use std::sync::Arc;
-use tokio::net::TcpStream;
-use tokio_postgres::tls::NoTlsStream;
-use tokio_postgres::{
-    Client, Config, Connection as Postgres_Connection, Error as PG_Connection_Error, NoTls,
-};
 use toml::Value;
 
 use super::databasetype::DatabaseType;
@@ -18,23 +14,16 @@ pub struct Database {
     pub username: String,
     pub password: String,
     pub host: String,
-    pub port: String,
+    pub port: u16,
     pub database_type: DatabaseType,
 }
 
 #[derive(Debug, Clone)]
 pub enum DatabaseConnection {
-    Pg(PgConnection),
-    MySql(MySqlConnection),
-    Sqlite(SqliteConnection),
+    Pg(Arc<PgPool>),
+    MySql(Arc<MySqlPool>),
+    Sqlite(Arc<SqlitePool>),
 }
-
-#[derive(Debug, Clone)]
-pub struct PgConnection(pub Arc<Client>);
-#[derive(Debug, Clone)]
-pub struct MySqlConnection(pub Arc<MySqlPool>);
-#[derive(Debug, Clone)]
-pub struct SqliteConnection(pub Arc<sqlx::sqlite::SqlitePool>);
 
 impl Database {
     pub fn new(
@@ -42,7 +31,7 @@ impl Database {
         username: String,
         password: String,
         host: String,
-        port: String,
+        port: u16,
         database_type: &str,
     ) -> Database {
         Database {
@@ -55,34 +44,8 @@ impl Database {
                 "postgres" => DatabaseType::Postgres,
                 "mysql" => DatabaseType::Mysql,
                 "sqlite" => DatabaseType::Sqlite,
-                "mongo" => DatabaseType::Mongo,
                 _ => DatabaseType::Mysql,
             },
-        }
-    }
-
-    pub fn create_database_connection_string(&self) -> String {
-        match &self.database_type {
-            DatabaseType::Mysql => {
-                let port = self.port.parse::<u16>().unwrap_or_else(|_| 3306);
-                format!(
-                    "mysql://{}:{}@{}:{}/{}",
-                    self.username, self.password, self.host, port, self.name
-                )
-            }
-            DatabaseType::Sqlite => {
-                format!("sqlite://{}.db", self.name)
-            }
-            DatabaseType::Mongo => {
-                todo!("MongoDB is not yet supported");
-            }
-            DatabaseType::Postgres => {
-                let port = self.port.parse::<u16>().unwrap_or_else(|_| 5432);
-                format!(
-                    "postgres://{}:{}@{}:{}/{}",
-                    self.username, self.password, self.host, port, self.name
-                )
-            }
         }
     }
 
@@ -91,94 +54,67 @@ impl Database {
     ) -> Result<DatabaseConnection, Box<dyn Error + Send>> {
         match &self.database_type {
             DatabaseType::Mysql => {
-                let connection_url = self.create_database_connection_string();
-                let options = MySqlConnectOptions::from_str(&connection_url)
-                    .expect("Failed to parse connection options");
+                let options = MySqlConnectOptions::new()
+                    .username(&self.username)
+                    .password(&self.password)
+                    .database(&self.name)
+                    .host(&self.host)
+                    .port(self.port);
                 let pool = MySqlPool::connect_with(options)
                     .await
-                    .expect("Failed to create connection pool.");
-                Ok(DatabaseConnection::MySql(MySqlConnection(Arc::new(pool))))
+                    .unwrap_or_else(|_| panic!("Failed to create connection pool."));
+                Ok(DatabaseConnection::MySql(Arc::new(pool)))
             }
             DatabaseType::Sqlite => {
-                let connection_url = self.create_database_connection_string();
-                let pool = sqlx::sqlite::SqlitePool::connect(&connection_url).await.expect("Could not connect to the SQLite database. Please check the documentation for more information.");
-                Ok(DatabaseConnection::Sqlite(SqliteConnection(Arc::new(pool))))
+                let pool = SqlitePool::connect(&format!("{}.db", self.name))
+                    .await
+                    .unwrap_or_else(|_| panic!("Could not connect to the SQLite database."));
+                Ok(DatabaseConnection::Sqlite(Arc::new(pool)))
             }
             DatabaseType::Postgres => {
-                let connection_url = self.create_database_connection_string();
-                let client = Self::connect(&connection_url).await.expect("Failed to connect to Postgres database. Please check the documentation for more information.");
-                Ok(DatabaseConnection::Pg(PgConnection(Arc::new(client))))
+                let options = PgConnectOptions::new()
+                    .username(&self.username)
+                    .password(&self.password)
+                    .database(&self.name)
+                    .host(&self.host)
+                    .port(self.port);
+                let pool = PgPool::connect_with(options)
+                    .await
+                    .unwrap_or_else(|_| panic!("Failed to connect to Postgres database."));
+                Ok(DatabaseConnection::Pg(Arc::new(pool)))
             }
-            DatabaseType::Mongo => {
-                todo!("MongoDB is not yet supported");
-            }
+            DatabaseType::Mongo => todo!(),
         }
     }
 
-    async fn connect_raw(
-        s: &str,
-    ) -> Result<(Client, Postgres_Connection<TcpStream, NoTlsStream>), PG_Connection_Error> {
-        let socket = TcpStream::connect("127.0.0.1:5432")
-            .await
-            .expect("Failed to create tcp connection.");
-        let config = s.parse::<Config>()?;
-        config.connect_raw(socket, NoTls).await
-    }
-
-    async fn connect(s: &str) -> Result<Client, PG_Connection_Error> {
-        let (client, connection) = Self::connect_raw(s).await?;
-        tokio::spawn(connection);
-        Ok(client)
-    }
-
-    pub  fn get_database_from_rustyroad_toml() -> Result<Database, std::io::Error> {
-        let database: Database = match fs::read_to_string("rustyroad.toml") {
-            Ok(file) => {
-                let toml: Value = toml::from_str(&file).unwrap();
-                let database_table = toml["database"].as_table().unwrap();
-                Database::new(
-                    database_table["database_name"]
-                        .as_str()
-                        .unwrap()
-                        .to_string(),
-                    database_table["database_user"]
-                        .as_str()
-                        .unwrap()
-                        .to_string(),
-                    database_table["database_password"]
-                        .as_str()
-                        .unwrap()
-                        .to_string(),
-                    database_table["database_host"]
-                        .as_str()
-                        .unwrap()
-                        .to_string(),
-                    database_table["database_port"]
-                        .as_str()
-                        .unwrap()
-                        .to_string(),
-                    database_table["database_type"]
-                        .as_str()
-                        .unwrap()
-                    ,
-                )
-            }
-            Err(_) => {
-                eprintln!("Error: Could not find rustyroad.toml");
-                std::process::exit(1);
-            }
-        };
-
-        Ok(database)
-    }
-}
-
-impl DatabaseConnection {
-    pub fn get_database_type(&self) -> DatabaseType {
-        match self {
-            DatabaseConnection::Pg(_) => DatabaseType::Postgres,
-            DatabaseConnection::MySql(_) => DatabaseType::Mysql,
-            DatabaseConnection::Sqlite(_) => DatabaseType::Sqlite,
-        }
+    pub fn get_database_from_rustyroad_toml() -> Result<Database, std::io::Error> {
+        let file = fs::read_to_string("rustyroad.toml")
+            .unwrap_or_else(|_| panic!("Error: Could not find rustyroad.toml"));
+        let toml: Value = toml::from_str(&file).unwrap();
+        let database_table = toml["database"].as_table().unwrap();
+        Ok(Database::new(
+            database_table["database_name"]
+                .as_str()
+                .unwrap()
+                .to_string(),
+            database_table["database_user"]
+                .as_str()
+                .unwrap()
+                .to_string(),
+            database_table["database_password"]
+                .as_str()
+                .unwrap()
+                .to_string(),
+            database_table["database_host"]
+                .as_str()
+                .unwrap()
+                .to_string(),
+            database_table["database_port"]
+                .as_str()
+                .unwrap()
+                .parse::<u16>()
+                .unwrap(),
+            database_table["database_type"].as_str().unwrap(),
+        ))
     }
 }

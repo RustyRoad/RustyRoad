@@ -14,7 +14,7 @@ async fn test_integration_load_sql_for_new_project() {
         "test_user".to_owned(),
         "password".to_owned(),
         "localhost".to_owned(),
-        "3306".to_owned(),
+        3306,
         "sqlite".to_string().as_str(),
     );
 

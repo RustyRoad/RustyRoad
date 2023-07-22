@@ -1,4 +1,5 @@
 use chrono::Local;
+use sqlx::Executor;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, DirEntry};
@@ -12,7 +13,6 @@ use std::{
 use crate::database::{Database, DatabaseConnection, DatabaseType};
 use rustyline::DefaultEditor;
 use serde::de::StdError;
-use sqlx::Executor;
 use strum_macros::Display;
 
 use crate::generators::create_file;
@@ -524,21 +524,18 @@ async fn execute_migration_with_connection(
         match connection.clone() {
             DatabaseConnection::Pg(connection) => {
                 println!("Executing query: {:?}", sql.clone().as_str());
-                let rows_affected = connection
-                    .0
-                    .query(sql.as_str(), &[])
-                    .await
-                    .expect("Could not execute the statement: {:?}");
+                //unwrap the arc
+                let rows_affected = connection.execute(sql.as_str()).await?;
                 println!("{:?} rows affected", rows_affected);
             }
             DatabaseConnection::MySql(connection) => {
                 println!("Executing query: {:?}", sql);
-                let rows_affected = connection.0.execute(sql.as_str()).await?;
+                let rows_affected = connection.execute(sql.as_str()).await?;
                 println!("{:?} rows affected", rows_affected);
             }
             DatabaseConnection::Sqlite(connection) => {
                 println!("Executing query: {:?}", sql);
-                let rows_affected = connection.0.execute(sql.as_str()).await.expect("Could not execute SQLite connection, please check the documentation for more information.");
+                let rows_affected = connection.execute(sql.as_str()).await?;
                 println!("{:?} rows affected", rows_affected);
             }
         };
