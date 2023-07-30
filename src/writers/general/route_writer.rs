@@ -45,12 +45,12 @@ pub fn write_to_route_name_html(route_name: String) -> Result<(), Error> {
 /// # Returns
 ///
 /// * `Ok(())` if the content was successfully written to the file, or an Error if something went wrong.
-pub fn write_to_route_name_rs(route_name: String) -> Result<(), Error> {
+pub fn write_to_new_get_route(route_name: String) -> Result<(), Error> {
     // Define the contents to be written to the file
     // This includes importing necessary Actix Web and Tera modules, defining the route handler function,
     // and setting up the Tera template rendering
     let contents = format!(
-        r#"use actix_web::{{get, web, HttpResponse}};
+        r#"use actix_web::{{get, web, HttpResponse, Responder}};
 use tera::{{Context, Tera}};
 
 #[get("/{}")]
@@ -77,6 +77,46 @@ async fn {}(tmpl: web::Data<Tera>) -> impl Responder {{
     // Return Ok if everything succeeded
     Ok(())
 }
+
+
+pub fn write_to_previous_get_route(previous_route_name: String, new_route_name: String) -> Result<(), Error> {
+    // Define the contents to be written to the file
+    // This includes importing necessary Actix Web and Tera modules, defining the route handler function,
+    // and setting up the Tera template rendering
+    let contents = format!(
+        r#"
+
+#[get("/{}/{}")]
+async fn {}(tmpl: web::Data<Tera>) -> impl Responder {{
+    let mut context = Context::new();
+    context.insert("route_name", "{}");
+    let rendered = tmpl.render("pages/{}.html.tera", &context).unwrap();
+    HttpResponse::Ok().body(rendered)
+}}"#,
+        previous_route_name, new_route_name, new_route_name, new_route_name, new_route_name
+    );
+
+    // Define the path to the file
+    let path = format!("./src/routes/{}/{}.rs", previous_route_name, previous_route_name);
+
+    // instead of overwriting the file, we need to append to the file
+    // lets get the contents of the file first
+    let mut file_contents = fs::read_to_string(&path).unwrap();
+    println!("file_contents: {}", file_contents);
+    // and then append the new contents to the file
+    file_contents.push_str(&contents);
+
+
+    match fs::write(PathBuf::from(&path), file_contents.as_bytes()) {
+        Ok(()) => println!("Successfully written to {}.rs", previous_route_name),
+        Err(e) => println!("Failed to write to {}.rs: {:?}", previous_route_name, e),
+    }
+
+    // Return Ok if everything succeeded
+    Ok(())
+}
+
+
 
 pub fn write_to_initial_get_route_rs(route_name: String) -> Result<(), Error> {
     // trim the route_name to remove the text before the last slash and the text before the .rs
