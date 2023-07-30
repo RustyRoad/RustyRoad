@@ -165,3 +165,50 @@ pub fn add_new_route_to_main_rs(route_name: &str) -> Result<(), Error> {
 
     Ok(())
 }
+
+
+pub fn add_to_route_in_main_rs(previous_route_name: &str, new_route_name: &str) -> Result<(), Error> {
+    // Check for the current working directory
+    let current_dir = std::env::current_dir().unwrap();
+
+    // Ensure that the project is a rustyroad project by looking for the rustyroad.toml file in the root directory
+    match std::fs::read_to_string(current_dir.join("rustyroad.toml")) {
+        Ok(_) => {}
+        Err(_) => {
+            return Err(Error::new(
+                std::io::ErrorKind::InvalidData,
+                "This is not a RustyRoad project",
+            ))
+        }
+    }
+
+    // Construct the path to the main.rs file
+    let main_rs: PathBuf = [current_dir, PathBuf::from("src/main.rs")].iter().collect();
+
+    // Read the file into a string
+    let mut contents = fs::read_to_string(&main_rs)?;
+
+    // Prepare the new route
+    let new_route = format!(".service(routes::{}::{})", previous_route_name, new_route_name);
+
+    // Prepare the regular expression to find the last .service() call
+    let re = Regex::new(r".service\(routes::\w+::\w+\)").unwrap();
+
+    // Find the last .service() call and its end position
+    let last_service_end_pos = re
+        .find_iter(&contents)
+        .last()
+        .ok_or(Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Could not find the position to insert new route",
+        ))?
+        .end();
+
+    // Insert the new route after the last .service() call
+    contents.insert_str(last_service_end_pos, &new_route);
+
+    // Write the string back to the file
+    fs::write(main_rs, contents)?;
+
+    Ok(())
+}
