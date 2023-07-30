@@ -58,9 +58,21 @@ use crate::writers::*;
 pub struct RustyRoad {
     name: String,
 }
-// timestamp
 
-// get time
+/**
+ * # Struct Project
+ * ## Description
+ * This struct is used to configure the project.
+ * This is specfically used to read the rustyroad.toml file and
+ * and decode the toml into a struct.
+ */
+#[derive(Debug, Deserialize, Clone, PartialEq, Eq, Hash, Copy, Parser)]
+pub enum CRUDType {
+    Create,
+    Read,
+    Update,
+    Delete,
+}
 
 /// # Name: Project
 /// ## Type: Struct
@@ -729,87 +741,227 @@ static/styles.css
         Ok(project)
     } // End of create_new_project function
 
-    pub fn create_new_route(route_name: String) -> Result<(), Error> {
+    pub fn create_new_route(route_name: String, route_type: CRUDType) -> Result<(), Error> {
         // the route will need to check the current directory to see if it is a rustyroad project
         // if it is not, it will return an error and ask the user to run the command in a rustyroad project
         // if it is a rustyroad project, it will create a new directory with the routeName
         // it will create a new file with the routeName.rs
+        // ask the user if a route folder already exists
+        // if it does, ask the user if they want to add this route to the file for that route
+        // if it does not, continue with the rest of the code
+        println!("Does a route folder already exist? (y/n): ");
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        let input = input.trim();
 
-        // check if the current directory is a rustyroad project
-        let current_dir = fs::read_dir(".").unwrap();
-        let mut has_rustyroad_toml = false;
+        // if the user enters y, ask the user if they want to add this route to the file for that route
+        if input == "y" {
+            match route_type {
+                CRUDType::Read => {
+                    // create the route
 
-        // check if the current directory has a rustyroad.toml file
-        for entry in current_dir {
-            let entry = entry.unwrap();
-            let file_name = entry.file_name();
-            let file_name = file_name.to_str().unwrap();
-            if file_name == "rustyroad.toml" {
-                has_rustyroad_toml = true;
+                    println!("Do you want to add this route to the file for that route? (y/n): ");
+                    let mut input = String::new();
+                    std::io::stdin().read_line(&mut input).unwrap();
+                    let input = input.trim();
+
+                    // if the user enters y, add the route to the file for that route
+                    if input == "y" {
+                        // ask the user the name of the route
+                        println!("What is the name of the route that already exists?: ");
+                        let mut input = String::new();
+                        std::io::stdin().read_line(&mut input).unwrap();
+                        let input = input.trim();
+
+                        // find the folder in the routes directory with the name of the route
+                        // if the folder does not exist, let the user know and ask them if they want to create
+                        // a new route with that name
+                        // if the folder does exist, add the route to the file for that route
+                        let current_dir = fs::read_dir("./src/routes").unwrap();
+                        let mut has_route = false;
+
+                        for entry in current_dir {
+                            let entry = entry.unwrap();
+                            let file_name = entry.file_name();
+                            let file_name = file_name.to_str().unwrap();
+                            if file_name == input {
+                                has_route = true;
+                            }
+                        }
+
+                        if !has_route {
+                            println!("There is no route with that name. Do you want to create a new route with that name? (y/n): ");
+                            let mut input = String::new();
+                            std::io::stdin().read_line(&mut input).unwrap();
+                            let input = input.trim();
+
+                            // if the user enters y, create a new route with that name
+                            if input == "y" {
+                                // create the route
+                                // add the route to the file for that route
+                                write_to_new_get_route(route_name.clone()).unwrap_or_else(|why| {
+                                    println!("Failed to write to route: {:?}", why.kind());
+                                });
+                                // end the function
+                                return Ok(());
+                            } else {
+                                println!(
+                                    "Please run the command again and enter a valid route name."
+                                );
+                                // end the function
+                                std::process::exit(0);
+                            }
+                        } else {
+                            // if the folder does exist, add the route to the file for that route
+                            write_to_previous_get_route(input.to_string(), route_name.clone())
+                                .unwrap_or_else(|why| {
+                                    println!("Failed to write to route: {:?}", why.kind());
+                                });
+                            // Create a new file with the routeName.html.tera
+                            create_file(&format!("./templates/pages/{}.html.tera", route_name))
+                                .unwrap_or_else(|why| {
+                                    println!("Failed to create file: {:?}", why.kind());
+                                });
+                            // Write to routeName.html.tera file
+                            write_to_route_name_html(route_name.clone()).unwrap_or_else(|why| {
+                                println!(
+                                    "Failed to write to routeName.html.tera: {:?}",
+                                    why.kind()
+                                );
+                            });
+
+                            // update main.rs file
+                            add_to_route_in_main_rs(input, route_name.clone().as_str())
+                                .unwrap_or_else(|why| {
+                                    println!("Failed to add to route in main.rs: {:?}", why.kind());
+                                });
+                            // end the function
+                            return Ok(());
+                        }
+                    } else {
+                        // if the user enters n, continue with the rest of the code
+                        // add the route to the file for that route
+                        write_to_new_get_route(route_name.clone()).unwrap_or_else(|why| {
+                            println!("Failed to write to route: {:?}", why.kind());
+                        });
+                        // end the function
+                        return Ok(());
+                    }
+                }
+                CRUDType::Create => {
+                    // create the route
+                    todo!("Create route");
+                }
+                CRUDType::Update => {
+                    // create the route
+                    todo!("Update route")
+                }
+                CRUDType::Delete => {
+                    // create the route
+                    todo!("Delete route")
+                }
             }
-        }
-        // rustyroad.toml file will be used to store the project name and other project information
-        // if the current directory does not have a rustyroad.toml file, it will return an error
-        if !has_rustyroad_toml {
-            println!(
+        } else {
+            match route_type {
+                CRUDType::Read => {
+                    // create the route
+                    // check if the current directory is a rustyroad project
+                    let current_dir = fs::read_dir(".").unwrap();
+                    let mut has_rustyroad_toml = false;
+
+                    // check if the current directory has a rustyroad.toml file
+                    for entry in current_dir {
+                        let entry = entry.unwrap();
+                        let file_name = entry.file_name();
+                        let file_name = file_name.to_str().unwrap();
+                        if file_name == "rustyroad.toml" {
+                            has_rustyroad_toml = true;
+                        }
+                    }
+                    // rustyroad.toml file will be used to store the project name and other project information
+                    // if the current directory does not have a rustyroad.toml file, it will return an error
+                    if !has_rustyroad_toml {
+                        println!(
                 "This is not a rustyroad project. Please run this command in a rustyroad project."
             );
-            // end the function
-            return Ok(());
+                        // end the function
+                        return Ok(());
+                    }
+
+                    // Create a new directory with the routeName
+                    create_dir(format!("./src/routes/{}", &route_name)).unwrap_or_else(|why| {
+                        println!("Failed to create directory: {:?}", why.kind());
+                    });
+                    // Create a new route using the routeName
+                    // Update the routes/mod.rs file
+                    let full_file_name = format!("./src/routes/mod.rs");
+                    write_to_routes_mod(&full_file_name, route_name.clone()).unwrap_or_else(
+                        |why| {
+                            println!("Failed to write to routes/mod: {:?}", why.kind());
+                        },
+                    );
+
+                    // create the routes/mod.rs file
+                    create_file(&format!("./src/routes/{}/mod.rs", route_name)).unwrap_or_else(
+                        |why| {
+                            println!("Failed to create file: {:?}", why.kind());
+                        },
+                    );
+
+                    let mut components = Vec::new();
+                    // Create a vector and push the routeName to the vector
+                    components.push(route_name.clone().to_string());
+
+                    // Write to mod.rs file
+                    writers::write_to_module(
+                        &format!("./src/routes/{}/mod.rs", &route_name),
+                        components,
+                    )
+                    .unwrap_or_else(|why| {
+                        println!("Failed to write to mod.rs: {:?}", why.kind());
+                    });
+
+                    // Create a new file with the routeName.rs
+                    create_file(&format!("./src/routes/{}/{}.rs", route_name, route_name))
+                        .unwrap_or_else(|why| {
+                            println!("Failed to create file: {:?}", why.kind());
+                        });
+                    // Write to routeName.rs file
+                    write_to_new_get_route(route_name.clone()).unwrap_or_else(|why| {
+                        println!("Failed to write to routeName.rs: {:?}", why.kind());
+                    });
+
+                    // Create a new file with the routeName.html.tera
+                    create_file(&format!("./templates/pages/{}.html.tera", route_name))
+                        .unwrap_or_else(|why| {
+                            println!("Failed to create file: {:?}", why.kind());
+                        });
+                    // Write to routeName.html.tera file
+                    write_to_route_name_html(route_name.clone()).unwrap_or_else(|why| {
+                        println!("Failed to write to routeName.html.tera: {:?}", why.kind());
+                    });
+
+                    // update main.rs file
+                    add_new_route_to_main_rs(&route_name)?;
+                    // Create a new file with the routeName.css
+                    // Create a new file with the routeName.js
+                    // Create a new file with the routeName.test.js
+                    Ok(())
+                }
+                CRUDType::Create => {
+                    // create the route
+                    todo!("Create route");
+                }
+                CRUDType::Update => {
+                    // create the route
+                    todo!("Update route")
+                }
+                CRUDType::Delete => {
+                    // create the route
+                    todo!("Delete route")
+                }
+            }
         }
-
-        // Create a new directory with the routeName
-        create_dir(format!("./src/routes/{}", &route_name)).unwrap_or_else(|why| {
-            println!("Failed to create directory: {:?}", why.kind());
-        });
-        // Create a new route using the routeName
-        // Update the routes/mod.rs file
-        let full_file_name = format!("./src/routes/mod.rs");
-        write_to_routes_mod(&full_file_name, route_name.clone()).unwrap_or_else(|why| {
-            println!("Failed to write to routes/mod: {:?}", why.kind());
-        });
-
-        // create the routes/mod.rs file
-        create_file(&format!("./src/routes/{}/mod.rs", route_name)).unwrap_or_else(|why| {
-            println!("Failed to create file: {:?}", why.kind());
-        });
-
-        let mut components = Vec::new();
-        // Create a vector and push the routeName to the vector
-        components.push(route_name.clone().to_string());
-
-        // Write to mod.rs file
-        writers::write_to_module(&format!("./src/routes/{}/mod.rs", &route_name), components)
-            .unwrap_or_else(|why| {
-                println!("Failed to write to mod.rs: {:?}", why.kind());
-            });
-
-        // Create a new file with the routeName.rs
-        create_file(&format!("./src/routes/{}/{}.rs", route_name, route_name)).unwrap_or_else(
-            |why| {
-                println!("Failed to create file: {:?}", why.kind());
-            },
-        );
-        // Write to routeName.rs file
-        write_to_route_name_rs(route_name.clone()).unwrap_or_else(|why| {
-            println!("Failed to write to routeName.rs: {:?}", why.kind());
-        });
-
-        // Create a new file with the routeName.html.tera
-        create_file(&format!("./templates/pages/{}.html.tera", route_name)).unwrap_or_else(|why| {
-            println!("Failed to create file: {:?}", why.kind());
-        });
-        // Write to routeName.html.tera file
-        write_to_route_name_html(route_name.clone()).unwrap_or_else(|why| {
-            println!("Failed to write to routeName.html.tera: {:?}", why.kind());
-        });
-
-        // update main.rs file
-        add_new_route_to_main_rs(&route_name)?;
-        // Create a new file with the routeName.css
-        // Create a new file with the routeName.js
-        // Create a new file with the routeName.test.js
-        Ok(())
     }
 
     pub fn exit_program() {
@@ -1128,41 +1280,61 @@ static/styles.css
                 };
             }
             // Generate new routes, models, controllers and migrations
-            Some(("generate", matches)) => {
-                match matches.subcommand() {
-                    Some(("route", matches)) => {
-                        let name = matches.get_one::<String>("name").unwrap().to_string();
-                        match Self::create_new_route(name) {
-                            // This is always going to be okay becase the error will be handled in the console
-                            Ok(_) => return,
-                            Err(e) => println!("Error generating route: {}", e.kind()),
+            Some(("generate", matches)) => match matches.subcommand() {
+                Some(("route", matches)) => {
+                    let name = matches.get_one::<String>("name").unwrap().to_string();
+                    let route_type = match matches.get_one::<CRUDType>("type") {
+                        Some(route_type) => route_type.clone(),
+                        None => {
+                            println!("What type of route would you like to create?");
+                            println!("1. GET");
+                            println!("2. POST");
+                            println!("3. PUT");
+                            println!("4. DELETE");
+                            let mut route_type_choice = String::new();
+
+                            std::io::stdin()
+                                .read_line(&mut route_type_choice)
+                                .expect("Failed to read line");
+
+                            let route_type_choice_int =
+                                route_type_choice.trim().parse::<u32>().unwrap();
+
+                            match route_type_choice_int {
+                                1 => CRUDType::Read,
+                                2 => CRUDType::Create,
+                                3 => CRUDType::Update,
+                                4 => CRUDType::Delete,
+                                _ => {
+                                    println!("Invalid route type choice");
+                                    return;
+                                }
+                            }
                         }
-                    }
-                    Some(("model", matches)) => {
-                        let name = matches.get_one::<String>("name").unwrap().to_string();
-                        match Self::create_new_route(name) {
-                            Ok(_) => println!("Model created!"),
-                            Err(e) => println!("Error creating model: {}", e),
+                    };
+                    match Self::create_new_route(name, route_type) {
+                        Ok(_) => {
+                            println!("You selected the {:?} route", route_type);
                         }
-                    }
-                    Some(("controller", matches)) => {
-                        let name = matches.get_one::<String>("name").unwrap().to_string();
-                        match Self::create_new_route(name) {
-                            Ok(_) => println!("Controller created!"),
-                            Err(e) => println!("Error creating controller: {}", e),
-                        }
-                    }
-                    Some(("migration", matches)) => {
-                        let name = matches.get_one::<String>("name").unwrap().to_string();
-                        create_migration(&name)
-                            .await
-                            .expect("Error creating migration");
-                    }
-                    _ => {
-                        println!("Invalid generate choice");
+                        Err(e) => println!("Error creating route: {}", e),
                     }
                 }
-            }
+                Some(("model", _matches)) => {
+                    todo!("Implement this");
+                }
+                Some(("controller", _matches)) => {
+                    todo!("Implement this");
+                }
+                Some(("migration", matches)) => {
+                    let name = matches.get_one::<String>("name").unwrap().to_string();
+                    create_migration(&name)
+                        .await
+                        .expect("Error creating migration");
+                }
+                _ => {
+                    println!("Invalid generate choice");
+                }
+            },
             // Migration Case - Can generate migrations, run migrations, and rollback migrations
             Some(("migration", matches)) => match matches.subcommand() {
                 Some(("generate", matches)) => {
