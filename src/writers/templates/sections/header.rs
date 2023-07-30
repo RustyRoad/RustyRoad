@@ -4,6 +4,7 @@ use std::io::Error;
 pub fn write_to_header(name: &String) -> Result<(), Error> {
     let mut contents: String = r#"<link rel="stylesheet" href="styles.css" />
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}{% endblock title %} - #Title</title>"#
         .to_string();
     // Append page title to the title tag
