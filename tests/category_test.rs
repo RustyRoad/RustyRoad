@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use rustyroad::database::{DataTypeCategory, DatabaseType, PostgresTypes};
-
+    use rustyroad::database::{DataTypeCategory, DatabaseType, MySqlTypes, PostgresTypes};
 
     #[tokio::test]
     async fn test_get_data_from_data_type_category_postgres_numeric() {
@@ -176,7 +175,7 @@ mod tests {
             .types
             .contains_key(&PostgresTypes::JsonB.to_string()));
     }
-   
+
     #[tokio::test]
     async fn test_get_data_from_data_type_category_postgres_search() {
         let data_type_category = DataTypeCategory::Search;
@@ -232,7 +231,6 @@ mod tests {
             .types
             .contains_key(&PostgresTypes::Character.to_string()));
     }
-
 
     /// PostGres Interval
     /// - Passes
@@ -293,5 +291,14 @@ mod tests {
             .postgres
             .types
             .contains_key(&PostgresTypes::Array(Box::new(PostgresTypes::Integer)).to_string()));
+    }
+
+    #[tokio::test]
+    async fn fn_test_get_data_from_data_type_category_mysql_bit_string() {
+        let data_type_category = DataTypeCategory::BitString;
+        let database_type = DatabaseType::Mysql;
+        let types_for_database =
+            data_type_category.get_data_types_from_data_type_category(database_type);
+        assert_eq!(types_for_database.mysql.types.len(), 0);
     }
 }
