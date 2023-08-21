@@ -44,3 +44,6 @@ strum = "0.25.0"
 maplit = "1.0.2"
 [features]
 with-file-history = []
+
+[build-dependencies]
+pkg-config = "0.3"
