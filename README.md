@@ -166,15 +166,23 @@ rustup toolchain install stable-x86_64-pc-windows-msvc
 #### Linux
 If you are using Linux, you will need to install the following dependencies:
 
+Ubuntu/Debian:
 ```
-sudo apt-get install build-essential libssl-dev libpq-dev libsqlite3-dev pkg-config openssl sqlite3 postgresql postgresql-contrib 
+sudo apt-get install build-essential libssl-dev libpq-dev libsqlite3-dev pkg-config openssl sqlite3 postgresql postgresql-contrib postgresql-devel lld clang gcc
 ```
+
+Fedora:
+```
+sudo dnf install openssl-devel sqlite-devel clang lld gcc postgresql-devel pkg-config openssl sqlite3 postgresql postgresql-contrib
+```
+
+
 
 #### Mac
 If you are using Mac, you will need to install the following dependencies:
 
 ```
-brew install openssl sqlite3
+brew install openssl sqlite3 postgresql postgresql-contrib pkg-config openssl sqlite3 postgresql postgresql-contrib lld clang gcc rustup  rustup-init rustup toolchain install stable-x86_64-apple-darwin 
 ```
 
 ### Installing
