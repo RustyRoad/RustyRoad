@@ -4,9 +4,9 @@ use crate::models;
 use models::user::UserLogin;
 
 #[get("/dashboard")]
-async fn dashboard_route(tmpl: web::Data<Tera>) -> HttpResponse {
+async fn dashboard_controller(tmpl: web::Data<Tera>) -> HttpResponse {
     let mut context = Context::new();
-    context.insert("route_name", "dashboard");
+    context.insert("controller_name", "dashboard");
     let rendered = tmpl.render("pages/dashboard.html.tera", &context).unwrap();
     HttpResponse::Ok().body(rendered)
 }

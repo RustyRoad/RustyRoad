@@ -1,4 +1,4 @@
-use crate::writers::{route_writer, write_to_file, write_to_routes_mod};
+use crate::writers::{controller_writer, write_to_controllers_mod, write_to_file};
 use crate::Project;
 use std::io::Error;
 
@@ -25,20 +25,21 @@ pub fn write_to_dashboard(project: Project) -> Result<(), Error> {
         )
     });
 
-    route_writer::write_to_initial_get_route_rs(project.dashboard_route.clone()).unwrap_or_else(
+    controller_writer::write_to_initial_get_controller_rs(project.dashboard_controller.clone())
+        .unwrap_or_else(|why| {
+            panic!(
+                "Couldn't write to the: {}: {}",
+                &project.dashboard_controller, why
+            )
+        });
+
+    write_to_controllers_mod(&project.controllers_module, "dashboard".to_string()).unwrap_or_else(
         |why| {
             panic!(
                 "Couldn't write to the: {}: {}",
-                &project.dashboard_route, why
+                &project.dashboard_controller, why
             )
         },
     );
-
-    write_to_routes_mod(&project.routes_module, "dashboard".to_string()).unwrap_or_else(|why| {
-        panic!(
-            "Couldn't write to the: {}: {}",
-            &project.dashboard_route, why
-        )
-    });
     Ok(())
 }

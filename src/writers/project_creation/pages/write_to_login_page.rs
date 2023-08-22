@@ -1,4 +1,4 @@
-use crate::writers::{route_writer, write_to_file, write_to_routes_mod};
+use crate::writers::{controller_writer, write_to_controllers_mod, write_to_file};
 use crate::Project;
 use std::io::Error;
 
@@ -67,36 +67,32 @@ pub fn write_to_login_page(project: Project) -> Result<(), Error> {
 </div>
 {% endblock content %}"#.to_string();
 
-    write_to_file(&project.login_page_html, contents.as_bytes()).unwrap_or_else(|why| {
-        panic!(
-            "Couldn't write to {}: {}",
-            &project.login_page_html, why
-        )
-    });
+    write_to_file(&project.login_page_html, contents.as_bytes())
+        .unwrap_or_else(|why| panic!("Couldn't write to {}: {}", &project.login_page_html, why));
 
-    route_writer::write_to_initial_get_route_rs(project.login_route.clone()).unwrap_or_else(
+    controller_writer::write_to_initial_get_controller_rs(project.login_controller.clone())
+        .unwrap_or_else(|why| {
+            panic!(
+                "Couldn't write to the: {}: {}",
+                &project.login_controller, why
+            )
+        });
+
+    controller_writer::write_to_initial_post_controller_rs(project.login_controller.clone())
+        .unwrap_or_else(|why| {
+            panic!(
+                "Couldn't write to the: {}: {}",
+                &project.login_controller, why
+            )
+        });
+
+    write_to_controllers_mod(&project.controllers_module, "login".to_string()).unwrap_or_else(
         |why| {
             panic!(
                 "Couldn't write to the: {}: {}",
-                &project.login_route, why
+                &project.login_controller, why
             )
         },
     );
-
-    route_writer::write_to_initial_post_route_rs(project.login_route.clone()).unwrap_or_else(
-        |why| {
-            panic!(
-                "Couldn't write to the: {}: {}",
-                &project.login_route, why
-            )
-        },
-    );
-
-    write_to_routes_mod(&project.routes_module, "login".to_string()).unwrap_or_else(|why| {
-        panic!(
-            "Couldn't write to the: {}: {}",
-            &project.login_route, why
-        )
-    });
     Ok(())
 }

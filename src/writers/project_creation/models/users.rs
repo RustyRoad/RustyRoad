@@ -1,4 +1,4 @@
-use crate::{writers::write_to_routes_mod::write_to_models_mod, Project};
+use crate::{writers::write_to_controllers_mod::write_to_models_mod, Project};
 use std::{
     fs::OpenOptions,
     io::{Error, Write},

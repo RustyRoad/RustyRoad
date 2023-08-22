@@ -30,8 +30,8 @@ pub fn new(name: String) -> Project {
     let config_dev_db = format!("{}/dev.db", db);
     let config_prod_db = format!("{}/prod.db", db);
     let config_test_db = format!("{}/test.db", db);
-    let routes = format!("{}/routes", src_dir);
-    let routes_module = format!("{}/mod.rs", routes);
+    let controllers = format!("{}/controllers", src_dir);
+    let controllers_module = format!("{}/mod.rs", controllers);
     let controllers = format!("{}/controllers", src_dir);
     let models = format!("{}/models", src_dir);
     let models_module = format!("{}/mod.rs", models);
@@ -43,13 +43,13 @@ pub fn new(name: String) -> Project {
     let config_initializers_db = format!("{}/initialize_db.sql", config_initializers);
     let config_initializers_default = format!("{}/default.rs", config_initializers);
     let config_initializers_middleware = format!("{}/middleware.rs", config_initializers);
-    let config_initializers_routes = format!("{}/routes.rs", config_initializers);
+    let config_initializers_controllers = format!("{}/controllers.rs", config_initializers);
     let index_html = format!("{}/index.html.tera", template_pages);
     let base_html = format!("{}/base.html.tera", templates);
     let tailwind_css = format!("{}/tailwind.css", src_dir);
     let tailwind_config = format!("{}/tailwind.config.js", name);
     let postcss_config = format!("{}/postcss.config.js", name);
-    let not_found_route = format!("{}/not_found.rs", routes);
+    let not_found_controller = format!("{}/not_found.rs", controllers);
     let not_found_html = format!("{}/404.html.tera", template_pages);
     let server_error_html = format!("{}/500.html.tera", template_pages);
     let favicon_ico = format!("{}/favicon.ico", static_images);
@@ -67,13 +67,12 @@ pub fn new(name: String) -> Project {
     let initial_migration_up = format!("{}/up.sql", initial_migration_directory);
     let initial_migration_down = format!("{}/down.sql", initial_migration_directory);
     let user_test = format!("{}/user.rs", tests);
-    let user_route = format!("{}/user.rs", routes);
-    let index_route = format!("{}/index.rs", routes);
-    let login_route = format!("{}/login.rs", routes);
-    let signup_route = format!("{}/signup.rs", routes);
-    let reset_password_route = format!("{}/reset_password.rs", routes);
-    let forgot_password_route = format!("{}/forgot_password.rs", routes);
-    let dashboard_route = format!("{}/dashboard.rs", routes);
+    let index_controller = format!("{}/index.rs", controllers);
+    let login_controller = format!("{}/login.rs", controllers);
+    let signup_controller = format!("{}/signup.rs", controllers);
+    let reset_password_controller = format!("{}/reset_password.rs", controllers);
+    let forgot_password_controller = format!("{}/forgot_password.rs", controllers);
+    let dashboard_controller = format!("{}/dashboard.rs", controllers);
     let navbar_component = format!("{}/navbar.html.tera", template_components);
     let header_section = format!("{}/header.html.tera", template_sections);
 
@@ -106,9 +105,8 @@ pub fn new(name: String) -> Project {
         config_dev_db,
         config_prod_db,
         config_test_db,
-        routes,
-        routes_module,
         controllers,
+        controllers_module,
         models,
         models_module,
         migrations,
@@ -119,13 +117,13 @@ pub fn new(name: String) -> Project {
         config_initializers_db,
         config_initializers_default,
         config_initializers_middleware,
-        config_initializers_routes,
+        config_initializers_controllers,
         index_html,
         base_html,
         tailwind_css,
         tailwind_config,
         postcss_config,
-        not_found_route,
+        not_found_controller,
         not_found_html,
         server_error_html,
         favicon_ico,
@@ -143,13 +141,12 @@ pub fn new(name: String) -> Project {
         initial_migration_up,
         initial_migration_down,
         user_test,
-        user_route,
-        index_route,
-        login_route,
-        signup_route,
-        reset_password_route,
-        forgot_password_route,
-        dashboard_route,
+        index_controller,
+        login_controller,
+        signup_controller,
+        reset_password_controller,
+        forgot_password_controller,
+        dashboard_controller,
         navbar_component,
         header_section,
     }

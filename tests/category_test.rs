@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use rustyroad::database::{DataTypeCategory, DatabaseType, MySqlTypes, PostgresTypes};
+    use rustyroad::database::{DataTypeCategory, DatabaseType, PostgresTypes};
 
     #[tokio::test]
     async fn test_get_data_from_data_type_category_postgres_numeric() {

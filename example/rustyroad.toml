@@ -1,8 +1,8 @@
 [database]
 name = "example"
-database_name = "example"
+database_name = "test112"
 database_user = "postgres"
 database_password = "postgres"
-database_host = "127.0.0.1"
+database_host = "localhost"
 database_port = "5432"
 database_type = "postgres"

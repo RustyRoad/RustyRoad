@@ -245,7 +245,7 @@ Usage: rustyroad.exe <COMMAND>
 
 Commands:
   new       Creates a new project
-  generate  Generates a new route, model, or controller
+  generate  Generates a new controller, model, or controller
   migrate   Runs migrations
   help      Print this message or the help of the given subcommand(s)
 
@@ -258,9 +258,9 @@ Follow the command flow to create a new project
 rustyroad new my_project
 ```
 
-Generate a new route
+Generate a new controller
 ```shell
-rustyroad generate route users
+rustyroad generate controller users
 ```
 
 

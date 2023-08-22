@@ -7,7 +7,7 @@ use std::io::Error;
 use std::path::PathBuf;
 
 /// This function writes initial content to the main.rs file of a new RustyRoad project.
-/// The content includes setting up an Actix web server with three routes: index, dashboard, and login.
+/// The content includes setting up an Actix web server with three controllers: index, dashboard, and login.
 ///
 /// # Arguments
 ///
@@ -19,7 +19,7 @@ use std::path::PathBuf;
 pub fn write_to_main_rs(project: &Project) -> Result<(), Error> {
     // Define the contents to be written to the main.rs file
     // This includes importing necessary Actix Web modules, defining the main function, setting up the HTTP server,
-    // binding it to the localhost on port 8000, and defining three routes: index, dashboard, and login
+    // binding it to the localhost on port 8000, and defining three controllers: index, dashboard, and login
     let contents = r#"use std::env;
 
 use actix_files::Files;
@@ -36,7 +36,7 @@ use rustyroad::database::Database;
 use tera::Tera;
 mod controllers;
 mod models;
-mod routes;
+mod controllers;
 
 fn get_secret_key() -> Result<Key, Box<dyn std::error::Error>> {
     let secret_key_from_env = env::var("SECRET_KEY")?;
@@ -81,12 +81,12 @@ async fn main() -> std::io::Result<()> {
             .app_data(database.clone())
             .wrap(session_mw)
             .app_data(web::Data::new(tera.clone())) // Updated line
-            .service(routes::index::index)
-            .service(routes::dashboard::dashboard_route)
-            .service(routes::login::login_route)
-            .service(routes::login::login_function)
-            .service(routes::login::user_logout)
-            .service(routes::not_found::not_found)
+            .service(controllers::index::index)
+            .service(controllers::dashboard::dashboard_controller)
+            .service(controllers::login::login_controller)
+            .service(controllers::login::login_function)
+            .service(controllers::login::user_logout)
+            .service(controllers::not_found::not_found)
             .service(Files::new("/static", "./static")) // Add this line
     })
     .bind(("127.0.0.1", 8080))
@@ -107,20 +107,19 @@ async fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-
-/// This function adds a new route to the main.rs file of a RustyRoad project.
+/// This function adds a new controller to the main.rs file of a RustyRoad project.
 /// It first verifies that the current project is indeed a RustyRoad project by checking for the presence of a rustyroad.toml file.
-/// Then it reads the main.rs file, identifies the last .service() call, and adds a new .service() call for the provided route name after the last .service() call.
+/// Then it reads the main.rs file, identifies the last .service() call, and adds a new .service() call for the provided controller name after the last .service() call.
 /// If successful, it overwrites the main.rs file with the updated content.
 ///
 /// # Arguments
 ///
-/// * `route_name` - A string slice that holds the name of the new route to be added.
+/// * `controller_name` - A string slice that holds the name of the new controller to be added.
 ///
 /// # Returns
 ///
-/// * `Ok(())` if the new route was successfully added to the main.rs file, or an Error if something went wrong.
-pub fn add_new_route_to_main_rs(route_name: &str) -> Result<(), Error> {
+/// * `Ok(())` if the new controller was successfully added to the main.rs file, or an Error if something went wrong.
+pub fn add_new_controller_to_main_rs(controller_name: &str) -> Result<(), Error> {
     // Check for the current working directory
     let current_dir = std::env::current_dir().unwrap();
 
@@ -141,11 +140,14 @@ pub fn add_new_route_to_main_rs(route_name: &str) -> Result<(), Error> {
     // Read the file into a string
     let mut contents = fs::read_to_string(&main_rs)?;
 
-    // Prepare the new route
-    let new_route = format!(".service(routes::{}::{})", route_name, route_name);
+    // Prepare the new controller
+    let new_controller = format!(
+        ".service(controllers::{}::{})",
+        controller_name, controller_name
+    );
 
     // Prepare the regular expression to find the last .service() call
-    let re = Regex::new(r".service\(routes::\w+::\w+\)").unwrap();
+    let re = Regex::new(r".service\(controllers::\w+::\w+\)").unwrap();
 
     // Find the last .service() call and its end position
     let last_service_end_pos = re
@@ -153,12 +155,12 @@ pub fn add_new_route_to_main_rs(route_name: &str) -> Result<(), Error> {
         .last()
         .ok_or(Error::new(
             std::io::ErrorKind::InvalidData,
-            "Could not find the position to insert new route",
+            "Could not find the position to insert new controller",
         ))?
         .end();
 
-    // Insert the new route after the last .service() call
-    contents.insert_str(last_service_end_pos, &new_route);
+    // Insert the new controller after the last .service() call
+    contents.insert_str(last_service_end_pos, &new_controller);
 
     // Write the string back to the file
     fs::write(main_rs, contents)?;
@@ -166,8 +168,10 @@ pub fn add_new_route_to_main_rs(route_name: &str) -> Result<(), Error> {
     Ok(())
 }
 
-
-pub fn add_to_route_in_main_rs(previous_route_name: &str, new_route_name: &str) -> Result<(), Error> {
+pub fn add_to_controller_in_main_rs(
+    previous_controller_name: &str,
+    new_controller_name: &str,
+) -> Result<(), Error> {
     // Check for the current working directory
     let current_dir = std::env::current_dir().unwrap();
 
@@ -188,11 +192,14 @@ pub fn add_to_route_in_main_rs(previous_route_name: &str, new_route_name: &str) 
     // Read the file into a string
     let mut contents = fs::read_to_string(&main_rs)?;
 
-    // Prepare the new route
-    let new_route = format!(".service(routes::{}::{})", previous_route_name, new_route_name);
+    // Prepare the new controller
+    let new_controller = format!(
+        ".service(controllers::{}::{})",
+        previous_controller_name, new_controller_name
+    );
 
     // Prepare the regular expression to find the last .service() call
-    let re = Regex::new(r".service\(routes::\w+::\w+\)").unwrap();
+    let re = Regex::new(r".service\(controllers::\w+::\w+\)").unwrap();
 
     // Find the last .service() call and its end position
     let last_service_end_pos = re
@@ -200,12 +207,12 @@ pub fn add_to_route_in_main_rs(previous_route_name: &str, new_route_name: &str) 
         .last()
         .ok_or(Error::new(
             std::io::ErrorKind::InvalidData,
-            "Could not find the position to insert new route",
+            "Could not find the position to insert new controller",
         ))?
         .end();
 
-    // Insert the new route after the last .service() call
-    contents.insert_str(last_service_end_pos, &new_route);
+    // Insert the new controller after the last .service() call
+    contents.insert_str(last_service_end_pos, &new_controller);
 
     // Write the string back to the file
     fs::write(main_rs, contents)?;

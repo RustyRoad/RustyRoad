@@ -126,9 +126,8 @@ pub struct Project {
     pub config_dev_db: String,
     pub config_prod_db: String,
     pub config_test_db: String,
-    pub routes: String,
-    pub routes_module: String,
     pub controllers: String,
+    pub controllers_module: String,
     pub models: String,
     pub models_module: String,
     pub migrations: String,
@@ -139,7 +138,7 @@ pub struct Project {
     pub config_initializers_db: String,
     pub config_initializers_default: String,
     pub config_initializers_middleware: String,
-    pub config_initializers_routes: String,
+    pub config_initializers_controllers: String,
     pub index_html: String,
     pub base_html: String,
     pub tailwind_css: String,
@@ -162,14 +161,13 @@ pub struct Project {
     pub initial_migration_up: String,
     pub initial_migration_down: String,
     pub user_test: String,
-    pub user_route: String,
-    pub not_found_route: String,
-    pub index_route: String,
-    pub login_route: String,
-    pub signup_route: String,
-    pub reset_password_route: String,
-    pub forgot_password_route: String,
-    pub dashboard_route: String,
+    pub not_found_controller: String,
+    pub index_controller: String,
+    pub login_controller: String,
+    pub signup_controller: String,
+    pub reset_password_controller: String,
+    pub forgot_password_controller: String,
+    pub dashboard_controller: String,
     pub navbar_component: String,
     pub header_section: String,
 }
@@ -482,8 +480,8 @@ static/styles.css
             println!("Failed to write to postcss.config.js: {:?}", why.kind());
         });
 
-        // Write to index.html route
-        write_to_index_route(&project).unwrap_or_else(|why| {
+        // Write to index.html controller
+        write_to_index_controller(&project).unwrap_or_else(|why| {
             println!("Failed to write to index.html: {:?}", why.kind());
         });
 
@@ -492,9 +490,11 @@ static/styles.css
             println!("Failed to write to .gitignore: {:?}", why.kind());
         });
 
-        write_to_routes_mod(&project.routes_module, "index".to_string()).unwrap_or_else(|why| {
-            println!("Failed to write to routes/mod: {:?}", why.kind());
-        });
+        write_to_controllers_mod(&project.controllers_module, "index".to_string()).unwrap_or_else(
+            |why| {
+                println!("Failed to write to controllers/mod: {:?}", why.kind());
+            },
+        );
         // Write to Header
         write_to_header(&project.header_section).unwrap_or_else(|why| {
             println!("Failed to write to header: {:?}", why.kind());
@@ -741,130 +741,130 @@ static/styles.css
         Ok(project)
     } // End of create_new_project function
 
-    pub fn create_new_route(route_name: String, route_type: CRUDType) -> Result<(), Error> {
-        // the route will need to check the current directory to see if it is a rustyroad project
+    pub fn create_new_controller(controller_name: String, controller_type: CRUDType) -> Result<(), Error> {
+        // the controller will need to check the current directory to see if it is a rustyroad project
         // if it is not, it will return an error and ask the user to run the command in a rustyroad project
-        // if it is a rustyroad project, it will create a new directory with the routeName
-        // it will create a new file with the routeName.rs
-        // ask the user if a route folder already exists
-        // if it does, ask the user if they want to add this route to the file for that route
+        // if it is a rustyroad project, it will create a new directory with the controllerName
+        // it will create a new file with the controllerName.rs
+        // ask the user if a controller folder already exists
+        // if it does, ask the user if they want to add this controller to the file for that controller
         // if it does not, continue with the rest of the code
-        println!("Does a route folder already exist? (y/n): ");
+        println!("Does a controller folder already exist? (y/n): ");
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
         let input = input.trim();
 
-        // if the user enters y, ask the user if they want to add this route to the file for that route
+        // if the user enters y, ask the user if they want to add this controller to the file for that controller
         if input == "y" {
-            match route_type {
+            match controller_type {
                 CRUDType::Read => {
-                    // create the route
+                    // create the controller
 
-                    println!("Do you want to add this route to the file for that route? (y/n): ");
+                    println!("Do you want to add this controller to the file for that controller? (y/n): ");
                     let mut input = String::new();
                     std::io::stdin().read_line(&mut input).unwrap();
                     let input = input.trim();
 
-                    // if the user enters y, add the route to the file for that route
+                    // if the user enters y, add the controller to the file for that controller
                     if input == "y" {
-                        // ask the user the name of the route
-                        println!("What is the name of the route that already exists?: ");
+                        // ask the user the name of the controller
+                        println!("What is the name of the controller that already exists?: ");
                         let mut input = String::new();
                         std::io::stdin().read_line(&mut input).unwrap();
                         let input = input.trim();
 
-                        // find the folder in the routes directory with the name of the route
+                        // find the folder in the controllers directory with the name of the controller
                         // if the folder does not exist, let the user know and ask them if they want to create
-                        // a new route with that name
-                        // if the folder does exist, add the route to the file for that route
-                        let current_dir = fs::read_dir("./src/routes").unwrap();
-                        let mut has_route = false;
+                        // a new controller with that name
+                        // if the folder does exist, add the controller to the file for that controller
+                        let current_dir = fs::read_dir("./src/controllers").unwrap();
+                        let mut has_controller = false;
 
                         for entry in current_dir {
                             let entry = entry.unwrap();
                             let file_name = entry.file_name();
                             let file_name = file_name.to_str().unwrap();
                             if file_name == input {
-                                has_route = true;
+                                has_controller = true;
                             }
                         }
 
-                        if !has_route {
-                            println!("There is no route with that name. Do you want to create a new route with that name? (y/n): ");
+                        if !has_controller {
+                            println!("There is no controller with that name. Do you want to create a new controller with that name? (y/n): ");
                             let mut input = String::new();
                             std::io::stdin().read_line(&mut input).unwrap();
                             let input = input.trim();
 
-                            // if the user enters y, create a new route with that name
+                            // if the user enters y, create a new controller with that name
                             if input == "y" {
-                                // create the route
-                                // add the route to the file for that route
-                                write_to_new_get_route(route_name.clone()).unwrap_or_else(|why| {
-                                    println!("Failed to write to route: {:?}", why.kind());
+                                // create the controller
+                                // add the controller to the file for that controller
+                                write_to_new_get_controller(controller_name.clone()).unwrap_or_else(|why| {
+                                    println!("Failed to write to controller: {:?}", why.kind());
                                 });
                                 // end the function
                                 return Ok(());
                             } else {
                                 println!(
-                                    "Please run the command again and enter a valid route name."
+                                    "Please run the command again and enter a valid controller name."
                                 );
                                 // end the function
                                 std::process::exit(0);
                             }
                         } else {
-                            // if the folder does exist, add the route to the file for that route
-                            write_to_previous_get_route(input.to_string(), route_name.clone())
+                            // if the folder does exist, add the controller to the file for that controller
+                            write_to_previous_get_controller(input.to_string(), controller_name.clone())
                                 .unwrap_or_else(|why| {
-                                    println!("Failed to write to route: {:?}", why.kind());
+                                    println!("Failed to write to controller: {:?}", why.kind());
                                 });
-                            // Create a new file with the routeName.html.tera
-                            create_file(&format!("./templates/pages/{}.html.tera", route_name))
+                            // Create a new file with the controllerName.html.tera
+                            create_file(&format!("./templates/pages/{}.html.tera", controller_name))
                                 .unwrap_or_else(|why| {
                                     println!("Failed to create file: {:?}", why.kind());
                                 });
-                            // Write to routeName.html.tera file
-                            write_to_route_name_html(route_name.clone()).unwrap_or_else(|why| {
+                            // Write to controllerName.html.tera file
+                            write_to_controller_name_html(controller_name.clone()).unwrap_or_else(|why| {
                                 println!(
-                                    "Failed to write to routeName.html.tera: {:?}",
+                                    "Failed to write to controllerName.html.tera: {:?}",
                                     why.kind()
                                 );
                             });
 
                             // update main.rs file
-                            add_to_route_in_main_rs(input, route_name.clone().as_str())
+                            add_to_controller_in_main_rs(input, controller_name.clone().as_str())
                                 .unwrap_or_else(|why| {
-                                    println!("Failed to add to route in main.rs: {:?}", why.kind());
+                                    println!("Failed to add to controller in main.rs: {:?}", why.kind());
                                 });
                             // end the function
                             return Ok(());
                         }
                     } else {
                         // if the user enters n, continue with the rest of the code
-                        // add the route to the file for that route
-                        write_to_new_get_route(route_name.clone()).unwrap_or_else(|why| {
-                            println!("Failed to write to route: {:?}", why.kind());
+                        // add the controller to the file for that controller
+                        write_to_new_get_controller(controller_name.clone()).unwrap_or_else(|why| {
+                            println!("Failed to write to controller: {:?}", why.kind());
                         });
                         // end the function
                         return Ok(());
                     }
                 }
                 CRUDType::Create => {
-                    // create the route
-                    todo!("Create route");
+                    // create the controller
+                    todo!("Create controller");
                 }
                 CRUDType::Update => {
-                    // create the route
-                    todo!("Update route")
+                    // create the controller
+                    todo!("Update controller")
                 }
                 CRUDType::Delete => {
-                    // create the route
-                    todo!("Delete route")
+                    // create the controller
+                    todo!("Delete controller")
                 }
             }
         } else {
-            match route_type {
+            match controller_type {
                 CRUDType::Read => {
-                    // create the route
+                    // create the controller
                     // check if the current directory is a rustyroad project
                     let current_dir = fs::read_dir(".").unwrap();
                     let mut has_rustyroad_toml = false;
@@ -888,77 +888,81 @@ static/styles.css
                         return Ok(());
                     }
 
-                    // Create a new directory with the routeName
-                    create_dir(format!("./src/routes/{}", &route_name)).unwrap_or_else(|why| {
-                        println!("Failed to create directory: {:?}", why.kind());
-                    });
-                    // Create a new route using the routeName
-                    // Update the routes/mod.rs file
-                    let full_file_name = format!("./src/routes/mod.rs");
-                    write_to_routes_mod(&full_file_name, route_name.clone()).unwrap_or_else(
+                    // Create a new directory with the controllerName
+                    create_dir(format!("./src/controllers/{}", &controller_name)).unwrap_or_else(
                         |why| {
-                            println!("Failed to write to routes/mod: {:?}", why.kind());
+                            println!("Failed to create directory: {:?}", why.kind());
+                        },
+                    );
+                    // Create a new controller using the controllerName
+                    // Update the controllers/mod.rs file
+                    let full_file_name = format!("./src/controllers/mod.rs");
+                    write_to_controllers_mod(&full_file_name, controller_name.clone()).unwrap_or_else(
+                        |why| {
+                            println!("Failed to write to controllers/mod: {:?}", why.kind());
                         },
                     );
 
-                    // create the routes/mod.rs file
-                    create_file(&format!("./src/routes/{}/mod.rs", route_name)).unwrap_or_else(
-                        |why| {
+                    // create the controllers/mod.rs file
+                    create_file(&format!("./src/controllers/{}/mod.rs", controller_name))
+                        .unwrap_or_else(|why| {
                             println!("Failed to create file: {:?}", why.kind());
-                        },
-                    );
+                        });
 
                     let mut components = Vec::new();
-                    // Create a vector and push the routeName to the vector
-                    components.push(route_name.clone().to_string());
+                    // Create a vector and push the controllerName to the vector
+                    components.push(controller_name.clone().to_string());
 
                     // Write to mod.rs file
                     writers::write_to_module(
-                        &format!("./src/routes/{}/mod.rs", &route_name),
+                        &format!("./src/controllers/{}/mod.rs", &controller_name),
                         components,
                     )
                     .unwrap_or_else(|why| {
                         println!("Failed to write to mod.rs: {:?}", why.kind());
                     });
 
-                    // Create a new file with the routeName.rs
-                    create_file(&format!("./src/routes/{}/{}.rs", route_name, route_name))
-                        .unwrap_or_else(|why| {
-                            println!("Failed to create file: {:?}", why.kind());
-                        });
-                    // Write to routeName.rs file
-                    write_to_new_get_route(route_name.clone()).unwrap_or_else(|why| {
-                        println!("Failed to write to routeName.rs: {:?}", why.kind());
+                    // Create a new file with the controllerName.rs
+                    create_file(&format!(
+                        "./src/controllers/{}/{}.rs",
+                        controller_name, controller_name
+                    ))
+                    .unwrap_or_else(|why| {
+                        println!("Failed to create file: {:?}", why.kind());
+                    });
+                    // Write to controllerName.rs file
+                    write_to_new_get_controller(controller_name.clone()).unwrap_or_else(|why| {
+                        println!("Failed to write to controllerName.rs: {:?}", why.kind());
                     });
 
-                    // Create a new file with the routeName.html.tera
-                    create_file(&format!("./templates/pages/{}.html.tera", route_name))
+                    // Create a new file with the controllerName.html.tera
+                    create_file(&format!("./templates/pages/{}.html.tera", controller_name))
                         .unwrap_or_else(|why| {
                             println!("Failed to create file: {:?}", why.kind());
                         });
-                    // Write to routeName.html.tera file
-                    write_to_route_name_html(route_name.clone()).unwrap_or_else(|why| {
-                        println!("Failed to write to routeName.html.tera: {:?}", why.kind());
+                    // Write to controllerName.html.tera file
+                    write_to_controller_name_html(controller_name.clone()).unwrap_or_else(|why| {
+                        println!("Failed to write to controllerName.html.tera: {:?}", why.kind());
                     });
 
                     // update main.rs file
-                    add_new_route_to_main_rs(&route_name)?;
-                    // Create a new file with the routeName.css
-                    // Create a new file with the routeName.js
-                    // Create a new file with the routeName.test.js
+                    add_new_controller_to_main_rs(&controller_name)?;
+                    // Create a new file with the controllerName.css
+                    // Create a new file with the controllerName.js
+                    // Create a new file with the controllerName.test.js
                     Ok(())
                 }
                 CRUDType::Create => {
-                    // create the route
-                    todo!("Create route");
+                    // create the controller
+                    todo!("Create controller");
                 }
                 CRUDType::Update => {
-                    // create the route
-                    todo!("Update route")
+                    // create the controller
+                    todo!("Update controller")
                 }
                 CRUDType::Delete => {
-                    // create the route
-                    todo!("Delete route")
+                    // create the controller
+                    todo!("Delete controller")
                 }
             }
         }
@@ -983,11 +987,11 @@ static/styles.css
             )
             .subcommand(
                 Command::new("generate")
-                    .about("Generates a new route, model, or controller")
+                    .about("Generates a new controller, model, or controller")
                     .subcommand(
-                        Command::new("route")
-                            .about("Generates a new route")
-                            .arg(arg!(<name> "The name of the route"))
+                        Command::new("controller")
+                            .about("Generates a new controller")
+                            .arg(arg!(<name> "The name of the controller"))
                             .subcommand_help_heading("SUBCOMMANDS:")
                             // if no subcommand is provided, print help
                             .subcommand_required(true)
@@ -1023,8 +1027,8 @@ static/styles.css
                     )
                     .after_help(
                         "EXAMPLES:
-                To generate a new route:
-                    rustyroad generate route <name>
+                To generate a new controller:
+                    rustyroad generate controller <name>
                 To generate a new model:
                     rustyroad generate model <name>
                 To generate a new controller:
@@ -1279,50 +1283,47 @@ static/styles.css
                     }
                 };
             }
-            // Generate new routes, models, controllers and migrations
+            // Generate new controllers, models, controllers and migrations
             Some(("generate", matches)) => match matches.subcommand() {
-                Some(("route", matches)) => {
+                Some(("controller", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
-                    let route_type = match matches.get_one::<CRUDType>("type") {
-                        Some(route_type) => route_type.clone(),
+                    let controller_type = match matches.get_one::<CRUDType>("type") {
+                        Some(controller_type) => controller_type.clone(),
                         None => {
-                            println!("What type of route would you like to create?");
+                            println!("What type of controller would you like to create?");
                             println!("1. GET");
                             println!("2. POST");
                             println!("3. PUT");
                             println!("4. DELETE");
-                            let mut route_type_choice = String::new();
+                            let mut controller_type_choice = String::new();
 
                             std::io::stdin()
-                                .read_line(&mut route_type_choice)
+                                .read_line(&mut controller_type_choice)
                                 .expect("Failed to read line");
 
-                            let route_type_choice_int =
-                                route_type_choice.trim().parse::<u32>().unwrap();
+                            let controller_type_choice_int =
+                                controller_type_choice.trim().parse::<u32>().unwrap();
 
-                            match route_type_choice_int {
+                            match controller_type_choice_int {
                                 1 => CRUDType::Read,
                                 2 => CRUDType::Create,
                                 3 => CRUDType::Update,
                                 4 => CRUDType::Delete,
                                 _ => {
-                                    println!("Invalid route type choice");
+                                    println!("Invalid controller type choice");
                                     return;
                                 }
                             }
                         }
                     };
-                    match Self::create_new_route(name, route_type) {
+                    match Self::create_new_controller(name, controller_type) {
                         Ok(_) => {
-                            println!("You selected the {:?} route", route_type);
+                            println!("You selected the {:?} controller", controller_type);
                         }
-                        Err(e) => println!("Error creating route: {}", e),
+                        Err(e) => println!("Error creating controller: {}", e),
                     }
                 }
                 Some(("model", _matches)) => {
-                    todo!("Implement this");
-                }
-                Some(("controller", _matches)) => {
                     todo!("Implement this");
                 }
                 Some(("migration", matches)) => {

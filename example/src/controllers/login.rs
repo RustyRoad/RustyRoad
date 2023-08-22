@@ -4,9 +4,9 @@ use crate::models;
 use models::user::UserLogin;
 
 #[get("/login")]
-async fn login_route(tmpl: web::Data<Tera>) -> HttpResponse {
+async fn login_controller(tmpl: web::Data<Tera>) -> HttpResponse {
     let mut context = Context::new();
-    context.insert("route_name", "login");
+    context.insert("controller_name", "login");
     let rendered = tmpl.render("pages/login.html.tera", &context).unwrap();
     HttpResponse::Ok().body(rendered)
 }

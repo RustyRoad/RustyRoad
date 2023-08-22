@@ -13,7 +13,7 @@ pub fn create_directory(project: &Project) -> Result<(), Error> {
         &project.config,
         &project.config_env,
         &project.db,
-        &project.routes,
+        &project.controllers,
         &project.controllers,
         &project.models,
         &project.migrations,
