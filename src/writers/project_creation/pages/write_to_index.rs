@@ -429,3 +429,5 @@ pub fn write_to_index_html(project: &Project) -> Result<(), Error> {
 {% endblock content %}",)?;
     Ok(())
 }
+
+
