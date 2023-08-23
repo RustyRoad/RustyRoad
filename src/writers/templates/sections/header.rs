@@ -13,3 +13,20 @@ pub fn write_to_header(name: &String) -> Result<(), Error> {
         .unwrap_or_else(|why| panic!("Couldn't write to {}: {}", &name, why.to_string()));
     Ok(())
 }
+
+pub fn write_to_header_with_grapesjs(name: &String) -> Result<(), Error> {
+    let mut contents: String = r#"<link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
+<script src="https://unpkg.com/grapesjs"></script>
+    <script src="/js/grapesjs-tailwind.min.js"></script>"#
+        .to_string();
+    
+    
+ // append to the end of the header
+    let header = std::fs::read_to_string("/templates/sections/header.html").unwrap();
+    
+    contents = contents + &header;
+    
+    write_to_file(&name, contents.as_bytes())
+        .unwrap_or_else(|why| panic!("Couldn't write to {}: {}", &name, why.to_string()));
+    Ok(())
+}
