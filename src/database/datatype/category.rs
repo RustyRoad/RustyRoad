@@ -195,7 +195,7 @@ impl DataTypeCategory {
     ///
     /// ```rust
     /// use rustyroad::database::datatype::category::TypesForDatabase;
-    /// use rustyroad::database::DatabaseType;
+    /// use rustyroad::database::{DatabaseType, DataTypeCategory, PostgresTypes};
     ///
     /// let category = DataTypeCategory::Array;
     /// let database_type = DatabaseType::Postgres;
