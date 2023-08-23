@@ -17,6 +17,7 @@ use tokio_postgres::{Config, NoTls};
 /// The sql will be written to the file
 /// # Example
 /// ```
+/// use rustyroad::writers::write_to_sql;
 /// use crate::writers::general::sql_writer::write_to_sql;
 ///
 /// write_to_sql("test.sql", "SELECT * FROM test;".to_string());
