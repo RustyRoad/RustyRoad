@@ -38,9 +38,12 @@ use std::{env, fs};
 use std::{fs::OpenOptions, io::Write};
 use tokio::io;
 
+pub mod features;
 pub mod database;
 pub mod generators;
 use database::*;
+use crate::features::add_feature;
+
 pub mod writers;
 
 use crate::generators::create_directory;
@@ -1396,6 +1399,30 @@ static/styles.css
                 }
                 _ => {
                     println!("Invalid migration choice");
+                }
+            },
+            // Add Feature Case
+            Some(("add", matches)) => match matches.subcommand() {
+                Some(("feature", matches)) => {
+                    let name = matches.get_one::<String>("name").unwrap().to_string();
+                    let confirmation = Confirm::new()
+                        .with_prompt(&format!("Are you sure you want to add the '{}' feature?", name))
+                        .interact()
+                        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+                        .expect("Error adding feature: ");
+
+                    if confirmation {
+                        println!("Adding the '{}' feature...", name.clone());
+
+
+                        println!("{}", add_feature(name.clone()).await.as_str());
+                        println!("'{}' feature completed successfully!", name.clone());
+                    } else {
+                        println!("'{}' feature canceled by user.", name);
+                    }
+                }
+                _ => {
+                    println!("Invalid add choice");
                 }
             },
             _ => {
