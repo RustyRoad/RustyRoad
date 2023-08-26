@@ -42,6 +42,8 @@ mysql_async = "0.32.2"
 dialoguer = "0.10.4"
 strum = "0.25.0"
 maplit = "1.0.2"
+eyre = "0.6.8"
+color-eyre = "0.6.2"
 [features]
 with-file-history = []
 
