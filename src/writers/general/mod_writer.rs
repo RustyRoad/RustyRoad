@@ -1,4 +1,5 @@
 use crate::writers::write_to_file;
+use color_eyre::eyre::Result;
 
 /// # Name: create_module
 /// # Description: Creates a module
