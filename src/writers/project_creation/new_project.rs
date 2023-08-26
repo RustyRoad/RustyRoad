@@ -10,11 +10,12 @@ pub fn new(name: String) -> Project {
     let package_json = format!("{name}/package.json");
     let readme = format!("{name}/README.md");
     let gitignore = format!("{name}/.gitignore");
-    let templates = format!("{}/templates", name);
+    let templates = format!("{}/views", src_dir);
     let static_dir = format!("{}/static", name);
     let template_components = format!("{}/components", templates);
     let template_sections = format!("{}/sections", templates);
     let template_layouts = format!("{}/layouts", templates);
+    let auth_template_layouts = format!("{}/authenticated", template_layouts);
     let template_pages = format!("{}/pages", templates);
     let static_css = format!("{}/css", static_dir);
     let static_js = format!("{}/js", static_dir);
@@ -59,6 +60,7 @@ pub fn new(name: String) -> Project {
     let reset_password_page_html = format!("{}/reset_password.html.tera", template_pages);
     let forgot_password_page_html = format!("{}/forgot_password.html.tera", template_pages);
     let dashboard_page_html = format!("{}/dashboard.html.tera", template_pages);
+    let authenticated_layout = format!("{}/authenticated.html.tera", auth_template_layouts);
     let user_controller_directory = format!("{}/user", controllers);
     let user_controller = format!("{}/user.rs", user_controller_directory);
     let user_controller_module = format!("{}/mod.rs", user_controller_directory);
@@ -90,6 +92,7 @@ pub fn new(name: String) -> Project {
         template_components,
         template_sections,
         template_layouts,
+        auth_template_layouts,
         template_pages,
         static_css,
         static_js,
