@@ -1,6 +1,6 @@
 use crate::{database::Database, writers::write_to_file, Project};
 use bcrypt::{hash as new_hash, DEFAULT_COST};
-
+use color_eyre::eyre::Result;
 async fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
     new_hash(password, DEFAULT_COST)
 }
