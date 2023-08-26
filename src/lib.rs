@@ -30,7 +30,7 @@ use sqlx::mysql::MySqlConnectOptions;
 use sqlx::postgres::PgConnectOptions;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
-
+use color_eyre::eyre::Result;
 use dialoguer::Confirm;
 use std::fs::create_dir;
 use std::io::Error;
@@ -114,6 +114,7 @@ pub struct Project {
     pub template_components: String,
     pub template_sections: String,
     pub template_layouts: String,
+    pub auth_template_layouts: String,
     pub template_pages: String,
     pub static_css: String,
     pub static_js: String,
@@ -363,7 +364,7 @@ static/styles.css
     fn write_to_tailwind_config(&self) -> Result<(), Error> {
         let contents = "module.exports = {
         darkMode: 'media',
-        content: ['./templates/**/*.{html.tera,js}'],
+        content: ['./views/**/*.{html.tera,js}'],
         theme: {
             extend: {
             },
@@ -821,7 +822,7 @@ static/styles.css
                                     println!("Failed to write to controller: {:?}", why.kind());
                                 });
                             // Create a new file with the controllerName.html.tera
-                            create_file(&format!("./templates/pages/{}.html.tera", controller_name))
+                            create_file(&format!("./views/pages/{}.html.tera", controller_name))
                                 .unwrap_or_else(|why| {
                                     println!("Failed to create file: {:?}", why.kind());
                                 });
@@ -939,7 +940,7 @@ static/styles.css
                     });
 
                     // Create a new file with the controllerName.html.tera
-                    create_file(&format!("./templates/pages/{}.html.tera", controller_name))
+                    create_file(&format!("./views/pages/{}.html.tera", controller_name))
                         .unwrap_or_else(|why| {
                             println!("Failed to create file: {:?}", why.kind());
                         });
