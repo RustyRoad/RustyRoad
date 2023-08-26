@@ -1,5 +1,5 @@
 use regex::Regex;
-
+use color_eyre::eyre::Result;
 use crate::writers::write_to_file;
 use crate::Project;
 use std::fs;
@@ -21,7 +21,6 @@ pub fn write_to_main_rs(project: &Project) -> Result<(), Error> {
     // This includes importing necessary Actix Web modules, defining the main function, setting up the HTTP server,
     // binding it to the localhost on port 8000, and defining three controllers: index, dashboard, and login
     let contents = r#"use std::env;
-
 use actix_files::Files;
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
@@ -30,7 +29,7 @@ use actix_web::{
     web::{self},
     App, HttpServer,
 };
-
+use color_eyre::eyre::Result;
 use actix_identity::IdentityMiddleware;
 use rustyroad::database::Database;
 use tera::Tera;
@@ -60,8 +59,8 @@ async fn main() -> std::io::Result<()> {
     println!("Starting Actix web server...");
 
     HttpServer::new(move || {
-        // Load tera templates from the specified directory
-        let tera = Tera::new("templates/**/*").unwrap();
+        // Load tera views from the specified directory
+        let tera = Tera::new("views/**/*").unwrap();
         println!("Initializing Actix web application...");
 
         let secret_key = get_secret_key().unwrap();
