@@ -22,7 +22,7 @@ pub fn write_to_header_with_grapesjs(name: &String) -> Result<(), Error> {
     
     
  // append to the end of the header
-    let header = std::fs::read_to_string("/templates/sections/header.html").unwrap();
+    let header = std::fs::read_to_string("/views/sections/header.html").unwrap();
     
     contents = contents + &header;
     
