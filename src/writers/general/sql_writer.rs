@@ -2,7 +2,7 @@ use crate::{database::Database, writers::write_to_file};
 use futures_util::future::FutureExt;
 use sqlx::{mysql::MySqlConnectOptions, MySqlPool};
 use std::str::FromStr;
-
+use color_eyre::eyre::Result;
 use sqlparser::dialect::SQLiteDialect;
 use tokio_postgres::{Config, NoTls};
 
