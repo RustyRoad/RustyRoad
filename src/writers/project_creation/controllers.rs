@@ -4,7 +4,7 @@ use std::io::Error;
 
 // Write to index controller
 pub fn write_to_index_controller(project: &Project) -> Result<(), Error> {
-    let contents = r#"use actix_web::{get, web, HttpResponse, Responder};
+    let contents = r#"use actix_web::{get, web, HttpResponse};
 use tera::{Context, Tera};
 
 #[get("/")]
@@ -85,7 +85,7 @@ async fn not_found(tmpl: web::Data<Tera>) -> HttpResponse {
         contents.as_bytes(),
     )
     .unwrap_or_else(|why| {
-        println!("Couldn't write to {}: {}", project.index_controller, why);
+        println!("Couldn't write to {}: {}", project.not_found_controller, why);
     });
     Ok(())
 }
