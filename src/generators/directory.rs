@@ -31,6 +31,8 @@ pub fn create_directory(project: &Project) -> Result<(), Error> {
         &project.static_images,
         &project.user_controller_directory,
         &project.initial_migration_directory,
+        &project.template_layouts,
+        &project.auth_template_layouts,
     ];
     for directory in directories {
         create_dir(directory).unwrap_or_else(|why| {
