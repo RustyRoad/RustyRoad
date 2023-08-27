@@ -1,5 +1,4 @@
 use std::env;
-
 use actix_files::Files;
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
@@ -8,13 +7,12 @@ use actix_web::{
     web::{self},
     App, HttpServer,
 };
-
+use color_eyre::eyre::Result;
 use actix_identity::IdentityMiddleware;
 use rustyroad::database::Database;
 use tera::Tera;
 mod controllers;
 mod models;
-mod controllers;
 
 fn get_secret_key() -> Result<Key, Box<dyn std::error::Error>> {
     let secret_key_from_env = env::var("SECRET_KEY")?;
@@ -38,8 +36,8 @@ async fn main() -> std::io::Result<()> {
     println!("Starting Actix web server...");
 
     HttpServer::new(move || {
-        // Load tera templates from the specified directory
-        let tera = Tera::new("templates/**/*").unwrap();
+        // Load tera views from the specified directory
+        let tera = Tera::new("views/**/*").unwrap();
         println!("Initializing Actix web application...");
 
         let secret_key = get_secret_key().unwrap();

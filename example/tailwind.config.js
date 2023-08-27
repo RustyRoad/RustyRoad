@@ -1,6 +1,6 @@
 module.exports = {
         darkMode: 'media',
-        content: ['./templates/**/*.{html.tera,js}'],
+        content: ['./views/**/*.{html.tera,js}'],
         theme: {
             extend: {
             },
