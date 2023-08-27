@@ -4,6 +4,7 @@ use std::io::Error;
 
 pub fn create_files(project: &Project) -> Result<(), Error> {
     let files = vec![
+        &project.env,
         &project.rustyroad_toml,
         &project.cargo_toml,
         &project.main_rs,
@@ -35,6 +36,7 @@ pub fn create_files(project: &Project) -> Result<(), Error> {
         &project.reset_password_page_html,
         &project.forgot_password_page_html,
         &project.dashboard_page_html,
+        &project.authenticated_layout,
         &project.user_controller,
         &project.user_model,
         &project.initial_migration_up,
@@ -53,6 +55,7 @@ pub fn create_files(project: &Project) -> Result<(), Error> {
     ];
 
     for file in files {
+        println!("Creating file: {}", file);
         create_file(file)?;
     }
 

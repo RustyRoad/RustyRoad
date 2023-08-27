@@ -2,7 +2,7 @@ use crate::Project;
 
 pub fn new(name: String) -> Project {
     let timestamp = chrono::offset::Local::now().format("%Y%m%d%H%M%S");
-
+    let env = format!("{}/.env", name);
     let src_dir = format!("{name}/src");
     let rustyroad_toml = format!("{name}/rustyroad.toml");
     let cargo_toml = format!("{name}/Cargo.toml");
@@ -92,6 +92,7 @@ pub fn new(name: String) -> Project {
         template_components,
         template_sections,
         template_layouts,
+        authenticated_layout,
         auth_template_layouts,
         template_pages,
         static_css,
@@ -152,5 +153,6 @@ pub fn new(name: String) -> Project {
         dashboard_controller,
         navbar_component,
         header_section,
+        env,
     }
 }
