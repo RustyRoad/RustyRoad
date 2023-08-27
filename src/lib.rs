@@ -442,6 +442,10 @@ static/styles.css
              panic!("Couldn't create files: {:?}", why.kind());
         });
 
+        // write to the .env file
+        let value = set_env(&project).unwrap();
+        println!("value: {}", value);
+
         // Write to rustyroad.toml file
         Self::write_to_rustyroad_toml(&project, &database_data)
             .expect("Failed to write to rustyroad.toml");
