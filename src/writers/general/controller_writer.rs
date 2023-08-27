@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use color_eyre::eyre::Result;
 use crate::writers::write_to_file;
 
-pub fn write_to_controller_name_html(controller_name: String) -> Result<(), Error> {
+pub fn write_to_controller_name_html(controller_name: &str) -> Result<(), Error> {
     let contents = format!(
         r#"{{% extends 'base.html.tera' %}}
 {{% block title %}}Index{{% endblock title %}}
@@ -45,7 +45,7 @@ pub fn write_to_controller_name_html(controller_name: String) -> Result<(), Erro
 /// # Returns
 ///
 /// * `Ok(())` if the content was successfully written to the file, or an Error if something went wrong.
-pub fn write_to_new_get_controller(controller_name: &str) -> Result<(), Error> {
+pub fn write_to_new_get_controller(controller_name: String) -> Result<(), Error> {
     // Define the contents to be written to the file
     // This includes importing necessary Actix Web and Tera modules, defining the controller handler function,
     // and setting up the Tera template rendering
