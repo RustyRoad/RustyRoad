@@ -18,7 +18,7 @@ use std::io::Write;
 ///   Ok(())
 /// }
 /// ```
-pub fn write_to_file(file: &String, message: &[u8]) -> Result<(), std::io::Error> {
+pub fn write_to_file(file: &str, message: &[u8]) -> Result<(), std::io::Error> {
     let mut file = std::fs::OpenOptions::new()
         .write(true)
         .append(true)

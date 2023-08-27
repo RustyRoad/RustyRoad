@@ -35,7 +35,6 @@ use rustyroad::database::Database;
 use tera::Tera;
 mod controllers;
 mod models;
-mod controllers;
 
 fn get_secret_key() -> Result<Key, Box<dyn std::error::Error>> {
     let secret_key_from_env = env::var("SECRET_KEY")?;
