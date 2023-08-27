@@ -102,6 +102,7 @@ pub enum CRUDType {
 #[derive(Parser, Debug, Clone)]
 pub struct Project {
     pub name: String,
+    pub env: String,
     pub rustyroad_toml: String,
     pub src_dir: String,
     pub main_rs: String,
@@ -115,6 +116,7 @@ pub struct Project {
     pub template_sections: String,
     pub template_layouts: String,
     pub auth_template_layouts: String,
+    pub authenticated_layout: String,
     pub template_pages: String,
     pub static_css: String,
     pub static_js: String,
@@ -437,7 +439,7 @@ static/styles.css
 
         // Create the files
         create_files(&project).unwrap_or_else(|why| {
-            panic!("Couldn't create files: {:?}", why.kind());
+             panic!("Couldn't create files: {:?}", why.kind());
         });
 
         // Write to rustyroad.toml file
@@ -827,7 +829,7 @@ static/styles.css
                                     println!("Failed to create file: {:?}", why.kind());
                                 });
                             // Write to controllerName.html.tera file
-                            write_to_controller_name_html(controller_name.clone()).unwrap_or_else(|why| {
+                            write_to_controller_name_html(controller_name.clone().as_str()).unwrap_or_else(|why| {
                                 println!(
                                     "Failed to write to controllerName.html.tera: {:?}",
                                     why.kind()
@@ -945,7 +947,7 @@ static/styles.css
                             println!("Failed to create file: {:?}", why.kind());
                         });
                     // Write to controllerName.html.tera file
-                    write_to_controller_name_html(controller_name.clone()).unwrap_or_else(|why| {
+                    write_to_controller_name_html(controller_name.clone().as_str()).unwrap_or_else(|why| {
                         println!("Failed to write to controllerName.html.tera: {:?}", why.kind());
                     });
 
