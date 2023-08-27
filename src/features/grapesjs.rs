@@ -18,7 +18,7 @@ impl GrapesJS {
         // create a new edit page route
         add_new_controller_to_main_rs("edit_page").expect("Couldn't add new controller to main.rs");
 
-        write_to_new_get_controller("edit_page").expect("Couldn't write to new get controller");
+        write_to_new_get_controller("edit_page".to_string()).expect("Couldn't write to new get controller");
 
         write_to_controller_name_html("edit_page").expect("Couldn't write to edit_page.html.tera");
 
@@ -29,7 +29,7 @@ impl GrapesJS {
 
 
 pub fn write_to_edit_page_html() {
-    let mut contents: String = r"
+    let contents: String = r#"
     <div id="gjs" style="height:0px; overflow:hidden">
         <div style="margin:100px 100px 25px; padding:25px; font:caption">
             This is a demo content from _index.html. You can use this template file for
@@ -95,7 +95,7 @@ pub fn write_to_edit_page_html() {
             },
         });
     </script>
-    ".to_string();
+    "#.to_string();
 
     write_to_file("/views/pages/edit_page.html", contents.as_bytes())
         .unwrap_or_else(|why| panic!("Couldn't write to edit_page.html: {}", why.to_string()));
