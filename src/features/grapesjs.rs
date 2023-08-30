@@ -1,5 +1,5 @@
 use crate::writers::{add_new_controller_to_main_rs, write_to_controller_name_html, write_to_file, write_to_new_get_controller};
-
+use crate::models::grapes_js::*;
 pub struct GrapesJS();
 
 impl GrapesJS {
@@ -22,6 +22,9 @@ impl GrapesJS {
 
         write_to_controller_name_html("edit_page").expect("Couldn't write to edit_page.html.tera");
 
+
+        // set grapesJs
+        let Html = HtmlGrapesJs::new();
     }
 }
 
