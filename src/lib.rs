@@ -41,8 +41,10 @@ use tokio::io;
 pub mod features;
 pub mod database;
 pub mod generators;
+
+pub mod models;
 use database::*;
-use crate::features::add_feature;
+use crate::features::{add_feature, GrapesJS};
 
 pub mod writers;
 
@@ -1421,6 +1423,10 @@ static/styles.css
                     if confirmation {
                         println!("Adding the '{}' feature...", name.clone());
 
+                        // create new feature
+                        let mut grapes_js = GrapesJS::new();
+
+                        grapes_js.add_grapesjs().await;
 
                         println!("{}", add_feature(name.clone()).await.as_str());
                         println!("'{}' feature completed successfully!", name.clone());
