@@ -37,7 +37,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         // Load tera views from the specified directory
-        let tera = Tera::new("views/**/*").unwrap();
+        let tera = Tera::new("src/views/**/*").unwrap();
         println!("Initializing Actix web application...");
 
         let secret_key = get_secret_key().unwrap();
@@ -61,9 +61,8 @@ async fn main() -> std::io::Result<()> {
             .service(controllers::dashboard::dashboard_controller)
             .service(controllers::login::login_controller)
             .service(controllers::login::login_function)
-            .service(controllers::login::user_logout)
-            .service(controllers::not_found::not_found)
-            .service(Files::new("/static", "./static")) // Add this line
+            .service(controllers::login::user_logout).service(controllers::edit_page::edit_page)
+            .service(Files::new("/static", "./static"))
     })
     .bind(("127.0.0.1", 8080))
     .unwrap()
