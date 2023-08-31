@@ -23,6 +23,6 @@ pub fn write_to_file(file: &str, message: &[u8]) -> Result<(), std::io::Error> {
         .write(true)
         .append(true)
         .open(file)?;
-    file.write_all(message).unwrap();
+    file.write_all(message)?;
     Ok(())
 }
