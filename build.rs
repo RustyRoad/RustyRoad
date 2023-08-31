@@ -1,5 +1,7 @@
 extern crate pkg_config;
 
+use std::process::Command;
+
 fn main() {
     if cfg!(target_os = "windows") {
         println!("cargo:rustc-link-search=native=C:\\Program Files (x86)\\vcpkg\\installed\\x64-windows\\lib");
@@ -13,7 +15,13 @@ fn main() {
             println!("cargo:rustc-link-search=native=/usr/local/lib/");
             println!("cargo:rustc-link-search=native=/lib/");
         }
+
     }
 
     println!("cargo:rustc-link-lib=libpq");
+    Command::new("cmd")
+        .args(&["/C", "nvm use 18.17.0 && npm run build"])
+        .current_dir("./grapesjs-tailwind")
+        .status()
+        .unwrap();
 }
