@@ -25,26 +25,25 @@
 #![allow(dead_code)]
 
 use clap::{arg, Arg, Command, Parser};
+use color_eyre::eyre::Result;
+use eyre::Error;
+use dialoguer::Confirm;
 use serde::Deserialize;
 use sqlx::mysql::MySqlConnectOptions;
 use sqlx::postgres::PgConnectOptions;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
-use color_eyre::eyre::Result;
-use dialoguer::Confirm;
 use std::fs::create_dir;
-use std::io::Error;
 use std::{env, fs};
 use std::{fs::OpenOptions, io::Write};
 use tokio::io;
 
-pub mod features;
 pub mod database;
+pub mod features;
 pub mod generators;
 
-pub mod models;
+use crate::features::add_feature;
 use database::*;
-use crate::features::{add_feature, GrapesJS};
 
 pub mod writers;
 
@@ -436,12 +435,12 @@ static/styles.css
 
         // Create the project directory
         create_directory(&project).unwrap_or_else(|why| {
-            println!("Couldn't create directory: {:?}", why.kind());
+            println!("Couldn't create directory: {:?}", why.to_string());
         });
 
         // Create the files
         create_files(&project).unwrap_or_else(|why| {
-             panic!("Couldn't create files: {:?}", why.kind());
+            panic!("Couldn't create files: {:?}", why.to_string());
         });
 
         // write to the .env file
@@ -466,65 +465,65 @@ static/styles.css
 
         // Write to index.js file
         Self::write_to_index_js(&project).unwrap_or_else(|why| {
-            println!("Failed to write to index.js: {:?}", why.kind());
+            println!("Failed to write to index.js: {:?}", why.to_string());
         });
         // Write to index.html.tera file
         write_to_index_html(&project).unwrap_or_else(|why| {
-            println!("Failed to write to index.html: {:?}", why.kind());
+            println!("Failed to write to index.html: {:?}", why.to_string());
         });
         // Write to base.html.tera file
         write_to_base_html(&project.base_html).unwrap_or_else(|why| {
-            println!("Failed to write to base.html: {:?}", why.kind());
+            println!("Failed to write to base.html: {:?}", why.to_string());
         });
 
         // Write to tailwind.css file
         Self::write_to_tailwind_css(&project).unwrap_or_else(|why| {
-            println!("Failed to write to tailwind.css: {:?}", why.kind());
+            println!("Failed to write to tailwind.css: {:?}", why.to_string());
         });
         // need to create the function
         // Write to tailwind.config.js file
         Self::write_to_tailwind_config(&project).unwrap_or_else(|why| {
-            println!("Failed to write to tailwind.config.js: {:?}", why.kind());
+            println!("Failed to write to tailwind.config.js: {:?}", why.to_string());
         });
 
         // Write to postcss.config.js file
         Self::write_to_postcss_config(&project).unwrap_or_else(|why| {
-            println!("Failed to write to postcss.config.js: {:?}", why.kind());
+            println!("Failed to write to postcss.config.js: {:?}", why.to_string());
         });
 
         // Write to index.html controller
         write_to_index_controller(&project).unwrap_or_else(|why| {
-            println!("Failed to write to index.html: {:?}", why.kind());
+            println!("Failed to write to index.html: {:?}", why.to_string());
         });
 
         // Write to gitignore file
         Self::write_to_gitignore(&project).unwrap_or_else(|why| {
-            println!("Failed to write to .gitignore: {:?}", why.kind());
+            println!("Failed to write to .gitignore: {:?}", why.to_string());
         });
 
         write_to_controllers_mod(&project.controllers_module, "index".to_string()).unwrap_or_else(
             |why| {
-                println!("Failed to write to controllers/mod: {:?}", why.kind());
+                println!("Failed to write to controllers/mod: {:?}", why.to_string());
             },
         );
         // Write to Header
         write_to_header(&project.header_section).unwrap_or_else(|why| {
-            println!("Failed to write to header: {:?}", why.kind());
+            println!("Failed to write to header: {:?}", why.to_string());
         });
 
         // write to navbar
         write_to_navbar(&project).unwrap_or_else(|why| {
-            println!("Failed to write to navbar: {:?}", why.kind());
+            println!("Failed to write to navbar: {:?}", why.to_string());
         });
 
         // write to the dashboard page
         write_to_dashboard(project.clone()).unwrap_or_else(|why| {
-            println!("Failed to write to dashboard: {:?}", why.kind());
+            println!("Failed to write to dashboard: {:?}", why.to_string());
         });
 
         // write to the login page
         write_to_login_page(project.clone()).unwrap_or_else(|why| {
-            println!("Failed to write to login: {:?}", why.kind());
+            println!("Failed to write to login: {:?}", why.to_string());
         });
 
         // We need to tell Diesel where to find our database. We do this by setting the DATABASE_URL environment variable.
@@ -571,7 +570,7 @@ static/styles.css
                 }
 
                 write_to_sqlite_user_models(&project).unwrap_or_else(|why| {
-                    println!("Failed to write to user models: {:?}", why.kind());
+                    println!("Failed to write to user models: {:?}", why.to_string());
                 });
             }
 
@@ -727,7 +726,7 @@ static/styles.css
                 }
 
                 write_to_mysql_user_models(&project).unwrap_or_else(|why| {
-                    println!("Failed to write to user models: {:?}", why.kind());
+                    println!("Failed to write to user models: {:?}", why.to_string());
                 });
             }
 
@@ -753,7 +752,10 @@ static/styles.css
         Ok(project)
     } // End of create_new_project function
 
-    pub fn create_new_controller(controller_name: String, controller_type: CRUDType) -> Result<(), Error> {
+    pub fn create_new_controller(
+        controller_name: String,
+        controller_type: CRUDType,
+    ) -> Result<(), Error> {
         // the controller will need to check the current directory to see if it is a rustyroad project
         // if it is not, it will return an error and ask the user to run the command in a rustyroad project
         // if it is a rustyroad project, it will create a new directory with the controllerName
@@ -811,9 +813,10 @@ static/styles.css
                             if input == "y" {
                                 // create the controller
                                 // add the controller to the file for that controller
-                                write_to_new_get_controller(controller_name.clone()).unwrap_or_else(|why| {
-                                    println!("Failed to write to controller: {:?}", why.kind());
-                                });
+                                write_to_new_get_controller(controller_name.clone())
+                                    .unwrap_or_else(|why| {
+                                        println!("Failed to write to controller: {:?}", why.to_string());
+                                    });
                                 // end the function
                                 return Ok(());
                             } else {
@@ -825,27 +828,34 @@ static/styles.css
                             }
                         } else {
                             // if the folder does exist, add the controller to the file for that controller
-                            write_to_previous_get_controller(input.to_string(), controller_name.clone())
-                                .unwrap_or_else(|why| {
-                                    println!("Failed to write to controller: {:?}", why.kind());
-                                });
+                            write_to_previous_get_controller(
+                                input.to_string(),
+                                controller_name.clone(),
+                            )
+                            .unwrap_or_else(|why| {
+                                println!("Failed to write to controller: {:?}", why.to_string());
+                            });
                             // Create a new file with the controllerName.html.tera
                             create_file(&format!("./views/pages/{}.html.tera", controller_name))
                                 .unwrap_or_else(|why| {
-                                    println!("Failed to create file: {:?}", why.kind());
+                                    println!("Failed to create file: {:?}", why.to_string());
                                 });
                             // Write to controllerName.html.tera file
-                            write_to_controller_name_html(controller_name.clone().as_str()).unwrap_or_else(|why| {
-                                println!(
-                                    "Failed to write to controllerName.html.tera: {:?}",
-                                    why.kind()
-                                );
-                            });
+                            write_to_controller_name_html(controller_name.clone().as_str())
+                                .unwrap_or_else(|why| {
+                                    println!(
+                                        "Failed to write to controllerName.html.tera: {:?}",
+                                        why.kind()
+                                    );
+                                });
 
                             // update main.rs file
                             add_to_controller_in_main_rs(input, controller_name.clone().as_str())
                                 .unwrap_or_else(|why| {
-                                    println!("Failed to add to controller in main.rs: {:?}", why.kind());
+                                    println!(
+                                        "Failed to add to controller in main.rs: {:?}",
+                                        why.kind()
+                                    );
                                 });
                             // end the function
                             return Ok(());
@@ -853,9 +863,11 @@ static/styles.css
                     } else {
                         // if the user enters n, continue with the rest of the code
                         // add the controller to the file for that controller
-                        write_to_new_get_controller(controller_name.clone()).unwrap_or_else(|why| {
-                            println!("Failed to write to controller: {:?}", why.kind());
-                        });
+                        write_to_new_get_controller(controller_name.clone()).unwrap_or_else(
+                            |why| {
+                                println!("Failed to write to controller: {:?}", why.to_string());
+                            },
+                        );
                         // end the function
                         return Ok(());
                     }
@@ -903,22 +915,21 @@ static/styles.css
                     // Create a new directory with the controllerName
                     create_dir(format!("./src/controllers/{}", &controller_name)).unwrap_or_else(
                         |why| {
-                            println!("Failed to create directory: {:?}", why.kind());
+                            println!("Failed to create directory: {:?}", why.to_string());
                         },
                     );
                     // Create a new controller using the controllerName
                     // Update the controllers/mod.rs file
                     let full_file_name = format!("./src/controllers/mod.rs");
-                    write_to_controllers_mod(&full_file_name, controller_name.clone()).unwrap_or_else(
-                        |why| {
-                            println!("Failed to write to controllers/mod: {:?}", why.kind());
-                        },
-                    );
+                    write_to_controllers_mod(&full_file_name, controller_name.clone())
+                        .unwrap_or_else(|why| {
+                            println!("Failed to write to controllers/mod: {:?}", why.to_string());
+                        });
 
                     // create the controllers/mod.rs file
                     create_file(&format!("./src/controllers/{}/mod.rs", controller_name))
                         .unwrap_or_else(|why| {
-                            println!("Failed to create file: {:?}", why.kind());
+                            println!("Failed to create file: {:?}", why.to_string());
                         });
 
                     let mut components = Vec::new();
@@ -931,7 +942,7 @@ static/styles.css
                         components,
                     )
                     .unwrap_or_else(|why| {
-                        println!("Failed to write to mod.rs: {:?}", why.kind());
+                        println!("Failed to write to mod.rs: {:?}", why.to_string());
                     });
 
                     // Create a new file with the controllerName.rs
@@ -940,22 +951,27 @@ static/styles.css
                         controller_name, controller_name
                     ))
                     .unwrap_or_else(|why| {
-                        println!("Failed to create file: {:?}", why.kind());
+                        println!("Failed to create file: {:?}", why.to_string());
                     });
                     // Write to controllerName.rs file
                     write_to_new_get_controller(controller_name.clone()).unwrap_or_else(|why| {
-                        println!("Failed to write to controllerName.rs: {:?}", why.kind());
+                        println!("Failed to write to controllerName.rs: {:?}", why.to_string());
                     });
 
                     // Create a new file with the controllerName.html.tera
                     create_file(&format!("./views/pages/{}.html.tera", controller_name))
                         .unwrap_or_else(|why| {
-                            println!("Failed to create file: {:?}", why.kind());
+                            println!("Failed to create file: {:?}", why.to_string());
                         });
                     // Write to controllerName.html.tera file
-                    write_to_controller_name_html(controller_name.clone().as_str()).unwrap_or_else(|why| {
-                        println!("Failed to write to controllerName.html.tera: {:?}", why.kind());
-                    });
+                    write_to_controller_name_html(controller_name.clone().as_str()).unwrap_or_else(
+                        |why| {
+                            println!(
+                                "Failed to write to controllerName.html.tera: {:?}",
+                                why.kind()
+                            );
+                        },
+                    );
 
                     // update main.rs file
                     add_new_controller_to_main_rs(&controller_name)?;
@@ -1089,6 +1105,22 @@ static/styles.css
                     )
                     .subcommand_help_heading("SUBCOMMANDS:")
                     // if no subcommand is provided, print help
+                    .subcommand_required(true)
+                    .arg_required_else_help(true)
+                    .allow_external_subcommands(true),
+            )
+            .subcommand(
+                Command::new("feature")
+                    .subcommand(
+                        Command::new("add")
+                            .about("Adds a feature to the project")
+                            .subcommand(
+                                Command::new("grapesjs").about("Adds grapesjs to the project"),
+                            )
+                            .subcommand_required(true)
+                            .arg_required_else_help(true)
+                            .allow_external_subcommands(true),
+                    )
                     .subcommand_required(true)
                     .arg_required_else_help(true)
                     .allow_external_subcommands(true),
@@ -1411,35 +1443,31 @@ static/styles.css
                 }
             },
             // Add Feature Case
-            Some(("add", matches)) => match matches.subcommand() {
-                Some(("feature", matches)) => {
-                    let name = matches.get_one::<String>("name").unwrap().to_string();
-                    let confirmation = Confirm::new()
-                        .with_prompt(&format!("Are you sure you want to add the '{}' feature?", name))
-                        .interact()
-                        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
-                        .expect("Error adding feature: ");
+            Some(("feature", matches)) => match matches.subcommand() {
+                Some(("add", matches)) => match matches.subcommand() {
+                    Some(("grapesjs", _matches)) => {
+                        // ask the user if they are sure they want to add grapesjs to the project
+                        // if they are sure, add grapesjs to the project
+                        // if they are not sure, cancel the command
+                        let confirmation = Confirm::new()
+                            .with_prompt("Are you sure you want to add grapesjs to the project?")
+                            .interact()
+                            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+                            .expect("Error adding grapesjs to the project: ");
 
-                    if confirmation {
-                        println!("Adding the '{}' feature...", name.clone());
-
-                        // create new feature
-                        let mut grapes_js = GrapesJS::new();
-
-                        grapes_js.add_grapesjs().await;
-
-                        println!("{}", add_feature(name.clone()).await.as_str());
-                        println!("'{}' feature completed successfully!", name.clone());
-                    } else {
-                        println!("'{}' feature canceled by user.", name);
+                        if confirmation {
+                            add_feature("grapesjs".to_string()).await.expect("Error adding grapesjs to the project");
+                        }
                     }
-                }
+                    _ => {}
+                },
                 _ => {
                     println!("Invalid add choice");
                 }
             },
+
             _ => {
-                println!("Invalid choice");
+                println!("Invalid add choice");
             }
         }
     }
