@@ -21,9 +21,11 @@ pub fn write_to_controller_name_html(controller_name: &str) -> Result<(), Error>
 {{% endblock content %}}"#
     );
 
+
+
     // write to the file
     write_to_file(
-        &format!("./views/pages/{}.html.tera", controller_name).to_string(),
+        &format!("src/views/pages/{}.html.tera", controller_name).to_string(),
         contents.as_bytes(),
     )
     .unwrap_or_else(|why| {
