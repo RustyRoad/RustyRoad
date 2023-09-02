@@ -3,6 +3,8 @@ use std::env;
 use std::process::Command;
 
 fn main() {
+    println!("VCPKG_ROOT: {:?}", env::var("VCPKG_ROOT"));
+    println!("POSTGRES_LIB_PATH: {:?}", env::var("POSTGRES_LIB_PATH"));
     if cfg!(target_os = "windows") {
         let pg_path = match env::var("POSTGRES_LIB_PATH") {
             Ok(val) => val,
@@ -26,7 +28,7 @@ fn main() {
     println!("cargo:rustc-link-lib=libpq");
 
     Command::new("cmd")
-        .args(&["/C", "nvm use 18.17.0 && npm run build"])
+        .args(&["/C", "nvm use 18.17.1 && npm run build"])
         .current_dir("./grapesjs-tailwind")
         .status()
         .unwrap();
