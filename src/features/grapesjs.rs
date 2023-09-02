@@ -3,6 +3,7 @@ use chrono::Local;
 use std::fs;
 use std::fs::{create_dir, OpenOptions};
 use std::io::Write;
+use std::env;
 
 use crate::database::{run_migration, MigrationDirection, Database};
 use crate::generators::create_file;
@@ -18,16 +19,21 @@ impl GrapesJS {
 
     pub async fn add_grapesjs(&mut self) -> Result<(), Error> {
         // move the contents of the grapesjs folder to the static folder
-        let grapes_js_java_script: &'static [u8] =
-            include_bytes!("../../grapesjs-tailwind/dist/grapesjs-tailwind.min.js");
+        if let Ok(current_dir) = env::current_dir() {
+            println!("Current working directory: {:?}", current_dir);
+        } else {
+            eprintln!("Failed to retrieve the current working directory.");
+        }
+        // let grapes_js_java_script: &'static [u8] =
+        //     include_bytes!("./grapesjs-tailwind/dist/grapesjs-tailwind.min.js");
 
         let new_grapes_js_path = std::path::Path::new("static/js/grapesjs-tailwind.min.js");
 
         // Create the directory structure if it doesn't exist
         fs::create_dir_all(new_grapes_js_path.parent().unwrap()).unwrap();
 
-        // Write the contents of the byte array to a new file
-        fs::write(new_grapes_js_path, grapes_js_java_script).unwrap();
+        // // Write the contents of the byte array to a new file
+        // fs::write(new_grapes_js_path, grapes_js_java_script).unwrap();
 
 
 
