@@ -8,8 +8,8 @@
 
 [![Hackathon](https://img.shields.io/badge/rust-gray.svg?&logo=rust&logoColor=orange)](https://www.rust-lang.org/)
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
-[![GitHub Issues](https://img.shields.io/github/issues/RileySeaburg/RustyRoad.svg)](https://github.com/RileySeaburg/RustyRoad/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/RileySeaburg/RustyRoad.svg)](https://github.com/RileySeaburg/RustyRoad/pulls)
+[![GitHub Issues](https://img.shields.io/github/issues/RileySeaburg/RustyRoad.svg)](https://github.com/RustyRoad/RustyRoad/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/RileySeaburg/RustyRoad.svg)](https://github.com/RustyRoad/RustyRoad/pulls)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 </div>
@@ -189,7 +189,7 @@ sudo ln -s ~/.cargo/bin/rustyroad /usr/local/bin/rr
 Clone the repository and run the setup script.
 
 ```
-git clone https://github.com/RileySeaburg/RustyRoad
+git clone --recurse-submodules https://github.com/RustyRoad/RustyRoad
 ```
 
 ```
@@ -246,7 +246,7 @@ rustyroad generate route users
 
 - [@rileyseaburg](https://github.com/RileySeaburg) - Idea & Initial work
 
-See also the list of [contributors](https://github.com/RileySeaburg/RustyRoad/contributors)
+See also the list of [contributors](https://github.com/RustyRoad/RustyRoad/contributors)
 who participated in this project.
 
 ## 🎉 Acknowledgments <a name = "acknowledgments"></a>
