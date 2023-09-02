@@ -132,11 +132,10 @@ If you encounter an error like this: `LINK : fatal error LNK1181: cannot open in
 2. Make sure to install it in an easily accessible location, like `C:\\Program Files\\PostgreSQL\\13\\`.
 3. Set the `POSTGRES_LIB_PATH` environment variable pointing to your PostgreSQL lib directory where `libpq.lib` resides:
    - Press `Windows key -> Type 'Environment Variables' -> Click on 'Edit the system environment variables' -> Click the 'Environment Variables...' button -> Under the 'System Variables' section, click the 'New...' button -> For 'Variable name', enter 'POSTGRES_LIB_PATH'. For 'Variable value', enter the path to the directory containing `libpq.lib` -> Confirm and apply the changes. Remember, you might need to open a new command prompt or PowerShell window for the changes to take effect.
-   
+
 _Note: Replace `C:\\Program Files\\PostgreSQL\\13\\lib` with your exact path where PostgreSQL is installed._
 
 _Note: The Rust build script uses this `POSTGRES_LIB_PATH` environment variable._
-
 
 ### Installing Node Version Manager (nvm) for Windows
 
