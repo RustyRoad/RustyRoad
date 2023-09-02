@@ -129,12 +129,13 @@ and testing purposes. See [deployment](#deployment) for notes on how to deploy t
 If you encounter an error like this: `LINK : fatal error LNK1181: cannot open input file 'libpq.lib'`, it means the project is not able to find the libpq library. Follow these steps to resolve the issue:
 
 1. If you haven't already, download and install PostgreSQL binaries for Windows from the [official website](https://www.postgresql.org/download/windows/).
-2. Make sure to install it in an easily accessible location, like `C:\Program Files\PostgreSQL\13\`.
-3. After installation, add `C:\Program Files\PostgreSQL\13\lib` to your PATH variable (`libpq.lib` should be in this directory).
-   - Press `Windows key -> Type 'Environment Variables' -> Click on 'Edit the system environment variables' -> Click 'Environment Variables...' button -> In 'System Variables' section, find and select 'Path' -> Click 'Edit...' Button -> Click 'New' button -> Paste your path
-4. After you've added the path to `libpq.lib` to PATH, restart your command prompt or terminal and try building the project again.
+2. Make sure to install it in an easily accessible location, like `C:\\Program Files\\PostgreSQL\\13\\`.
+3. Set the `POSTGRES_LIB_PATH` environment variable pointing to your PostgreSQL lib directory where `libpq.lib` resides:
+   - Press `Windows key -> Type 'Environment Variables' -> Click on 'Edit the system environment variables' -> Click the 'Environment Variables...' button -> Under the 'System Variables' section, click the 'New...' button -> For 'Variable name', enter 'POSTGRES_LIB_PATH'. For 'Variable value', enter the path to the directory containing `libpq.lib` -> Confirm and apply the changes. Remember, you might need to open a new command prompt or PowerShell window for the changes to take effect.
+   
+_Note: Replace `C:\\Program Files\\PostgreSQL\\13\\lib` with your exact path where PostgreSQL is installed._
 
-_Note: Replace `C:\Program Files\PostgreSQL\13\lib\` with your exact path where PostgreSQL is installed._
+_Note: The Rust build script uses this `POSTGRES_LIB_PATH` environment variable._
 
 
 ### Installing Node Version Manager (nvm) for Windows
