@@ -136,6 +136,18 @@ If you encounter an error like this: `LINK : fatal error LNK1181: cannot open in
 
 _Note: Replace `C:\Program Files\PostgreSQL\13\lib\` with your exact path where PostgreSQL is installed._
 
+
+### Installing Node Version Manager (nvm) for Windows
+
+The Rusty Road project uses Node.js, which we'll manage versions with by using Node Version Manager (nvm). To install nvm for Windows:
+
+1. Visit the latest release page for nvm for Windows at https://github.com/coreybutler/nvm-windows/releases
+2. Download the `nvm-setup.zip` file.
+3. Extract the zip file and run the installer (`nvm-setup.exe`).
+4. Follow the instructions provided by the installer.
+5. Once nvm is installed, close your terminal or command prompt and open a new one for the changes to take effect.
+6. Verify that nvm is installed correctly by typing `nvm version` into your new terminal. If a version number is displayed, nvm has been installed successfully.
+
 ### Prerequisites
 
 Rust is required to build and run Rusty Road. You can install Rust using rustup. rustup is a tool that helps manage Rust installations, it allows for installing multiple versions of Rust and switching between them easily.
@@ -146,10 +158,6 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 
 ### Installing
-
-![Rusty Road Logo](https://raw.githubusercontent.com/rileyseaburg/rustyroad/master/logo.png)
-
-
 
 #### Crates.io
 Rusty Road is available on [crates.io](https://crates.io/crates/rustyroad). You can install it using cargo:
