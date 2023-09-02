@@ -1,0 +1,3 @@
+[submodule "grapesjs-tailwind"]
+	path = grapesjs-tailwind
+	url = https://github.com/RustyRoad/grapesjs-tailwind.git
