@@ -18,9 +18,7 @@
 
 <!-- Alert letting the user know to use the release candidate or the cargo crate. Not to use master as it is still in development -->
 
-> Note: Rusty Road is still in development. Please use the release candidate or the cargo crate. Do not use main for production purposes. It is still under heavy development and is not ready for production use.
-
-This version is 0.1.8-beta. It is a release candidate. It contains fixes for the database connection strings specfially PostgreSQL. It should now work on any database conection including a remote one.
+> Note: Rusty Road is still in development. Please use the release candidate or the cargo crate. Do not use master for production purposes. It is still under heavy development and is not ready for production use.
 
 <p align="center">
   Rusty Road is a powerful and reliable web framework for the Rust programming language, inspired by Ruby on Rails. Combining the familiar conventions and ease of use of Rails with the performance and efficiency of Rust, Rusty Road empowers developers to build cutting-edge web applications with confidence.
@@ -53,7 +51,7 @@ This version is 0.1.8-beta. It is a release candidate. It contains fixes for the
 - [Setting up a local environment](#getting_started)
 - [Usage](#usage)
 - [Technology Stack](#tech_stack)
-- [Contributing](./CONTRIBUTING.md)
+- [Contributing](../CONTRIBUTING.md)
 - [Authors](#authors)
 - [Acknowledgments](#acknowledgments)
 
@@ -96,31 +94,12 @@ Because Rusty Road uses the actix web framework, the architecture is not exactly
 ## 🎈 Current Features <a name="features"></a>
 
 - Database migrations
-  - Create Migrations
-     -  ``` 
-        rustyroad migration generate [migration name]
-        ```
-  - Run Migrations
-    -  ``` 
-        rustyroad migration run [migration name]
-        ```
-  - Rollback Migrations
-    -  ``` 
-        rustyroad migration rollback
-        ```
 - Database seeds
-  - Part of new project generation
 - Support for PostgreSQL
-  - Project creation
-  - Database migrations
 - Support for MySQL
-  - Project creation
 - Support for SQLite
-  - Project creation
 - Support for MongoDB (Planned)
 - Routing (actix)
-- Basic Authentication
-- Session Management (Via Cookies)
 - Templating (Tera)
 - CSS Framework (Tailwind CSS)
 
@@ -133,13 +112,9 @@ Because Rusty Road uses the actix web framework, the architecture is not exactly
 ## 🚀 Future Scope <a name = "future_scope"></a>
 
 - Add support for more database adapters.
-- Split into separate crates.
-  - Create an API crate.
-    - Add support for GraphQL.
-    - Add support for API based microservices.
-  - Create a web crate.
-    -  Add support for react.
-  - Convert RustyRoad into a CLI library that each crate can use.
+- Add support for react.
+- Add support for GraphQL.
+- Add support for API based microservices.
 - Add support for more asset pipelines.
 - One click deployment to AWS, GCP, Azure, and Digital Ocean or provide a docker image.
 - Add support for more authentication frameworks.
@@ -149,6 +124,18 @@ Because Rusty Road uses the actix web framework, the architecture is not exactly
 These instructions will get you a copy of the project up and running on your local machine for development
 and testing purposes. See [deployment](#deployment) for notes on how to deploy the project on a live system.
 
+### Solving PostgreSQL linkage issue
+
+If you encounter an error like this: `LINK : fatal error LNK1181: cannot open input file 'libpq.lib'`, it means the project is not able to find the libpq library. Follow these steps to resolve the issue:
+
+1. If you haven't already, download and install PostgreSQL binaries for Windows from the [official website](https://www.postgresql.org/download/windows/).
+2. Make sure to install it in an easily accessible location, like `C:\Program Files\PostgreSQL\13\`.
+3. After installation, add `C:\Program Files\PostgreSQL\13\lib` to your PATH variable (`libpq.lib` should be in this directory).
+   - Press `Windows key -> Type 'Environment Variables' -> Click on 'Edit the system environment variables' -> Click 'Environment Variables...' button -> In 'System Variables' section, find and select 'Path' -> Click 'Edit...' Button -> Click 'New' button -> Paste your path
+4. After you've added the path to `libpq.lib` to PATH, restart your command prompt or terminal and try building the project again.
+
+_Note: Replace `C:\Program Files\PostgreSQL\13\lib\` with your exact path where PostgreSQL is installed._
+
 ### Prerequisites
 
 Rust is required to build and run Rusty Road. You can install Rust using rustup. rustup is a tool that helps manage Rust installations, it allows for installing multiple versions of Rust and switching between them easily.
@@ -156,34 +143,7 @@ Rust is required to build and run Rusty Road. You can install Rust using rustup.
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
-#### Windows
-If you are using Windows, you will need to install the Visual C++ build tools. You can install them using the following command:
 
-```
-rustup toolchain install stable-x86_64-pc-windows-msvc
-```
-
-#### Linux
-If you are using Linux, you will need to install the following dependencies:
-
-Ubuntu/Debian:
-```
-sudo apt-get install build-essential libssl-dev libpq-dev libsqlite3-dev pkg-config openssl sqlite3 postgresql postgresql-contrib postgresql-devel lld clang gcc
-```
-
-Fedora:
-```
-sudo dnf install openssl-devel sqlite-devel clang lld gcc postgresql-devel pkg-config openssl sqlite3 postgresql postgresql-contrib
-```
-
-
-
-#### Mac
-If you are using Mac, you will need to install the following dependencies:
-
-```
-brew install openssl sqlite3 postgresql postgresql-contrib pkg-config openssl sqlite3 postgresql postgresql-contrib lld clang gcc rustup  rustup-init rustup toolchain install stable-x86_64-apple-darwin 
-```
 
 ### Installing
 
@@ -245,7 +205,7 @@ Usage: rustyroad.exe <COMMAND>
 
 Commands:
   new       Creates a new project
-  generate  Generates a new controller, model, or controller
+  generate  Generates a new route, model, or controller
   migrate   Runs migrations
   help      Print this message or the help of the given subcommand(s)
 
@@ -258,9 +218,9 @@ Follow the command flow to create a new project
 rustyroad new my_project
 ```
 
-Generate a new controller
+Generate a new route
 ```shell
-rustyroad generate controller users
+rustyroad generate route users
 ```
 
 
@@ -268,8 +228,10 @@ rustyroad generate controller users
 
 - [Rust](https://www.rust-lang.org/) - Programming Language
 - [actix](https://actix.rs/) - Web Framework
-- [Sqlx](https://github.com/launchbadge/sqlx) - Database Adapter
+- [Diesel](https://diesel.rs/) - ORM
 - [Tera](https://tera.netlify.app/) - Template Engine
+- [PostgreSQL](https://www.postgresql.org/) - Database
+- [Cucumber Rust](https://github.com/cucumber-rs) - Testing
 
 ## ✍️ Authors <a name = "authors"></a>
 
@@ -282,4 +244,3 @@ who participated in this project.
 
 - Creator of Ruby on Rails, David Heinemeier Hansson (DHH)
 - Creator of Rust, Graydon Hoare
-- Creator of actix, Sergio Benitez
