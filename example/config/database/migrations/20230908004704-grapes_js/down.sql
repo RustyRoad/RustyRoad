@@ -1,0 +1,1 @@
+DROP TABLE grapes_js;
