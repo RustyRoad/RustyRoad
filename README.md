@@ -124,7 +124,11 @@ Because Rusty Road uses the actix web framework, the architecture is not exactly
 These instructions will get you a copy of the project up and running on your local machine for development
 and testing purposes. See [deployment](#deployment) for notes on how to deploy the project on a live system.
 
-### Solving PostgreSQL linkage issue
+### Known Issues
+
+***There are a couple known issues, but they are easy to fix.***
+
+#### Solving PostgreSQL linkage issue
 
 If you encounter an error like this: `LINK : fatal error LNK1181: cannot open input file 'libpq.lib'`, it means the project is not able to find the libpq library. Follow these steps to resolve the issue:
 
@@ -132,10 +136,46 @@ If you encounter an error like this: `LINK : fatal error LNK1181: cannot open in
 2. Make sure to install it in an easily accessible location, like `C:\\Program Files\\PostgreSQL\\13\\`.
 3. Set the `POSTGRES_LIB_PATH` environment variable pointing to your PostgreSQL lib directory where `libpq.lib` resides:
    - Press `Windows key -> Type 'Environment Variables' -> Click on 'Edit the system environment variables' -> Click the 'Environment Variables...' button -> Under the 'System Variables' section, click the 'New...' button -> For 'Variable name', enter 'POSTGRES_LIB_PATH'. For 'Variable value', enter the path to the directory containing `libpq.lib` -> Confirm and apply the changes. Remember, you might need to open a new command prompt or PowerShell window for the changes to take effect.
+4. After you generate a website using rustyRoad, if you are on windows.
+   - Create or edit the `config.toml` file inside the `.cargo` directory in your rustyroad project's root directory (create the `.cargo` directory if it doesn't exist). Add the following lines, replacing `C:\\Program Files\\PostgreSQL\\13\\lib` with your actual path where your `libpq.lib` is located. Remember to use double backslashes `\\` for cross-platform compatibility.
+
+    ```toml
+    [target.'cfg(windows)']
+    rustflags = ["-C", "link-arg=/LIBPATH:C:\\Program Files\\PostgreSQL\\13\\lib"]
+    ```
 
 _Note: Replace `C:\\Program Files\\PostgreSQL\\13\\lib` with your exact path where PostgreSQL is installed._
 
 _Note: The Rust build script uses this `POSTGRES_LIB_PATH` environment variable._
+
+#### Solving the Generated Project linkage issue on Windows
+
+1. Navigate to your rustyroad project's root directory (where your `Cargo.toml` file is located).
+    ```bash
+    cd to/your/project/directory
+    ```
+2. Inside this directory, find the `.cargo` directory, or create it if it doesn't exist.
+
+```bash
+mkdir .cargo    # if .cargo directory doesn't exist
+```
+
+3. Inside the `.cargo` directory, create or edit the `config.toml` file.
+
+```bash
+cd .cargo
+touch config.toml  # if config.toml doesn't exist
+```
+
+4. Open the `config.toml` file in your preferred text editor. Add the following lines to the `config.toml` file, replacing `C:\\ProgramData\\PostgreSQL\\16rc1\\lib` with the actual path (use double backslashes) where your `libpq.lib` file is located.
+
+```toml
+[target.'cfg(windows)']
+rustflags = ["-C", "link-arg=/LIBPATH:C:\\ProgramData\\PostgreSQL\\16rc1\\lib"]
+```
+
+5. Save and close the file.
+6. Now when you build your project again with `cargo build` or `cargo run`, the build should find the `libpq.lib` file correctly.
 
 ### Installing Node Version Manager (nvm) for Windows
 
