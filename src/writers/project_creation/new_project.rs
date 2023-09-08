@@ -23,8 +23,8 @@ pub fn new(name: String) -> Project {
     let static_images = format!("{}/images", static_dir);
     let config = format!("{}/config", name);
     let config_env = format!("{}/environments", config);
-    let config_dev_env = format!("{}/dev.env", config_env);
-    let config_prod_env = format!("{}/prod.env", config_env);
+    let config_dev_env = format!("{}/dev.env", src_dir);
+    let config_prod_env = format!("{}/prod.env", src_dir);
     let config_test_env = format!("{}/test.env", config_env);
     let config_default_env = format!("{}/default.env", config_env);
     let db = format!("{}/database", config);
