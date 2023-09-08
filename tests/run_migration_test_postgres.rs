@@ -16,7 +16,7 @@ mod tests {
             "postgres".to_owned(),
             "postgres".to_owned(),
             "localhost".to_owned(),
-            5432,
+            5434,
             DatabaseType::Postgres.to_string().as_str(),
         );
 
