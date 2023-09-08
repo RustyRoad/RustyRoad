@@ -284,6 +284,13 @@ This project was created using Rusty Road. Rusty Road is Rails for Rust. It is a
 npx tailwindcss init -p
 ```
 
+### Set Environment Variables
+
+```bash
+cp .env.example .env
+```
+
+
 To get started, run `yarn dev` to start the server and watch for changes to your TailwindCSS files.
 
 ## Contributing
@@ -445,7 +452,9 @@ static/styles.css
 
         // write to the .env file
         let value = set_env(&project).unwrap();
-        println!("value: {}", value);
+       write_to_file(&project.env, value.as_bytes()).unwrap_or_else(|why| {
+            println!("Couldn't write to .env: {:?}", why.to_string());
+        });
 
         // Write to rustyroad.toml file
         Self::write_to_rustyroad_toml(&project, &database_data)
