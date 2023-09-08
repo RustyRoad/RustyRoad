@@ -8,7 +8,7 @@
             }
         }
 
-        const rustyroad = new RustyRoad();
+        const rusty-road = new RustyRoad();
 
-        rustyroad.greet();
+        rusty-road.greet();
         

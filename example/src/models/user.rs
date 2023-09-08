@@ -10,7 +10,7 @@ use rand::distributions::Alphanumeric;
 use rand::Rng;
 use rustyroad::database::Database;
 use serde::Deserialize;
-use sqlx::MySqlPool;
+use sqlx::PgPool;
 
 use tera::Context;
 use tera::Tera;
@@ -37,9 +37,9 @@ pub struct UserLogin {
 impl UserLogin {
     async fn get_hashed_password_from_db(
         username: &str,
-        pool: &sqlx::MySqlPool,
+        pool: &sqlx::PgPool,
     ) -> Result<String, sqlx::Error> {
-        let row: (String,) = sqlx::query_as("SELECT password FROM Users WHERE username = ?")
+        let row: (String,) = sqlx::query_as("SELECT password FROM Users WHERE username = $1")
             .bind(username)
             .fetch_one(pool)
             .await?;
@@ -55,7 +55,7 @@ impl UserLogin {
 
         // Create the database URL
         let database_url = format!(
-            "mysql://{}:{}@{}:{}/{}",
+            "postgres://{}:{}@{}:{}/{}",
             database.username,
             database.password,
             database.host,
@@ -64,11 +64,11 @@ impl UserLogin {
         );
 
         // Create the database connection pool
-        let db_pool = MySqlPool::connect(&database_url)
+        let db_pool = PgPool::connect(&database_url)
             .await
-            .expect("Failed to connect to MySQL.");
+            .expect("Failed to connect to Postgres.");
 
-         // Retrieve the hashed password from the database
+      // Retrieve the hashed password from the database
         match Self::get_hashed_password_from_db(&self.username, &db_pool).await {
             Ok(hashed_password) => {
                 match verify(&self.password, &hashed_password) {
@@ -132,7 +132,7 @@ impl UserLogin {
                             ctx.insert("error", "Invalid username or password");
                             let rendered = tmpl.render("pages/login.html.tera", &ctx).unwrap();
                             return Ok(HttpResponse::Ok().body(rendered));
-                        }
+                           }
                     }
                     Err(e) => {
                         panic!("Failed to verify password: {}", e);
@@ -145,23 +145,27 @@ impl UserLogin {
         }
     }
 
-    pub async fn user_logout(
+        pub async fn user_logout(
         tmpl: web::Data<Tera>,
         database: Database,
         req: HttpRequest,
     ) -> Result<HttpResponse, Error> {
         let mut ctx = Context::new();
 
-        // Create the database URL
+       // Create the database URL
         let database_url = format!(
-            "mysql://{}:{}@{}:{}/{}",
-            database.username, database.password, database.host, database.port, database.name
+            "postgres://{}:{}@{}:{}/{}",
+            database.username,
+            database.password,
+            database.host,
+            database.port,
+            database.name
         );
 
         // Create the database connection pool
-        let db_pool = MySqlPool::connect(&database_url)
+        let db_pool = PgPool::connect(&database_url)
             .await
-            .expect("Failed to connect to MySQL.");
+            .expect("Failed to connect to Postgres.");
 
         // Retrieve the session token from the cookies
         let session_token = req
@@ -194,4 +198,5 @@ impl UserLogin {
             return Ok(HttpResponse::Ok().body(rendered));
         }
     }
+
 }

@@ -9,6 +9,13 @@ This project was created using Rusty Road. Rusty Road is Rails for Rust. It is a
 npx tailwindcss init -p
 ```
 
+### Set Environment Variables
+
+```bash
+cp .env.example .env
+```
+
+
 To get started, run `yarn dev` to start the server and watch for changes to your TailwindCSS files.
 
 ## Contributing
