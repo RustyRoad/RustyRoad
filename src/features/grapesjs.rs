@@ -367,3 +367,8 @@ pub fn append_graped_js_to_header() -> Result<(), Error> {
 
     Ok(())
 }
+
+
+// need to add method to save the html to the database
+// this will need a special connection pool
+// we need to determine the database type from the rustyroad.toml
