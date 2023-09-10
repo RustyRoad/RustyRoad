@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_files::Files;
 use actix_identity::IdentityMiddleware;
 use actix_session::storage::CookieSessionStore;
@@ -36,6 +37,7 @@ async fn main() -> std::io::Result<()> {
     println!("Starting Actix web server...");
 
     HttpServer::new(move || {
+        let cors = Cors::permissive();
         // Load tera views from the specified directory
         let tera = Tera::new("src/views/**/*").unwrap();
         println!("Initializing Actix web application...");
@@ -52,7 +54,9 @@ async fn main() -> std::io::Result<()> {
                 actix_web::middleware::Logger::default()
                     .exclude("/static")
                     .exclude("/favicon.ico"),
+                    
             )
+            .wrap(cors)
             .wrap(IdentityMiddleware::default())
             .app_data(database.clone())
             .wrap(session_mw)
@@ -63,9 +67,10 @@ async fn main() -> std::io::Result<()> {
             .service(controllers::login::login_function)
             .service(controllers::login::user_logout)
             .service(controllers::edit_page::edit_page)
+            .service(controllers::edit_page::save_page)
             .service(Files::new("/static", "./static")) // Add this line
     })
-    .bind(("127.0.0.1", 8080))
+    .bind(("127.0.0.1", 8081))
     .unwrap()
     .workers(2)
     .run()
