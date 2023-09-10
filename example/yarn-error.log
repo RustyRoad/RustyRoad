@@ -1,0 +1,49 @@
+Arguments: 
+  C:\Users\Administrator\AppData\Roaming\nodejs\node.exe C:\Users\Administrator\AppData\Roaming\nodejs\node_modules\yarn\bin\yarn.js
+
+PATH: 
+  C:\Users\Administrator\bin;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\local\bin;C:\Program Files\Git\usr\bin;C:\Program Files\Git\usr\bin;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Users\Administrator\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\libnvvp;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\libnvvp;C:\Program Files\Microsoft\jdk-11.0.16.101-hotspot\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Microsoft SQL Server\150\Tools\Binn;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn;C:\Program Files\dotnet;C:\Program Files (x86)\Incredibuild;C:\Program Files\Git\cmd;C:\Users\Administrator\AppData\Roaming\nvm;C:\Users\Administrator\AppData\Roaming\nodejs;C:\Program Files\NVIDIA Corporation\Nsight Compute 2023.2.2;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.36.32532\bin\Hostx64\x64;C:\Users\Administrator\AppData\Local\Programs\Python\Python311\Scripts;C:\Users\Administrator\AppData\Local\Programs\Python\Python311;C:\Users\Administrator\.cargo\bin;C:\Users\Administrator\AppData\Local\Microsoft\WindowsApps;C:\ProgramData\PostgreSQL\16rc1\lib;C:\ProgramData\PostgreSQL\16rc1\bin;C:\Users\Administrator\AppData\Local\Programs\Microsoft VS Code\bin;C:\Program Files\Git\usr\bin\vendor_perl;C:\Program Files\Git\usr\bin\core_perl
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  18.17.1
+
+Platform: 
+  win32 x64
+
+Trace: 
+  SyntaxError: C:\Users\RileySeaburg\Documents\programming\RustyRoad\example\package.json: Unexpected token { in JSON at position 1
+      at JSON.parse (<anonymous>)
+      at C:\Users\Administrator\AppData\Roaming\nvm\v18.17.1\node_modules\yarn\lib\cli.js:1629:59
+      at Generator.next (<anonymous>)
+      at step (C:\Users\Administrator\AppData\Roaming\nvm\v18.17.1\node_modules\yarn\lib\cli.js:310:30)
+      at C:\Users\Administrator\AppData\Roaming\nvm\v18.17.1\node_modules\yarn\lib\cli.js:321:13
+
+npm manifest: 
+  {{
+    "name": "rustyroad",
+    "version": "1.0.0",
+    "main": "index.js",
+    "repository": "https://github.com/Riley-Seaburg/RustyRoad.git",
+    "author": "Riley Seaburg <riley@rileyseaburg.com>",
+    "license": "MIT",
+    "scripts": {{
+      "server": "cargo run",
+      "tailwind:dev": "npx tailwindcss -i ./src/tailwind.css -o ./static/styles.css --watch",
+      "tailwind:build": "npx tailwindcss -i ./src/tailwind.css -o ./static/styles.css --minify",
+      "dev": "concurrently \"yarn tailwind:dev\" \" yarn server\""
+    }},
+    "devDependencies": {{
+      "@tailwindcss/forms": "^0.5.3",
+      "concurrently": "^7.6.0",
+      "tailwindcss": "^3.2.4"
+    }}
+  }}
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

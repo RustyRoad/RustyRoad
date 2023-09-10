@@ -49,18 +49,14 @@ impl UserLogin {
     pub async fn user_login(
         &self,
         tmpl: web::Data<Tera>,
-        database: Database
+        database: Database,
     ) -> Result<HttpResponse, Error> {
         let mut ctx = Context::new();
 
         // Create the database URL
         let database_url = format!(
             "postgres://{}:{}@{}:{}/{}",
-            database.username,
-            database.password,
-            database.host,
-            database.port,
-            database.name
+            database.username, database.password, database.host, database.port, database.name
         );
 
         // Create the database connection pool
@@ -68,7 +64,7 @@ impl UserLogin {
             .await
             .expect("Failed to connect to Postgres.");
 
-      // Retrieve the hashed password from the database
+        // Retrieve the hashed password from the database
         match Self::get_hashed_password_from_db(&self.username, &db_pool).await {
             Ok(hashed_password) => {
                 match verify(&self.password, &hashed_password) {
@@ -132,34 +128,30 @@ impl UserLogin {
                             ctx.insert("error", "Invalid username or password");
                             let rendered = tmpl.render("pages/login.html.tera", &ctx).unwrap();
                             return Ok(HttpResponse::Ok().body(rendered));
-                           }
+                        }
                     }
                     Err(e) => {
                         panic!("Failed to verify password: {}", e);
                     }
                 }
-            },
+            }
             Err(e) => {
                 panic!("Failed to retrieve hashed password from database: {}", e);
             }
         }
     }
 
-        pub async fn user_logout(
+    pub async fn user_logout(
         tmpl: web::Data<Tera>,
         database: Database,
         req: HttpRequest,
     ) -> Result<HttpResponse, Error> {
         let mut ctx = Context::new();
 
-       // Create the database URL
+        // Create the database URL
         let database_url = format!(
             "postgres://{}:{}@{}:{}/{}",
-            database.username,
-            database.password,
-            database.host,
-            database.port,
-            database.name
+            database.username, database.password, database.host, database.port, database.name
         );
 
         // Create the database connection pool
@@ -181,7 +173,7 @@ impl UserLogin {
 
             match result {
                 Ok(_) => {
-                   // Remove the session token cookie from the response
+                    // Remove the session token cookie from the response
                     let mut response = HttpResponse::Ok().body("Logout successful!");
                     response.del_cookie("session_token");
 
@@ -198,5 +190,4 @@ impl UserLogin {
             return Ok(HttpResponse::Ok().body(rendered));
         }
     }
-
 }

@@ -1,5 +1,5 @@
-use std::env;
 use actix_files::Files;
+use actix_identity::IdentityMiddleware;
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
@@ -8,8 +8,8 @@ use actix_web::{
     App, HttpServer,
 };
 use color_eyre::eyre::Result;
-use actix_identity::IdentityMiddleware;
 use rustyroad::database::Database;
+use std::env;
 use tera::Tera;
 mod controllers;
 mod models;

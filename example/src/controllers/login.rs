@@ -1,7 +1,7 @@
-use actix_web::{get, web, HttpResponse, HttpRequest, Error};
-use tera::{Context, Tera};
 use crate::models;
+use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use models::user::UserLogin;
+use tera::{Context, Tera};
 
 #[get("/login")]
 async fn login_controller(tmpl: web::Data<Tera>) -> HttpResponse {
@@ -11,7 +11,7 @@ async fn login_controller(tmpl: web::Data<Tera>) -> HttpResponse {
     HttpResponse::Ok().body(rendered)
 }
 
- use actix_web::post;
+use actix_web::post;
 
 #[post("/login")]
 async fn login_function(
@@ -25,12 +25,11 @@ async fn login_function(
     form.user_login(tmpl, database).await
 }
 
-
 #[get("/logout")]
 async fn user_logout(
     tmpl: web::Data<Tera>,
     req: HttpRequest, // Add the HttpRequest
 ) -> Result<HttpResponse, Error> {
- let database = rustyroad::database::Database::get_database_from_rustyroad_toml().unwrap();
+    let database = rustyroad::database::Database::get_database_from_rustyroad_toml().unwrap();
     UserLogin::user_logout(tmpl, database, req).await
 }

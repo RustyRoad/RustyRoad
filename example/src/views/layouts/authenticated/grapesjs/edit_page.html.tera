@@ -1,14 +1,18 @@
+<!DOCTYPE html>
+<html class='bg-gray-50 h-full' lang='en'>
 
-    {% extends 'base.html.tera' %}
-{% block title %}Edit Page{% endblock title %}
-{% block head %}
-{{ super() }}
-{% endblock head %}
-{% block content %}
-    <div id="gjs" style="height:0px; overflow:hidden">
+<head>
+    {% block head %}
+    {% include 'sections/header.html.tera' %}
+    {% endblock head %}
+</head>
+
+<body id='app' class='h-full'>
+    {% include 'components/navbar.html.tera'%}
+    <div id="gjs" style="height: 100%; width: 100%;">
         <div style="margin:100px 100px 25px; padding:25px; font:caption">
-            This is a demo content from _index.html. You can use this template file for
-            development purpose. It won't be stored in your git repository
+            This is a demo content from _index.html. You can use this template file for development purpose. It
+            won't be stored in your git repository
         </div>
     </div>
 
@@ -41,10 +45,11 @@
             outline: none;
             box-shadow: 0 0 0 2pt #c5c5c575;
         }
+
+        .gjs-pn-views-container {
+            height: auto !important;
+        }
     </style>
-
-
-    <script src="/static/js/grapesjs-tailwind.min.js"></script>
 
     <script>
         const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
@@ -73,5 +78,12 @@
             },
         });
     </script>
-{% endblock content %}
-    
+    <div id='footer'>
+        {% block footer %}
+        {% include 'sections/footer' ignore missing %}
+        {% endblock footer %}
+    </div>
+</body>
+<script src='static/js/index.js'></script>
+
+</html>
