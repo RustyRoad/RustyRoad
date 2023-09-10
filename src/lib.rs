@@ -239,25 +239,25 @@ database_type = \"{}\"",
             .expect("Failed to open package.json");
 
         file.write_all(
-            "{{
-  \"name\": \"rustyroad\",
-  \"version\": \"1.0.0\",
-  \"main\": \"index.js\",
-  \"repository\": \"https://github.com/Riley-Seaburg/RustyRoad.git\",
-  \"author\": \"Riley Seaburg <riley@rileyseaburg.com>\",
-  \"license\": \"MIT\",
-  \"scripts\": {{
-    \"server\": \"cargo run\",
-    \"tailwind:dev\": \"npx tailwindcss -i ./src/tailwind.css -o ./static/styles.css --watch\",
-    \"tailwind:build\": \"npx tailwindcss -i ./src/tailwind.css -o ./static/styles.css --minify\",
-    \"dev\": \"concurrently \\\"yarn tailwind:dev\\\" \\\" yarn server\\\"\"
-  }},
-  \"devDependencies\": {{
-    \"@tailwindcss/forms\": \"^0.5.3\",
-    \"concurrently\": \"^7.6.0\",
-    \"tailwindcss\": \"^3.2.4\"
-  }}
-}}"
+            "{
+                \"name\": \"rustyroad\",
+                \"version\": \"1.0.0\",
+                \"main\": \"index.js\",
+                \"repository\": \"https://github.com/Riley-Seaburg/RustyRoad.git\",
+                \"author\": \"Riley Seaburg <riley@rileyseaburg.com>\",
+                \"license\": \"MIT\",
+                \"scripts\": {
+                  \"server\": \"cargo run\",
+                  \"tailwind:dev\": \"npx tailwindcss -i ./src/tailwind.css -o ./static/css/styles.css --watch\",
+                  \"tailwind:build\": \"npx tailwindcss -i ./src/tailwind.css -o ./static/css/styles.css --minify\",
+                  \"dev\": \"concurrently \\\"yarn tailwind:dev\\\" \\\" yarn server\\\"\"
+                },
+                \"devDependencies\": {
+                  \"@tailwindcss/forms\": \"^0.5.3\",
+                  \"concurrently\": \"^7.6.0\",
+                  \"tailwindcss\": \"^3.2.4\"
+                }
+              }"
             .as_bytes(),
         )
         .expect("Failed to write to package.json");
