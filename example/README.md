@@ -16,7 +16,7 @@ cp .env.example .env
 ```
 
 
-To get started, run `yarn dev` to start the server and watch for changes to your TailwindCSS files.
+To get started, run `yarn` then ` `yarn dev` to start the server and watch for changes to your TailwindCSS files.
 
 ## Contributing
 
