@@ -1,5 +1,5 @@
 use actix_web::web::to;
-use chrono::{DateTime, Utc, NaiveDateTime, TimeZone};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use rustyroad::database::{Database, DatabaseType};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
@@ -28,31 +28,68 @@ impl HtmlGrapesJs {
         }
     }
 
-pub async fn create_new_database_page(
-    new_html: HtmlGrapesJs,
-) -> Result<serde_json::Value, sqlx::Error> {
-    let sql = r#"
+    /// # Name: create_new_database_page
+    /// ### Description: Creates a new database page
+    /// ### Parameters: new_html: HtmlGrapesJs
+    /// ### Returns: Result<serde_json::Value, sqlx::Error>
+    /// ### Example:
+    /// ```
+    /// use rustyroad::models::grapes_js::HtmlGrapesJs;
+    /// 
+    /// let new_html = HtmlGrapesJs::new();
+    /// let result = HtmlGrapesJs::create_new_database_page(new_html);
+    /// ```
+    pub async fn create_new_database_page(
+        new_html: HtmlGrapesJs,
+    ) -> Result<serde_json::Value, sqlx::Error> {
+        let sql = r#"
         INSERT INTO grapes_js (html_content, created_at, updated_at, associated_user_id, metadata) 
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *"#;
 
-    let pool = get_db_pool().await.unwrap();
+        let pool = get_db_pool().await.unwrap();
 
-    let new_grapes_js_page: HtmlGrapesJs = sqlx::query_as(&sql)
-        .bind(new_html.html_content)
-        .bind(new_html.created_at.naive_utc())
-        .bind(new_html.updated_at.naive_utc())
-        .bind(new_html.associated_user_id)
-        .bind(new_html.metadata)
-        .fetch_one(&pool)
-        .await?;
+        let new_grapes_js_page: HtmlGrapesJs = sqlx::query_as(&sql)
+            .bind(new_html.html_content)
+            .bind(new_html.created_at.naive_utc())
+            .bind(new_html.updated_at.naive_utc())
+            .bind(new_html.associated_user_id)
+            .bind(new_html.metadata)
+            .fetch_one(&pool)
+            .await?;
 
-    Ok(serde_json::json!({
-        "status": "success",
-        "message": "Page saved successfully",
-        "data": new_grapes_js_page
-    }))
-}
+        Ok(serde_json::json!({
+            "status": "success",
+            "message": "Page saved successfully",
+            "data": new_grapes_js_page
+        }))
+    }
+
+
+    /// # Name: get_page_by_id
+    /// ### Description: Gets a page by id
+    /// ### Parameters: id: i32
+    /// ### Returns: Result<serde_json::Value, sqlx::Error>
+    /// ### Example:
+    /// ```
+    /// use rustyroad::models::grapes_js::HtmlGrapesJs;
+    /// 
+    /// let id = 1;
+    /// let result = HtmlGrapesJs::get_page_by_id(id);
+    /// ```
+    pub async fn get_page_by_id(id: i32) -> Result<HtmlGrapesJs, sqlx::Error> {
+        let sql = r#"
+        SELECT * FROM grapes_js WHERE id = $1"#;
+
+        let pool = get_db_pool().await.unwrap();
+
+        let grapes_js_page: HtmlGrapesJs = sqlx::query_as(&sql)
+            .bind(id)
+            .fetch_one(&pool)
+            .await?;
+
+        Ok(grapes_js_page)
+    }
 }
 
 impl<'a> FromRow<'a, PgRow> for HtmlGrapesJs {
@@ -60,8 +97,14 @@ impl<'a> FromRow<'a, PgRow> for HtmlGrapesJs {
         Ok(Self {
             id: row.try_get("id")?,
             html_content: row.try_get("html_content")?,
-            created_at: TimeZone::from_utc_datetime(&Utc, &row.try_get::<NaiveDateTime, _>("created_at")?),
-            updated_at: TimeZone::from_utc_datetime(&Utc, &row.try_get::<NaiveDateTime, _>("updated_at")?),
+            created_at: TimeZone::from_utc_datetime(
+                &Utc,
+                &row.try_get::<NaiveDateTime, _>("created_at")?,
+            ),
+            updated_at: TimeZone::from_utc_datetime(
+                &Utc,
+                &row.try_get::<NaiveDateTime, _>("updated_at")?,
+            ),
             associated_user_id: row.try_get("associated_user_id")?,
             metadata: row.try_get("metadata")?,
         })

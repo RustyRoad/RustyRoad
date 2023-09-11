@@ -1,4 +1,4 @@
-use actix_web::{get, web, HttpResponse, Responder, post};
+use actix_web::{get, post, web, HttpResponse, Responder};
 use serde_json::json;
 use tera::{Context, Tera};
 
@@ -8,7 +8,12 @@ use crate::models::HtmlGrapesJs;
 async fn edit_page(tmpl: web::Data<Tera>) -> impl Responder {
     let mut context = Context::new();
     context.insert("controller_name", "edit_page");
-    let rendered = tmpl.render("layouts/authenticated/grapesjs/edit_page.html.tera", &context).unwrap();
+    let rendered = tmpl
+        .render(
+            "layouts/authenticated/grapesjs/edit_page.html.tera",
+            &context,
+        )
+        .unwrap();
     HttpResponse::Ok().body(rendered)
 }
 
@@ -22,8 +27,10 @@ async fn save_page(html: web::Json<HtmlGrapesJs>) -> impl Responder {
     println!("Updated At: {:?}", html.updated_at);
     println!("Associated User Id: {:?}", html.associated_user_id);
     // create the page
-    let new_page = HtmlGrapesJs::create_new_database_page(html.into_inner()).await.unwrap();
-    
+    let new_page = HtmlGrapesJs::create_new_database_page(html.into_inner())
+        .await
+        .unwrap();
+
     let json_response = json!({
         "status": "success",
         "message": "Page saved successfully",

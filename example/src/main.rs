@@ -54,7 +54,6 @@ async fn main() -> std::io::Result<()> {
                 actix_web::middleware::Logger::default()
                     .exclude("/static")
                     .exclude("/favicon.ico"),
-                    
             )
             .wrap(cors)
             .wrap(IdentityMiddleware::default())
@@ -68,6 +67,7 @@ async fn main() -> std::io::Result<()> {
             .service(controllers::login::user_logout)
             .service(controllers::edit_page::edit_page)
             .service(controllers::edit_page::save_page)
+            .service(controllers::page::get_page_by_id)
             .service(Files::new("/static", "./static")) // Add this line
     })
     .bind(("127.0.0.1", 8081))
