@@ -64,9 +64,9 @@
         noticeOnUnload: false,
         storageManager: false,
         selectorManager: { escapeName },
-        plugins: ['page-tailwind'],
+        plugins: ['grapesjs-tailwind'],
         pluginsOpts: {
-            'page-tailwind': { /* Test here your options  */ }
+            'grapesjs-tailwind': { /* Test here your options  */ }
         }
     });
 
