@@ -31,7 +31,7 @@ impl GrapesJs {
         let page_java_script: &'static [u8] =
             include_bytes!("../../../grapesjs-tailwind/dist/grapesjs-tailwind.min.js");
         println!("page_java_script: {:?}", page_java_script);
-        let new_page_path = std::path::Path::new("static/js/page-tailwind.min.js");
+        let new_page_path = std::path::Path::new("static/js/grapesjs-tailwind.min.js");
 
         // Create the directory structure if it doesn't exist
         fs::create_dir_all(new_page_path.parent().unwrap()).unwrap();
@@ -164,7 +164,7 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
             </style>
 
 
-            <script src="/static/js/page-tailwind.min.js"></script>
+            <script src="/static/js/grapesjs-tailwind.min.js"></script>
 
         <script>
                 const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
@@ -177,9 +177,9 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
                 noticeOnUnload: false,
                 storageManager: false,
                 selectorManager: { escapeName },
-                plugins: ['page-tailwind'],
+                plugins: ['grapesjs-tailwind'],
                 pluginsOpts: {
-                    'page-tailwind': { /* Test here your options  */ }
+                    'grapesjs-tailwind': { /* Test here your options  */ }
                 }
                 });
 
