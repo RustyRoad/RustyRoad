@@ -540,8 +540,8 @@ CREATE TABLE IF NOT EXISTS page (
 pub fn append_graped_js_to_header() -> Result<(), Error> {
     let contents: String = r#"
 <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
-<script src="/static/js/grapesjs-tailwind.min.js"></script>
 <script src="https://unpkg.com/grapesjs"></script>
+<script src="/static/js/grapesjs-tailwind.min.js"></script>
     "#
     .to_string();
 

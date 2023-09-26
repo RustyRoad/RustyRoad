@@ -63,9 +63,6 @@
             storageManager: false,
             selectorManager: { escapeName },
             plugins: ['grapesjs-tailwind'],
-            pluginsOpts: {
-                'grapesjs-tailwind': { /* Test here your options  */ }
-            }
         });
 
         editor.Panels.addButton('options', {

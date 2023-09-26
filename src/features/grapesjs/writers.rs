@@ -1,3 +1,4 @@
+use std::fs::create_dir;
 use crate::generators::create_file;
 use crate::writers::{
     add_new_controller_to_main_rs, write_to_controllers_mod, write_to_file, write_to_module,
@@ -36,6 +37,7 @@ async fn get_page_by_id(
     }
 }
 "#;
+    create_dir("src/controllers/page").expect("Error creating the page controllers directory");
     println!("Page controllers directory created successfully!");
     println!("adding the page controllers module to the controllers module...");
     write_to_controllers_mod(&"src/controllers/mod.rs".to_string(), "page".to_string())
