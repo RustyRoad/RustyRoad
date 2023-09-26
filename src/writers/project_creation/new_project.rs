@@ -1,5 +1,5 @@
 use crate::Project;
-
+// need to test that the save button works in the example project.
 pub fn new(name: String) -> Project {
     let timestamp = chrono::offset::Local::now().format("%Y%m%d%H%M%S");
     let env = format!("{}/.env", name);

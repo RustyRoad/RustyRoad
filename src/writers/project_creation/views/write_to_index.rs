@@ -1,6 +1,6 @@
+use crate::Project;
 use std::fs::OpenOptions;
 use std::io::{Error, Write};
-use crate::Project;
 
 // Write to index.html.tera
 pub fn write_to_index_html(project: &Project) -> Result<(), Error> {
@@ -429,5 +429,3 @@ pub fn write_to_index_html(project: &Project) -> Result<(), Error> {
 {% endblock content %}",)?;
     Ok(())
 }
-
-

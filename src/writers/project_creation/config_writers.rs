@@ -1,7 +1,7 @@
-use std::fs;
-use std::io::Error;
 use crate::database::{Database, DatabaseType};
 use crate::Project;
+use std::fs;
+use std::io::Error;
 
 /// This function writes the dependencies for the project to the Cargo.toml file.
 ///
@@ -46,6 +46,7 @@ authors = ["RustyRoad"]
 edition = "2021"
 
 [dependencies]
+actix-cors = "0.6.4"
 actix-web = "4.0.0-beta.8"
 actix-files = "0.6.2"
 actix-session = {{version = "0.7.2", features = ["cookie-session"]}}

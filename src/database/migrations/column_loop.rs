@@ -70,8 +70,9 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<String, E
 
         // check if data_type_category matches an array type
 
-        let data_types_for_category =
-            data_type_category.clone().get_data_types_from_data_type_category(database_type.clone());
+        let data_types_for_category = data_type_category
+            .clone()
+            .get_data_types_from_data_type_category(database_type.clone());
 
         let database_types = match database_type {
             DatabaseType::Postgres => PostgresDatabaseType
@@ -154,8 +155,6 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<String, E
 
         println!("Type You selected: {:?}", selected_type[0].clone());
 
-
-
         let nullable_input = rl.readline("Is the column nullable? (y/n): ").unwrap();
         let nullable = match nullable_input.trim().to_lowercase().as_str() {
             "y" => "NULL",
@@ -170,42 +169,32 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<String, E
             .read_line(&mut column_constraints)
             .expect("Failed to read line");
 
-
-
-
-
-
         match data_type_category {
             DataTypeCategory::Array => {
                 let array_type_index = selected_type[0].clone();
 
                 match array_type_index {
                     PostgresTypes::Array(thatthis) => {
-
                         let array_type = thatthis.deref();
-
 
                         column_string.push_str(&format!(
                             "{} {:?}[] {} {},",
                             column_name, array_type, nullable, column_constraints
                         ));
                     }
-                    _ => {
-                        return Err(io::Error::new(
-                            io::ErrorKind::InvalidInput,
-                            "Invalid input",
-                        ))
-                    }
+                    _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid input")),
                 }
             }
             _ => {
                 column_string.push_str(&format!(
                     r#"{} {:?} {} {},"#,
-                    column_name, selected_type[0].clone(), nullable, column_constraints
+                    column_name,
+                    selected_type[0].clone(),
+                    nullable,
+                    column_constraints
                 ));
             }
         }
-
 
         println!("Column type selected: {:?}", selected_type);
     }
@@ -215,7 +204,8 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<String, E
     CREATE TABLE {} (
     {}
     );"#,
-        migration_name, column_string.trim_end_matches(',')
+        migration_name,
+        column_string.trim_end_matches(',')
     );
 
     Ok(up_sql_contents)

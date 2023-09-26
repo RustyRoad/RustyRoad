@@ -4,7 +4,7 @@ use std::process::Command;
 
 fn main() {
     if cfg!(target_os = "windows") {
-        let pg_path = match env::var("POSTGRES_LIB_PATH") {
+        let _pg_path = match env::var("POSTGRES_LIB_PATH") {
             Ok(val) => val,
             Err(_) => panic!("Could not find environment variable POSTGRES_LIB_PATH. Make sure it's set and valid."),
         };

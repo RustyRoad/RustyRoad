@@ -26,8 +26,8 @@
 
 use clap::{arg, Arg, Command, Parser};
 use color_eyre::eyre::Result;
-use eyre::Error;
 use dialoguer::Confirm;
+use eyre::Error;
 use serde::Deserialize;
 use sqlx::mysql::MySqlConnectOptions;
 use sqlx::postgres::PgConnectOptions;
@@ -45,12 +45,11 @@ pub mod generators;
 use crate::features::add_feature;
 use database::*;
 
+pub mod helpers;
 pub mod writers;
-
-use crate::generators::create_directory;
+use crate::generators::create_directories_for_new_project;
 use crate::generators::create_file;
 use crate::writers::*;
-
 /**
  * # Struct RustyRoad
  * ## Description
@@ -210,8 +209,9 @@ impl Project {
             .open(&self.rustyroad_toml)?;
 
         let config = format!(
-            "[database]
+            "[rustyroad_project]
 name = \"{}\"
+[database]
 database_name = \"{}\"
 database_user = \"{}\"
 database_password = \"{}\"
@@ -441,7 +441,7 @@ static/styles.css
         let mut project = new(name);
 
         // Create the project directory
-        create_directory(&project).unwrap_or_else(|why| {
+        create_directories_for_new_project(&project).unwrap_or_else(|why| {
             println!("Couldn't create directory: {:?}", why.to_string());
         });
 
@@ -452,7 +452,7 @@ static/styles.css
 
         // write to the .env file
         let value = set_env(&project).unwrap();
-       write_to_file(&project.env, value.as_bytes()).unwrap_or_else(|why| {
+        write_to_file(&project.env, value.as_bytes()).unwrap_or_else(|why| {
             println!("Couldn't write to .env: {:?}", why.to_string());
         });
 
@@ -492,12 +492,18 @@ static/styles.css
         // need to create the function
         // Write to tailwind.config.js file
         Self::write_to_tailwind_config(&project).unwrap_or_else(|why| {
-            println!("Failed to write to tailwind.config.js: {:?}", why.to_string());
+            println!(
+                "Failed to write to tailwind.config.js: {:?}",
+                why.to_string()
+            );
         });
 
         // Write to postcss.config.js file
         Self::write_to_postcss_config(&project).unwrap_or_else(|why| {
-            println!("Failed to write to postcss.config.js: {:?}", why.to_string());
+            println!(
+                "Failed to write to postcss.config.js: {:?}",
+                why.to_string()
+            );
         });
 
         // Write to index.html controller
@@ -824,7 +830,10 @@ static/styles.css
                                 // add the controller to the file for that controller
                                 write_to_new_get_controller(controller_name.clone())
                                     .unwrap_or_else(|why| {
-                                        println!("Failed to write to controller: {:?}", why.to_string());
+                                        println!(
+                                            "Failed to write to controller: {:?}",
+                                            why.to_string()
+                                        );
                                     });
                                 // end the function
                                 return Ok(());
@@ -859,13 +868,16 @@ static/styles.css
                                 });
 
                             // update main.rs file
-                            add_to_controller_in_main_rs(input, controller_name.clone().as_str())
-                                .unwrap_or_else(|why| {
-                                    println!(
-                                        "Failed to add to controller in main.rs: {:?}",
-                                        why.kind()
-                                    );
-                                });
+                            add_new_controller_to_existing_module_in_main_rs(
+                                input,
+                                controller_name.clone().as_str(),
+                            )
+                            .unwrap_or_else(|why| {
+                                println!(
+                                    "Failed to add to controller in main.rs: {:?}",
+                                    why.kind()
+                                );
+                            });
                             // end the function
                             return Ok(());
                         }
@@ -896,6 +908,7 @@ static/styles.css
             }
         } else {
             match controller_type {
+                // if the user enters n, continue with the rest of the code and create a new controller that will be added to the controllers/mod.rs file
                 CRUDType::Read => {
                     // create the controller
                     // check if the current directory is a rustyroad project
@@ -964,7 +977,10 @@ static/styles.css
                     });
                     // Write to controllerName.rs file
                     write_to_new_get_controller(controller_name.clone()).unwrap_or_else(|why| {
-                        println!("Failed to write to controllerName.rs: {:?}", why.to_string());
+                        println!(
+                            "Failed to write to controllerName.rs: {:?}",
+                            why.to_string()
+                        );
                     });
 
                     // Create a new file with the controllerName.html.tera
@@ -983,11 +999,13 @@ static/styles.css
                     );
 
                     // update main.rs file
-                    add_new_controller_to_main_rs(&controller_name)?;
-                    // Create a new file with the controllerName.css
-                    // Create a new file with the controllerName.js
-                    // Create a new file with the controllerName.test.js
-                    Ok(())
+                    add_new_controller_to_main_rs(None, controller_name.clone().as_str())
+                        .unwrap_or_else(|why| {
+                            println!("Failed to add to controller in main.rs: {:?}", why.kind());
+                        });
+
+                    // end the function
+                    return Ok(());
                 }
                 CRUDType::Create => {
                     // create the controller
@@ -1120,6 +1138,7 @@ static/styles.css
             )
             .subcommand(
                 Command::new("feature")
+                    .about("Adds a feature to the project")
                     .subcommand(
                         Command::new("add")
                             .about("Adds a feature to the project")
@@ -1140,11 +1159,6 @@ static/styles.css
         vec![arg!(-m --message <MESSAGE>)]
     }
 
-    /// Runs the CLI
-    /// # Examples
-    /// ```
-    /// rusty_road::cli::run();
-    /// ```
     pub async fn run() {
         let matches = Self::cli().get_matches();
         match matches.subcommand() {
@@ -1465,7 +1479,9 @@ static/styles.css
                             .expect("Error adding grapesjs to the project: ");
 
                         if confirmation {
-                            add_feature("grapesjs".to_string()).await.expect("Error adding grapesjs to the project");
+                            add_feature("grapesjs".to_string())
+                                .await
+                                .expect("Error adding grapesjs to the project");
                         }
                     }
                     _ => {}

@@ -6,6 +6,15 @@ use std::io::Error;
 /// # Arguments:
 /// * `name` - The name of the file
 pub fn create_file(name: &str) -> Result<(), Error> {
-    File::create(name)?;
-    Ok(())
+    let result = match File::create(name) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e),
+    };
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            println!("Error creating file: {:?}", e);
+            Err(e)
+        }
+    }
 }

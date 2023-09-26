@@ -4,22 +4,14 @@ mod tests {
     use sqlx::ConnectOptions;
 
     use rustyroad::database::{
-        DataTypeCategory, Database, DatabaseType, DatabaseTypeTrait, PostgresDatabaseType,
-        TypesForDatabase,
+        DataTypeCategory, Database, DatabaseTypeTrait, PostgresDatabaseType, TypesForDatabase,
     };
+    use rustyroad::helpers::helpers::get_project_name_from_rustyroad_toml;
     use rustyroad::Project;
 
     #[tokio::test]
     async fn test_run_migration() -> Result<(), Box<dyn std::error::Error>> {
-        let database_data = Database::new(
-            "test112".to_owned(),
-            "postgres".to_owned(),
-            "postgres".to_owned(),
-            "localhost".to_owned(),
-            5434,
-            DatabaseType::Postgres.to_string().as_str(),
-        );
-
+        let database_data = Database::get_database_from_rustyroad_toml().unwrap();
         // Construct the database URL for the newly created database
         let database_url = format!(
             "postgres://{}:{}@{}:{}/{}",
@@ -34,7 +26,7 @@ mod tests {
         println!("{:?}", database_url.clone());
 
         // Create a new project with the desired name
-        let project_name = String::from("example");
+        let project_name = get_project_name_from_rustyroad_toml().unwrap();
 
         // Call the create_new_project function to create the new project and database
         Project::create_new_project(project_name, database_data.clone())

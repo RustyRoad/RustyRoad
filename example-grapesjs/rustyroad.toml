@@ -1,0 +1,9 @@
+[rustyroad_project]
+name = "example2"
+[database]
+database_name = "example_db2"
+database_user = "postgres"
+database_password = "spike2"
+database_host = "localhost"
+database_port = "5432"
+database_type = "postgres"

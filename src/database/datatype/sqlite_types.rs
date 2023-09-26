@@ -1,4 +1,4 @@
-use std::{collections::HashMap, cmp::Ordering};
+use std::{cmp::Ordering, collections::HashMap};
 
 use super::DataTypeCategory;
 #[derive(Debug, Clone, PartialEq, std::cmp::Eq, Hash, PartialOrd, Ord)]
@@ -55,7 +55,7 @@ mod tests {
     #[test]
     fn test_numeric_sql_types() {
         let expected_category = DataTypeCategory::Numeric;
-        
+
         assert_eq!(SqliteTypes::Integer.category(), expected_category);
         assert_eq!(SqliteTypes::Real.category(), expected_category);
         assert_eq!(SqliteTypes::Numeric.category(), expected_category);

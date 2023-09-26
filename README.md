@@ -15,6 +15,9 @@
 </div>
 
 ---
+<sup>In loving memory of Rusty, Rusty was my dog who passed away in September 2023. He was a wonderful loving pup. I am forever grateful for the time I had with him. He was my best friend and I will miss him dearly. I love you Rusty.</sup>
+<sup>2014 - 2023</sup>
+
 
 <!-- Alert letting the user know to use the release candidate or the cargo crate. Not to use master as it is still in development -->
 

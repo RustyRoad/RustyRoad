@@ -216,7 +216,7 @@ impl DataTypeCategory {
         match database_type {
             DatabaseType::Postgres => match self {
                 DataTypeCategory::Array => {
-                     types_for_database.add_postgres_type(
+                    types_for_database.add_postgres_type(
                         self.to_string(),
                         vec![
                             PostgresTypes::Array(Box::new(PostgresTypes::Text)),
@@ -388,9 +388,7 @@ impl DataTypeCategory {
                     types_for_database
                 }
             },
-          _ => {
-              types_for_database
-          }
+            _ => types_for_database,
         }
     }
 }

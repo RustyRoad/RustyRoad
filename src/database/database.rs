@@ -1,3 +1,4 @@
+use crate::database::{get_mysql_pool, get_pg_pool, get_sqlite_pool};
 use sqlx::mysql::{MySqlConnectOptions, MySqlPool};
 use sqlx::postgres::{PgConnectOptions, PgPool};
 use sqlx::sqlite::SqlitePool;
@@ -117,4 +118,46 @@ impl Database {
             database_table["database_type"].as_str().unwrap(),
         ))
     }
+
+    /// # Name: get_db_pool
+    /// Description: Returns a database connection pool based on the database type.
+    ///
+    /// # Arguments
+    /// * `database` - Database struct
+    ///
+    /// # Returns
+    /// * `DatabaseConnection` - Database connection pool
+    ///
+    /// # Example
+    /// ```
+    /// let database = Database::get_database_from_rustyroad_toml().unwrap();
+    /// let db_pool = database.get_db_pool(database).await;
+    /// ```
+    pub async fn get_db_pool(database: Database) -> Result<PoolConnection, Box<dyn Error + Send>> {
+        match database.database_type {
+            DatabaseType::Mysql => {
+                let pool = get_mysql_pool(&database)
+                    .await
+                    .expect("Error getting mysql pool");
+                Ok(PoolConnection::MySql(pool))
+            }
+            DatabaseType::Sqlite => {
+                let pool = get_sqlite_pool(&database)
+                    .await
+                    .expect("Error getting sqlite pool");
+                Ok(PoolConnection::Sqlite(pool))
+            }
+            DatabaseType::Postgres => {
+                let pool = get_pg_pool(&database).await.expect("Error getting pg pool");
+                Ok(PoolConnection::Pg(pool))
+            }
+            DatabaseType::Mongo => todo!(),
+        }
+    }
+}
+
+pub enum PoolConnection {
+    Pg(sqlx::PgPool),
+    MySql(sqlx::MySqlPool),
+    Sqlite(sqlx::SqlitePool),
 }

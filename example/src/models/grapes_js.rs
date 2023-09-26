@@ -4,6 +4,47 @@ use rustyroad::database::{Database, DatabaseType};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
 
+/// # Name: HtmlGrapesJs
+/// ### Description: A struct that represents a page created with GrapesJS
+/// ### Example:
+/// ```
+/// use rustyroad::models::grapes_js::HtmlGrapesJs;
+///
+/// let new_html = HtmlGrapesJs::new();
+/// ```
+/// ### Fields:
+/// * id: Option<i32>
+/// * html_content: String
+/// * created_at: DateTime<chrono::Utc>
+/// * updated_at: DateTime<chrono::Utc>
+/// * associated_user_id: i32
+/// * metadata: String
+/// ### Methods:
+/// * create_new_database_page(new_html: HtmlGrapesJs) -> Result<serde_json::Value, sqlx::Error>
+/// * get_page_by_id(id: i32) -> Result<HtmlGrapesJs, sqlx::Error>
+/// * get_db_pool() -> Result<sqlx::PgPool, sqlx::Error>
+/// ### Example:
+/// ```
+/// use rustyroad::models::grapes_js::HtmlGrapesJs;
+///
+/// let new_html = HtmlGrapesJs::new();
+/// let result = HtmlGrapesJs::create_new_database_page(new_html);
+/// ```
+/// ### Example:
+/// ```
+/// use rustyroad::models::grapes_js::HtmlGrapesJs;
+///
+/// let id = 1;
+///
+/// let result = HtmlGrapesJs::get_page_by_id(id);
+/// ```
+///
+/// ### Example:
+/// ```
+/// use rustyroad::models::grapes_js::HtmlGrapesJs;
+///
+/// let result = HtmlGrapesJs::get_db_pool();
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HtmlGrapesJs {
     pub id: Option<i32>,
@@ -35,7 +76,7 @@ impl HtmlGrapesJs {
     /// ### Example:
     /// ```
     /// use rustyroad::models::grapes_js::HtmlGrapesJs;
-    /// 
+    ///
     /// let new_html = HtmlGrapesJs::new();
     /// let result = HtmlGrapesJs::create_new_database_page(new_html);
     /// ```
@@ -43,7 +84,7 @@ impl HtmlGrapesJs {
         new_html: HtmlGrapesJs,
     ) -> Result<serde_json::Value, sqlx::Error> {
         let sql = r#"
-        INSERT INTO grapes_js (html_content, created_at, updated_at, associated_user_id, metadata) 
+        INSERT INTO grapes_js (html_content, created_at, updated_at, associated_user_id, metadata)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *"#;
 
@@ -65,7 +106,6 @@ impl HtmlGrapesJs {
         }))
     }
 
-
     /// # Name: get_page_by_id
     /// ### Description: Gets a page by id
     /// ### Parameters: id: i32
@@ -73,7 +113,7 @@ impl HtmlGrapesJs {
     /// ### Example:
     /// ```
     /// use rustyroad::models::grapes_js::HtmlGrapesJs;
-    /// 
+    ///
     /// let id = 1;
     /// let result = HtmlGrapesJs::get_page_by_id(id);
     /// ```
@@ -83,10 +123,7 @@ impl HtmlGrapesJs {
 
         let pool = get_db_pool().await.unwrap();
 
-        let grapes_js_page: HtmlGrapesJs = sqlx::query_as(&sql)
-            .bind(id)
-            .fetch_one(&pool)
-            .await?;
+        let grapes_js_page: HtmlGrapesJs = sqlx::query_as(&sql).bind(id).fetch_one(&pool).await?;
 
         Ok(grapes_js_page)
     }
@@ -111,13 +148,56 @@ impl<'a> FromRow<'a, PgRow> for HtmlGrapesJs {
     }
 }
 
+/// # Name: get_db_pool
+///
+/// ### Description: Gets the database pool
+/// ### Returns: Result<sqlx::PgPool, sqlx::Error>
+/// ### Example:
+/// ```
+/// use rustyroad::models::grapes_js::HtmlGrapesJs;
+///
+/// let result = HtmlGrapesJs::get_db_pool();
+/// ```
 pub async fn get_db_pool() -> Result<sqlx::PgPool, sqlx::Error> {
     let database = Database::get_database_from_rustyroad_toml().unwrap();
 
-    let database_url = format!(
-        "postgres://{}:{}@{}:{}/{}",
-        database.username, database.password, database.host, database.port, database.name
-    );
+    match database.database_type {
+        DatabaseType::Postgres => {
+            let database_url = format!(
+                "postgres://{}:{}@{}:{}/{}",
+                database.username,
+                database.password,
+                database.host,
+                database.port,
+                database.database_name
+            );
+            let db_pool = sqlx::PgPool::connect(&database_url).await?;
+            Ok(db_pool)
+        }
+        DatabaseType::Sqlite => {
+            let database_url = format!(
+                "sqlite://{}",
+                database.database_name
+            );
+            let db_pool = sqlx::PgPool::connect(&database_url).await?;
+            Ok(db_pool)
+        }
+        DatabaseType::Mysql => {
+            let database_url = format!(
+                "mysql://{}:{}@{}:{}/{}",
+                database.username,
+                database.password,
+                database.host,
+                database.port,
+                database.database_name
+            );
+            let db_pool = sqlx::PgPool::connect(&database_url).await?;
+            Ok(db_pool)
+        }
+        _ => {
+            println!("Database type not supported");
+        }
+    }
 
     let db_pool = sqlx::PgPool::connect(&database_url).await?;
     Ok(db_pool)

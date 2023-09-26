@@ -78,13 +78,15 @@ pub fn write_to_login_page(project: Project) -> Result<(), Error> {
             )
         });
 
-    controller_writer::write_to_initial_post_controller_rs(project.login_controller.clone())
-        .unwrap_or_else(|why| {
-            panic!(
-                "Couldn't write to the: {}: {}",
-                &project.login_controller, why
-            )
-        });
+    controller_writer::write_to_initial_post_controller_authentication(
+        project.login_controller.clone(),
+    )
+    .unwrap_or_else(|why| {
+        panic!(
+            "Couldn't write to the: {}: {}",
+            &project.login_controller, why
+        )
+    });
 
     write_to_controllers_mod(&project.controllers_module, "login".to_string()).unwrap_or_else(
         |why| {

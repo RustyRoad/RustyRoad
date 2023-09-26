@@ -85,7 +85,10 @@ async fn not_found(tmpl: web::Data<Tera>) -> HttpResponse {
         contents.as_bytes(),
     )
     .unwrap_or_else(|why| {
-        println!("Couldn't write to {}: {}", project.not_found_controller, why);
+        println!(
+            "Couldn't write to {}: {}",
+            project.not_found_controller, why
+        );
     });
     Ok(())
 }

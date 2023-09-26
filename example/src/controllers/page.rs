@@ -1,8 +1,8 @@
-use actix_web::{get, HttpRequest, HttpResponse, web};
-use color_eyre::eyre::Error;
-use tera::Tera;
 use crate::models;
 use crate::models::HtmlGrapesJs;
+use actix_web::{get, web, HttpRequest, HttpResponse};
+use color_eyre::eyre::Error;
+use tera::Tera;
 
 #[get("/page/{id}")]
 async fn get_page_by_id(
@@ -22,12 +22,12 @@ async fn get_page_by_id(
             context.insert("html_content", &html_content);
             let s = tmpl.render("pages/page.html.tera", &context).unwrap();
             HttpResponse::Ok().body(s)
-        },
-           Err(e) => {
-               let mut context = tera::Context::new();
+        }
+        Err(e) => {
+            let mut context = tera::Context::new();
 
-               let s = tmpl.render("pages/404.html.tera", &context).unwrap();
-                HttpResponse::Ok().body(s)
-            }
+            let s = tmpl.render("pages/404.html.tera", &context).unwrap();
+            HttpResponse::Ok().body(s)
+        }
     }
 }
