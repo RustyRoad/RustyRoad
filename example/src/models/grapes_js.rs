@@ -1,6 +1,6 @@
 use actix_web::web::to;
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
-use rustyroad::database::{Database, DatabaseType};
+use rustyroad::database::{Database, DatabaseType, PoolConnection};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, FromRow, Row};
 
@@ -88,7 +88,16 @@ impl HtmlGrapesJs {
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *"#;
 
-        let pool = get_db_pool().await.unwrap();
+        let database = Database::get_database_from_rustyroad_toml().unwrap();
+
+            
+        let pool = Database::get_db_pool(database).await.unwrap();
+
+         let pool_connection = match pool {
+             PoolConnection::Pg(pool) => pool,
+
+             _ => panic!("Error getting pg pool"),
+         };
 
         let new_grapes_js_page: HtmlGrapesJs = sqlx::query_as(&sql)
             .bind(new_html.html_content)
@@ -96,7 +105,7 @@ impl HtmlGrapesJs {
             .bind(new_html.updated_at.naive_utc())
             .bind(new_html.associated_user_id)
             .bind(new_html.metadata)
-            .fetch_one(&pool)
+            .fetch_one(&pool_connection)
             .await?;
 
         Ok(serde_json::json!({
@@ -121,9 +130,18 @@ impl HtmlGrapesJs {
         let sql = r#"
         SELECT * FROM grapes_js WHERE id = $1"#;
 
-        let pool = get_db_pool().await.unwrap();
+        let database = Database::get_database_from_rustyroad_toml().unwrap();
 
-        let grapes_js_page: HtmlGrapesJs = sqlx::query_as(&sql).bind(id).fetch_one(&pool).await?;
+            
+        let pool = Database::get_db_pool(database).await.unwrap();
+
+         let pool_connection = match pool {
+             rustyroad::database::PoolConnection::Pg(pool) => pool,
+
+             _ => panic!("Error getting pg pool"),
+         };
+
+        let grapes_js_page: HtmlGrapesJs = sqlx::query_as(&sql).bind(id).fetch_one(&pool_connection).await?;
 
         Ok(grapes_js_page)
     }
@@ -146,59 +164,4 @@ impl<'a> FromRow<'a, PgRow> for HtmlGrapesJs {
             metadata: row.try_get("metadata")?,
         })
     }
-}
-
-/// # Name: get_db_pool
-///
-/// ### Description: Gets the database pool
-/// ### Returns: Result<sqlx::PgPool, sqlx::Error>
-/// ### Example:
-/// ```
-/// use rustyroad::models::grapes_js::HtmlGrapesJs;
-///
-/// let result = HtmlGrapesJs::get_db_pool();
-/// ```
-pub async fn get_db_pool() -> Result<sqlx::PgPool, sqlx::Error> {
-    let database = Database::get_database_from_rustyroad_toml().unwrap();
-
-    match database.database_type {
-        DatabaseType::Postgres => {
-            let database_url = format!(
-                "postgres://{}:{}@{}:{}/{}",
-                database.username,
-                database.password,
-                database.host,
-                database.port,
-                database.database_name
-            );
-            let db_pool = sqlx::PgPool::connect(&database_url).await?;
-            Ok(db_pool)
-        }
-        DatabaseType::Sqlite => {
-            let database_url = format!(
-                "sqlite://{}",
-                database.database_name
-            );
-            let db_pool = sqlx::PgPool::connect(&database_url).await?;
-            Ok(db_pool)
-        }
-        DatabaseType::Mysql => {
-            let database_url = format!(
-                "mysql://{}:{}@{}:{}/{}",
-                database.username,
-                database.password,
-                database.host,
-                database.port,
-                database.database_name
-            );
-            let db_pool = sqlx::PgPool::connect(&database_url).await?;
-            Ok(db_pool)
-        }
-        _ => {
-            println!("Database type not supported");
-        }
-    }
-
-    let db_pool = sqlx::PgPool::connect(&database_url).await?;
-    Ok(db_pool)
 }
