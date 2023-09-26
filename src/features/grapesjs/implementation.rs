@@ -109,81 +109,97 @@ impl GrapesJs {
 
 pub fn write_to_edit_page_html() -> Result<(), Error> {
     let contents: String = r#"
-    {% extends 'base.html.tera' %}
-{% block title %}Edit Page{% endblock title %}
-{% block head %}
-{{ super() }}
-{% endblock head %}
-{% block content %}
-    <div id="gjs" style="height:0px; overflow:hidden">
-        <div style="margin:100px 100px 25px; padding:25px; font:caption">
-            This is a demo content from _index.html. You can use this template file for
-            development purpose. It won't be stored in your git repository
+   <!DOCTYPE html>
+<html class='bg-gray-50 h-full' lang='en'>
+
+<head>
+    {% block head %}
+    {% include 'sections/header.html.tera' %}
+    {% endblock head %}
+</head>
+
+    <body id='app' class='h-full'>
+        {% include 'components/navbar.html.tera'%}
+        <div id="gjs" style="height: 100%; width: 100%;">
+            <div style="margin:100px 100px 25px; padding:25px; font:caption">
+                This is a demo content from _index.html. You can use this template file for development purpose. It
+                won't be stored in your git repository
+            </div>
         </div>
-    </div>
 
-    <style>
-        body,
-        html {
-            height: 100%;
-            margin: 0;
-        }
+        <style>
+            body,
+            html {
+                height: 100%;
+                margin: 0;
+                }
 
-        .gjs-block {
-            padding: 0 !important;
-            width: 100% !important;
-            min-height: auto !important;
-        }
+            .gjs-block {
+                padding: 0 !important;
+                width: 100% !important;
+                min-height: auto !important;
+                }
 
-        .gjs-block svg {
-            width: 100%;
-        }
+            .gjs-block svg {
+                width: 100%;
+                }
 
-        .change-theme-button {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin: 5px;
-        }
+            .change-theme-button {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                margin: 5px;
+                }
 
-        .change-theme-button:focus {
-            /* background-color: yellow; */
-            outline: none;
-            box-shadow: 0 0 0 2pt #c5c5c575;
-        }
-    </style>
-
-
-    <script src="/static/js/page-tailwind.min.js"></script>
-
-    <script>
-        const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
-
-        window.editor = page.init({
-            height: '100%',
-            container: '#gjs',
-            showOffsets: true,
-            fromElement: true,
-            noticeOnUnload: false,
-            storageManager: false,
-            selectorManager: { escapeName },
-            plugins: ['page-tailwind'],
-            pluginsOpts: {
-                'page-tailwind': { /* Test here your options  */ }
+            .change-theme-button:focus {
+                /* background-color: yellow; */
+                outline: none;
+                box-shadow: 0 0 0 2pt #c5c5c575;
             }
-        });
 
-        editor.Panels.addButton('options', {
-            id: 'update-theme',
-            className: 'fa fa-adjust',
-            command: 'open-update-theme',
-            attributes: {
-                title: 'Update Theme',
-                'data-tooltip-pos': 'bottom',
-            },
-        });
-    </script>
-{% endblock content %}
+
+            .gjs-pn-views-container {
+                height: auto !important;
+            }
+            </style>
+
+
+            <script src="/static/js/page-tailwind.min.js"></script>
+
+        <script>
+                const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
+
+            window.editor = grapesjs.init({
+                height: '100%',
+                container: '#gjs',
+                showOffsets: true,
+                fromElement: true,
+                noticeOnUnload: false,
+                storageManager: false,
+                selectorManager: { escapeName },
+                plugins: ['page-tailwind'],
+                pluginsOpts: {
+                    'page-tailwind': { /* Test here your options  */ }
+                }
+                });
+
+            editor.Panels.addButton('options', {
+                id: 'update-theme',
+                className: 'fa fa-adjust',
+                command: 'open-update-theme',
+                attributes: {
+                    title: 'Update Theme',
+                    'data-tooltip-pos': 'bottom',
+                },
+            });
+        </script>
+        <div id='footer'>
+            {% block footer %}
+            {% include 'sections/footer' ignore missing %}
+            {% endblock footer %}
+        </div>
+        </body>
+</html>
     "#
     .to_string();
 
@@ -523,9 +539,9 @@ CREATE TABLE IF NOT EXISTS page (
 
 pub fn append_graped_js_to_header() -> Result<(), Error> {
     let contents: String = r#"
-    <link href="https://unpkg.com/page/dist/css/page.min.css" rel="stylesheet"/>
-<script src="https://unpkg.com/page"></script>
-    <script src="/static/js/page-tailwind.min.js"></script>
+<link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
+<script src="/static/js/grapesjs-tailwind.min.js"></script>
+<script src="https://unpkg.com/grapesjs"></script>
     "#
     .to_string();
 
