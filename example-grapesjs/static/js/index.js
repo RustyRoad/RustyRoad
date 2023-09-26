@@ -1,14 +1,11 @@
-// Rusty Road
-        class RustyRoad {
-            constructor() {
-                this.name = "example2";
-        function greet() {
-            console.log("Welcome to example2 powered by Rusty Road");
-        }
-            }
-        }
+class RustyRoad {
+    constructor() {
+        this.name = "example2";
+    }
+    greet() {
+        console.log("Welcome to example2 powered by Rusty Road");
+    }
+}
+const rustyroad = new RustyRoad();
 
-        const rusty-road = new RustyRoad();
-
-        rusty-road.greet();
-        
+rustyroad.greet();
