@@ -33,8 +33,7 @@ use sqlx::mysql::MySqlConnectOptions;
 use sqlx::postgres::PgConnectOptions;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
-use std::fs::create_dir;
-use std::{env, fs};
+use std::{env};
 use std::{fs::OpenOptions, io::Write};
 use tokio::io;
 
@@ -48,7 +47,6 @@ use database::*;
 pub mod helpers;
 pub mod writers;
 use crate::generators::create_directories_for_new_project;
-use crate::generators::create_file;
 use crate::writers::*;
 /**
  * # Struct RustyRoad
