@@ -167,31 +167,89 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
             <script src="/static/js/grapesjs-tailwind.min.js"></script>
 
         <script>
-                const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
+        const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
 
-            window.editor = grapesjs.init({
-                height: '100%',
-                container: '#gjs',
-                showOffsets: true,
-                fromElement: true,
-                noticeOnUnload: false,
-                storageManager: false,
-                selectorManager: { escapeName },
-                plugins: ['grapesjs-tailwind'],
-                pluginsOpts: {
-                    'grapesjs-tailwind': { /* Test here your options  */ }
-                }
-                });
+        window.editor = grapesjs.init({
+            height: '100%',
+            container: '#gjs',
+            showOffsets: true,
+            fromElement: true,
+            noticeOnUnload: false,
+            storageManager: false,
+            selectorManager: { escapeName },
+            plugins: ['grapesjs-tailwind'],
+            pluginsOpts: {
+                'grapesjs-tailwind': { /* Test here your options  */ }
+            }
+        });
+        editor.Panels.addButton('options', {
+            id: 'update-theme',
+            className: 'fa fa-adjust',
+            command: 'open-update-theme',
+            attributes: {
+                title: 'Update Theme',
+                'data-tooltip-pos': 'bottom',
+            },
+        });
+        
+        let isSaved = false;
 
-            editor.Panels.addButton('options', {
-                id: 'update-theme',
-                className: 'fa fa-adjust',
-                command: 'open-update-theme',
-                attributes: {
-                    title: 'Update Theme',
-                    'data-tooltip-pos': 'bottom',
-                },
-            });
+        const saveHtml = (HtmlGrapesJs) => {
+            if (!isSaved) {
+                // save html to database
+                fetch('http://localhost:8080/page', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(
+                        HtmlGrapesJs
+                    ),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+                        sender.set('active', 1); // turn on the button
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        sender.set('active', 1); // turn on the button
+                    });
+                isSaved = true;
+            }
+        };
+
+        editor.Commands.add('savePage', {
+            run(editor, sender) {
+                sender.set('active', 0); // turn off the button
+                // get html from editor
+                var html = editor.getHtml();
+                // create object to save to database
+                const now = Date.now();  // milliseconds since 1970-01-01T00:00:00Z
+                const HtmlGrapesJs = {
+                    html_content: html,
+                    created_at: Math.floor(now / 1000),  // convert to seconds
+                    updated_at: Math.floor(now / 1000),  // convert to seconds
+                    associated_user_id: 1,
+                    metadata: JSON.stringify({
+                        title: 'test',
+                        description: 'test',
+                        keywords: 'test',
+                    }),
+                };
+                saveHtml(HtmlGrapesJs);
+            }
+        });
+
+        editor.Panels.addButton('options', {
+            id: 'savePage',
+            className: 'fa fa-save',
+            command: 'savePage',
+            attributes: {
+                title: 'Save HTML',
+                'data-tooltip-pos': 'bottom',
+            },
+        });
         </script>
         <div id='footer'>
             {% block footer %}
