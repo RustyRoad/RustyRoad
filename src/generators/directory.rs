@@ -2,11 +2,21 @@ use crate::Project;
 use std::fs::create_dir;
 use std::io::Error;
 
-/// # Name: create_directory
-/// # Description: Creates a directory
-/// # Arguments:
-/// * `name` - The name of the directory
-pub fn create_directory(project: &Project) -> Result<(), Error> {
+/// # Name: create_directories_for_new_project
+/// ## Description
+/// Creates the directories for a new project
+/// ## Arguments
+/// * `project` - A reference to a Project struct
+/// ## Returns
+/// * `Ok(())` if the directories were successfully created, or an Error if something went wrong.
+/// ## Example
+/// ```
+/// use rustyroad::Project;
+///
+/// let project = Project::new();
+/// rustyroad::generators::create_directories_for_new_project(&project);
+/// ```
+pub fn create_directories_for_new_project(project: &Project) -> Result<(), Error> {
     let directories = vec![
         &project.name,
         &project.src_dir,
@@ -31,6 +41,8 @@ pub fn create_directory(project: &Project) -> Result<(), Error> {
         &project.static_images,
         &project.user_controller_directory,
         &project.initial_migration_directory,
+        &project.template_layouts,
+        &project.auth_template_layouts,
     ];
     for directory in directories {
         create_dir(directory).unwrap_or_else(|why| {

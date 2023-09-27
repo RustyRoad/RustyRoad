@@ -1,17 +1,25 @@
-use crate::features::GrapesJS;
+use crate::features::implementation::GrapesJs;
+use color_eyre::eyre::Result;
+use eyre::Error;
 
-pub async fn add_feature(feature_name: String)  -> String {
-    return match feature_name.as_str() {
+pub async fn add_feature(feature_name: String) -> Result<(), Error> {
+    match feature_name.as_str() {
         "grapesjs" => {
-            let mut grapesjs = GrapesJS::new();
-            grapesjs.add_grapesjs().await;
+            let mut grapesjs = GrapesJs::new();
 
-            String::from("GrapesJS added")
+            match grapesjs.add_page().await {
+                Ok(_) => {
+                    println!("Successfully added grapesjs");
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                }
+            }
         }
         _ => {
-            println!("Invalid feature name");
-
-            String::from("Invalid feature name")
+            println!("Couldn't find feature: {}", feature_name);
         }
     }
+
+    Ok(())
 }

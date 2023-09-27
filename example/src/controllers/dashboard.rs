@@ -1,7 +1,7 @@
-use actix_web::{get, web, HttpResponse, HttpRequest, Error};
-use tera::{Context, Tera};
 use crate::models;
+use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use models::user::UserLogin;
+use tera::{Context, Tera};
 
 #[get("/dashboard")]
 async fn dashboard_controller(tmpl: web::Data<Tera>) -> HttpResponse {

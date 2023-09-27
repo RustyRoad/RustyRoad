@@ -1,33 +1,61 @@
-// use super::Database;
+use super::Database;
 
-// // ## Name: connect
-// // ## Description: Connects to the database
-// // ## Parameters:
-// // - database: [`&Database`] - the database struct
-// // ## Returns:
-// // - if the connection was successful: [`Ok(Pool<ConnectionManager<PgConnection>>)`]
-// // - if there was an error connecting to the database: [`Err(Error)`]
-// // ## Example:
-// // ```rust
-// // use rustyroad::database::connect;
-// // use rustyroad::database::Database;
-// //  // read the config file
-// //  let config = Config::from_file("rustyroad.toml").unwrap();
-// //  // get the database struct from the config file
-// //  let database = config.database.unwrap();
-// //  // connect to the database
-// //  let pool = connect(&database).unwrap();
-// // // ```
-// // pub fn connect(database: &Database) -> Result<Pool<ConnectionManager<PgConnection>>, Error> {
-// //    // read the config file
-// //     let config = Config::from_file("rustyroad.toml").unwrap();
+/// ## Name: get_pg_pool
+/// ## Description: This function returns a database connection pool for postgres
+/// ## Parameters:
+/// * `database` - Database struct
+/// ## Returns:
+/// * `Result<sqlx::PgPool, sqlx::Error>` - Returns a sqlx::PgPool
+/// ## Example:
+/// ```
+/// let database = Database::get_database_from_rustyroad_toml().unwrap();
+/// let pool: sqlx::PgPool = get_pg_pool(&database);
+/// ```
+pub async fn get_pg_pool(database: &Database) -> Result<sqlx::PgPool, sqlx::Error> {
+    let database_url = format!(
+        "postgres://{}:{}@{}:{}/{}",
+        database.username, database.password, database.host, database.port, database.name
+    );
 
-// //     // get the database struct from the config file
-// //     let database: Database = config.database.unwrap();
+    let db_pool = sqlx::PgPool::connect(&database_url).await?;
+    Ok(db_pool)
+}
 
-// //     // connect to the database
-// //     let pool = connect(&database).unwrap();
+/// ## Name: get_mysql_pool
+/// ## Description: This function returns a database connection pool for mysql
+/// ## Parameters:
+/// * `database` - Database struct
+/// ## Returns:
+/// * `Result<sqlx::MySqlPool, sqlx::Error>` - Returns a sqlx::MySqlPool
+/// ## Example:
+/// ```
+/// let database = Database::get_database_from_rustyroad_toml().unwrap();
+/// let pool: sqlx::MySqlPool = get_mysql_pool(&database);
+/// ```
+pub async fn get_mysql_pool(database: &Database) -> Result<sqlx::MySqlPool, sqlx::Error> {
+    let database_url = format!(
+        "mysql://{}:{}@{}:{}/{}",
+        database.username, database.password, database.host, database.port, database.name
+    );
 
-// //     // return the pool
-// //     Ok(pool)
-// // }
+    let db_pool = sqlx::MySqlPool::connect(&database_url).await?;
+    Ok(db_pool)
+}
+
+/// ## Name: get_sqlite_pool
+/// ## Description: This function returns a database connection pool for sqlite
+/// ## Parameters:
+/// * `database` - Database struct
+/// ## Returns:
+/// * `Result<sqlx::SqlitePool, sqlx::Error>` - Returns a sqlx::SqlitePool
+/// ## Example:
+/// ```
+/// let database = Database::get_database_from_rustyroad_toml().unwrap();
+/// let pool: sqlx::SqlitePool = get_sqlite_pool(&database);
+/// ```
+pub async fn get_sqlite_pool(database: &Database) -> Result<sqlx::SqlitePool, sqlx::Error> {
+    let database_url = format!("{}.db", database.name);
+
+    let db_pool = sqlx::SqlitePool::connect(&database_url).await?;
+    Ok(db_pool)
+}

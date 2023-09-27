@@ -1,0 +1,14 @@
+{% extends 'base.html.tera' %}
+{% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
+
+
+
+{% block content %}
+
+
+{% block authenticated_content %}
+<!-- Custom main content for this page -->
+{% endblock authenticated_content %}
+
+
+{% endblock content %}

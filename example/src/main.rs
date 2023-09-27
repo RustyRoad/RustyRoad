@@ -1,6 +1,6 @@
-use std::env;
-
+use actix_cors::Cors;
 use actix_files::Files;
+use actix_identity::IdentityMiddleware;
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
@@ -8,13 +8,12 @@ use actix_web::{
     web::{self},
     App, HttpServer,
 };
-
-use actix_identity::IdentityMiddleware;
+use color_eyre::eyre::Result;
 use rustyroad::database::Database;
+use std::env;
 use tera::Tera;
 mod controllers;
 mod models;
-mod controllers;
 
 fn get_secret_key() -> Result<Key, Box<dyn std::error::Error>> {
     let secret_key_from_env = env::var("SECRET_KEY")?;
@@ -38,8 +37,9 @@ async fn main() -> std::io::Result<()> {
     println!("Starting Actix web server...");
 
     HttpServer::new(move || {
-        // Load tera templates from the specified directory
-        let tera = Tera::new("templates/**/*").unwrap();
+        let cors = Cors::permissive();
+        // Load tera views from the specified directory
+        let tera = Tera::new("src/views/**/*").unwrap();
         println!("Initializing Actix web application...");
 
         let secret_key = get_secret_key().unwrap();
@@ -55,6 +55,7 @@ async fn main() -> std::io::Result<()> {
                     .exclude("/static")
                     .exclude("/favicon.ico"),
             )
+            .wrap(cors)
             .wrap(IdentityMiddleware::default())
             .app_data(database.clone())
             .wrap(session_mw)
@@ -64,10 +65,12 @@ async fn main() -> std::io::Result<()> {
             .service(controllers::login::login_controller)
             .service(controllers::login::login_function)
             .service(controllers::login::user_logout)
-            .service(controllers::not_found::not_found)
+            .service(controllers::edit_page::edit_page)
+            .service(controllers::edit_page::save_page)
+            .service(controllers::page::get_page_by_id)
             .service(Files::new("/static", "./static")) // Add this line
     })
-    .bind(("127.0.0.1", 8080))
+    .bind(("127.0.0.1", 8081))
     .unwrap()
     .workers(2)
     .run()

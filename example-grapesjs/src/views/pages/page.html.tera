@@ -1,0 +1,9 @@
+{% extends 'base.html.tera' %}
+{% block title %}Page Title Here{% endblock title %}
+{% block head %}
+{{ super() }}
+{% endblock head %}
+{% block content %}
+{{html_content|safe}}
+test
+{% endblock content %}

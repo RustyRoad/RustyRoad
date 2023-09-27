@@ -1,10 +1,9 @@
 use crate::{database::Database, writers::write_to_file, Project};
 use bcrypt::{hash as new_hash, DEFAULT_COST};
-
+use color_eyre::eyre::Result;
 async fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
     new_hash(password, DEFAULT_COST)
 }
-
 
 pub async fn load_sql_for_new_project(
     project: &Project,
@@ -16,7 +15,10 @@ pub async fn load_sql_for_new_project(
         Ok(hashed_password) => hashed_password,
         Err(err) => {
             eprintln!("Failed to hash admin password: {:?}", err);
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to hash admin password"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Failed to hash admin password",
+            ));
         }
     };
 
@@ -89,7 +91,6 @@ pub async fn load_sql_for_new_project(
             statements.push(format!(
                     "INSERT OR IGNORE INTO Users (password, username, role_id) VALUES ('{hashed_admin_password}', 'admin', 1);"
                 ));
-
 
             // create the down migration
             let mut down_statements = Vec::new();

@@ -1,10 +1,9 @@
-use regex::Regex;
-
 use crate::writers::write_to_file;
 use crate::Project;
+use color_eyre::eyre::Result;
+use regex::Regex;
 use std::fs;
 use std::io::Error;
-use std::path::PathBuf;
 
 /// This function writes initial content to the main.rs file of a new RustyRoad project.
 /// The content includes setting up an Actix web server with three controllers: index, dashboard, and login.
@@ -16,13 +15,21 @@ use std::path::PathBuf;
 /// # Returns
 ///
 /// * `Ok(())` if the content was successfully written to the main.rs file, or an Error if something went wrong.
+/// # Example
+/// ```rust
+/// use rustyroad::writers::write_to_main::write_to_main_rs;
+/// use rustyroad::Project;
+///
+/// let project = Project::new();
+/// write_to_main_rs(&project);
+/// ```
 pub fn write_to_main_rs(project: &Project) -> Result<(), Error> {
     // Define the contents to be written to the main.rs file
     // This includes importing necessary Actix Web modules, defining the main function, setting up the HTTP server,
     // binding it to the localhost on port 8000, and defining three controllers: index, dashboard, and login
-    let contents = r#"use std::env;
-
+    let contents = r#"use actix_cors::Cors;
 use actix_files::Files;
+use actix_identity::IdentityMiddleware;
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
@@ -30,13 +37,12 @@ use actix_web::{
     web::{self},
     App, HttpServer,
 };
-
-use actix_identity::IdentityMiddleware;
+use color_eyre::eyre::Result;
 use rustyroad::database::Database;
+use std::env;
 use tera::Tera;
 mod controllers;
 mod models;
-mod controllers;
 
 fn get_secret_key() -> Result<Key, Box<dyn std::error::Error>> {
     let secret_key_from_env = env::var("SECRET_KEY")?;
@@ -60,8 +66,9 @@ async fn main() -> std::io::Result<()> {
     println!("Starting Actix web server...");
 
     HttpServer::new(move || {
-        // Load tera templates from the specified directory
-        let tera = Tera::new("templates/**/*").unwrap();
+        let cors = Cors::permissive();
+        // Load tera views from the specified directory
+        let tera = Tera::new("src/views/**/*").unwrap();
         println!("Initializing Actix web application...");
 
         let secret_key = get_secret_key().unwrap();
@@ -77,6 +84,7 @@ async fn main() -> std::io::Result<()> {
                     .exclude("/static")
                     .exclude("/favicon.ico"),
             )
+            .wrap(cors)
             .wrap(IdentityMiddleware::default())
             .app_data(database.clone())
             .wrap(session_mw)
@@ -86,7 +94,6 @@ async fn main() -> std::io::Result<()> {
             .service(controllers::login::login_controller)
             .service(controllers::login::login_function)
             .service(controllers::login::user_logout)
-            .service(controllers::not_found::not_found)
             .service(Files::new("/static", "./static")) // Add this line
     })
     .bind(("127.0.0.1", 8080))
@@ -119,7 +126,17 @@ async fn main() -> std::io::Result<()> {
 /// # Returns
 ///
 /// * `Ok(())` if the new controller was successfully added to the main.rs file, or an Error if something went wrong.
-pub fn add_new_controller_to_main_rs(controller_name: &str) -> Result<(), Error> {
+/// # Example
+/// ```rust
+/// use rustyroad::writers::write_to_main::add_new_controller_to_main_rs;
+///
+/// add_new_controller_to_main_rs("about");
+/// ```
+pub fn add_new_controller_to_main_rs(
+    folder_name: Option<&str>,
+    controller_name: &str,
+) -> Result<(), Error> {
+    println!("CONTROLLER NAME: {}", &controller_name);
     // Check for the current working directory
     let current_dir = std::env::current_dir().unwrap();
 
@@ -135,17 +152,22 @@ pub fn add_new_controller_to_main_rs(controller_name: &str) -> Result<(), Error>
     }
 
     // Construct the path to the main.rs file
-    let main_rs: PathBuf = [current_dir, PathBuf::from("src/main.rs")].iter().collect();
+    let main_rs_path = current_dir.join("src/main.rs");
 
     // Read the file into a string
-    let mut contents = fs::read_to_string(&main_rs)?;
+    let mut contents = fs::read_to_string(&main_rs_path)?;
 
     // Prepare the new controller
     let new_controller = format!(
-        ".service(controllers::{}::{})",
-        controller_name, controller_name
+        "\n.service({})",
+        if let Some(folder_name) = folder_name {
+            format!("controllers::{}::{}", folder_name, controller_name)
+        } else {
+            format!("controllers::{}", controller_name)
+        }
     );
 
+    println!("{}", new_controller);
     // Prepare the regular expression to find the last .service() call
     let re = Regex::new(r".service\(controllers::\w+::\w+\)").unwrap();
 
@@ -163,13 +185,26 @@ pub fn add_new_controller_to_main_rs(controller_name: &str) -> Result<(), Error>
     contents.insert_str(last_service_end_pos, &new_controller);
 
     // Write the string back to the file
-    fs::write(main_rs, contents)?;
+    fs::write(main_rs_path, contents)?;
 
     Ok(())
 }
 
-pub fn add_to_controller_in_main_rs(
-    previous_controller_name: &str,
+/// # Name: add_new_controller_to_existing_module_in_main_rs
+/// # Description: This function adds a new controller to an existing module in the main.rs file of a RustyRoad project.
+/// # Arguments
+/// * `existing_controller_name` - A string slice that holds the name of the existing controller to which the new controller will be added.
+/// * `new_controller_name` - A string slice that holds the name of the new controller to be added.
+/// # Returns
+/// * `Ok(())` if the new controller was successfully added to the main.rs file, or an Error if something went wrong.
+/// # Example
+/// ```rust
+/// use rustyroad::writers::write_to_main::add_new_controller_to_existing_module_in_main_rs;
+///
+/// add_new_controller_to_existing_module_in_main_rs("page", "about");
+/// ```
+pub fn add_new_controller_to_existing_module_in_main_rs(
+    existing_controller_name: &str,
     new_controller_name: &str,
 ) -> Result<(), Error> {
     // Check for the current working directory
@@ -187,19 +222,19 @@ pub fn add_to_controller_in_main_rs(
     }
 
     // Construct the path to the main.rs file
-    let main_rs: PathBuf = [current_dir, PathBuf::from("src/main.rs")].iter().collect();
+    let main_rs_path = current_dir.join("src/main.rs");
 
     // Read the file into a string
-    let mut contents = fs::read_to_string(&main_rs)?;
+    let mut contents = fs::read_to_string(&main_rs_path)?;
 
     // Prepare the new controller
     let new_controller = format!(
-        ".service(controllers::{}::{})",
-        previous_controller_name, new_controller_name
+        ".service({}::{})",
+        existing_controller_name, new_controller_name
     );
 
     // Prepare the regular expression to find the last .service() call
-    let re = Regex::new(r".service\(controllers::\w+::\w+\)").unwrap();
+    let re = Regex::new(r"\.service\((\w+::)*\w+::\w+\)").unwrap();
 
     // Find the last .service() call and its end position
     let last_service_end_pos = re
@@ -215,7 +250,7 @@ pub fn add_to_controller_in_main_rs(
     contents.insert_str(last_service_end_pos, &new_controller);
 
     // Write the string back to the file
-    fs::write(main_rs, contents)?;
+    fs::write(main_rs_path, contents)?;
 
     Ok(())
 }

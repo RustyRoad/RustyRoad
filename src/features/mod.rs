@@ -1,4 +1,4 @@
-pub mod grapesjs;
 pub mod features;
-pub use grapesjs::GrapesJS;
+pub mod grapesjs;
 pub use features::add_feature;
+pub use grapesjs::*;

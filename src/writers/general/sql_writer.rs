@@ -1,9 +1,9 @@
 use crate::{database::Database, writers::write_to_file};
+use color_eyre::eyre::Result;
 use futures_util::future::FutureExt;
+use sqlparser::dialect::SQLiteDialect;
 use sqlx::{mysql::MySqlConnectOptions, MySqlPool};
 use std::str::FromStr;
-
-use sqlparser::dialect::SQLiteDialect;
 use tokio_postgres::{Config, NoTls};
 
 /// # Name: write_to_sql

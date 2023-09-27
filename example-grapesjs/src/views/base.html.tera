@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html class='bg-gray-50 h-full' lang='en'>
+
+    <head>
+        {% block head %}
+        {% include 'sections/header.html.tera' %}
+        {% endblock head %}
+    </head>
+
+    <body id='app' class='h-full'>
+        {% include 'components/navbar.html.tera'%}
+        <div id='content'>{% block content %}{% endblock content %}</div>
+        <div id='footer'>
+            {% block footer %}
+            {% include 'sections/footer' ignore missing %}
+            {% endblock footer %}
+        </div>
+    </body>
+    <script src='/static/js/index.js'></script>
+
+</html>
