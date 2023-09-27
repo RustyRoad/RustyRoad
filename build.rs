@@ -20,42 +20,4 @@ fn main() {
             println!("cargo:rustc-link-search=native=/lib");
         }
     }
-
-    Command::new("cmd")
-        .args(&["/C", "nvm use 18.17.1 && npm run build"])
-        .current_dir("./grapesjs-tailwind")
-        .status()
-        .unwrap();
-
-    // install grapesjs-cli
-    Command::new("cmd")
-        .args(&["/C", "npm install -g grapesjs-cli"])
-        .status()
-        .unwrap();
-
-  
-        // Get the path to the directory containing Cargo.toml
-    let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR env var is not set");
-    
-    // Print the manifest directory
-    println!("Manifest dir: {:?}", manifest_dir);
-
-    // Construct the absolute path to the source file
-    let source_path = Path::new(&manifest_dir).join("grapesjs-tailwind/dist/grapesjs-tailwind.min.js");
-    
-    // Print the absolute path of the source file.
-    println!("Source file path: {:?}", source_path);
-
-    // Check whether the source file exists and print a message.
-    if source_path.exists() {
-        println!("Source file exists.");
-    } else {
-        println!("Source file does not exist.");
-    }
-
-        // Perform the file copy operation.
-        let out_dir = env::var("OUT_DIR").unwrap();
-        let dest_path = Path::new(&out_dir).join("grapesjs-tailwind.min.js");
-        fs::copy(&source_path, &dest_path)
-            .unwrap_or_else(|err| panic!("Failed to copy file: {}", err));
 }
