@@ -34,25 +34,25 @@ fn main() {
         .unwrap();
 
   
-    // Print the current working directory.
-    println!("Current dir: {:?}", env::current_dir());
+       // Get the path to the directory containing Cargo.toml
+       let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR env var is not set");
     
-    // Define the source file path.
-    let source_path = Path::new("grapesjs-tailwind/dist/grapesjs-tailwind.min.js");
-    
-    // Print the absolute path of the source file.
-    println!("Source file path: {:?}", source_path.canonicalize());
-    
-    // Check whether the source file exists and print a message.
-    if source_path.exists() {
-        println!("Source file exists.");
-    } else {
-        println!("Source file does not exist.");
-    }
-    
-    // Perform the file copy operation.
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let dest_path = Path::new(&out_dir).join("grapesjs-tailwind.min.js");
-    fs::copy(&source_path, &dest_path)
-        .unwrap_or_else(|err| panic!("Failed to copy file: {}", err));
+       // Construct the absolute path to the source file
+       let source_path = Path::new(&manifest_dir).join("grapesjs-tailwind/dist/grapesjs-tailwind.min.js");
+       
+       // Print the absolute path of the source file.
+       println!("Source file path: {:?}", source_path.canonicalize());
+       
+       // Check whether the source file exists and print a message.
+       if source_path.exists() {
+           println!("Source file exists.");
+       } else {
+           println!("Source file does not exist.");
+       }
+       
+       // Perform the file copy operation.
+       let out_dir = env::var("OUT_DIR").unwrap();
+       let dest_path = Path::new(&out_dir).join("grapesjs-tailwind.min.js");
+       fs::copy(&source_path, &dest_path)
+           .unwrap_or_else(|err| panic!("Failed to copy file: {}", err));
 }
