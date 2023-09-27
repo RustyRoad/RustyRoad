@@ -28,19 +28,7 @@ impl GrapesJs {
         } else {
             eprintln!("Failed to retrieve the current working directory.");
         }
-        let page_java_script: &'static [u8] = include_bytes!("features/grapesjs/grapesjs-tailwind.min.js");
-
-
-
-        println!("page_java_script: {:?}", page_java_script);
-        let new_page_path = std::path::Path::new("static/js/grapesjs-tailwind.min.js");
-
-        // Create the directory structure if it doesn't exist
-        fs::create_dir_all(new_page_path.parent().unwrap()).unwrap();
-
-        // // Write the contents of the byte array to a new file
-        fs::write(new_page_path, page_java_script).unwrap();
-
+      
         // create the edit page directory
         create_dir("src/controllers/edit_page").expect("Couldn't create edit_page directory");
 
@@ -164,9 +152,6 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
                 height: auto !important;
             }
             </style>
-
-
-            <script src="/static/js/grapesjs-tailwind.min.js"></script>
 
         <script>
         const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
@@ -612,7 +597,8 @@ pub fn append_graped_js_to_header() -> Result<(), Error> {
     let contents: String = r#"
 <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
 <script src="https://unpkg.com/grapesjs"></script>
-<script src="/static/js/grapesjs-tailwind.min.js"></script>
+<script src="https://unpkg.com/@rustyroad/editor@0.0.1/dist/grapesjs-tailwind.min.js"></script>
+
     "#
     .to_string();
 
