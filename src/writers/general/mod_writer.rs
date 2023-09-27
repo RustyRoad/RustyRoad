@@ -12,7 +12,7 @@ use color_eyre::eyre::Result;
 /// ```
 /// use std::vec;
 /// use rustyroad::writers::write_to_module;
-/// use crate::writers::general;
+///
 /// use std::io::Error;
 ///
 ///
