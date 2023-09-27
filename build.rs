@@ -52,10 +52,10 @@ fn main() {
     } else {
         println!("Source file does not exist.");
     }
-    
-    // Perform the file copy operation.
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let dest_path = Path::new(&out_dir).join("grapesjs-tailwind.min.js");
-    fs::copy(&source_path, &dest_path)
-        .unwrap_or_else(|err| panic!("Failed to copy file: {}", err));
+
+        // Perform the file copy operation.
+        let out_dir = env::var("OUT_DIR").unwrap();
+        let dest_path = Path::new(&out_dir).join("grapesjs-tailwind.min.js");
+        fs::copy(&source_path, &dest_path)
+            .unwrap_or_else(|err| panic!("Failed to copy file: {}", err));
 }
