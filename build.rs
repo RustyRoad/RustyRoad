@@ -1,7 +1,4 @@
 use std::env;
-use std::fs;
-use std::path::Path;
-use std::process::Command;
 
 fn main() {
     if cfg!(target_os = "windows") {

@@ -18,9 +18,8 @@ use tokio_postgres::{Config, NoTls};
 /// # Example
 /// ```
 /// use rustyroad::writers::write_to_sql;
-/// use crate::writers::general::sql_writer::write_to_sql;
 ///
-/// write_to_sql("test.sql", "SELECT * FROM test;".to_string());
+/// write_to_sql(&"test.sql".to_string(), &"SELECT * FROM test;".to_string());
 ///
 /// ```
 /// # Result
