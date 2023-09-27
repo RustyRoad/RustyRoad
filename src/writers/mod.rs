@@ -5,7 +5,9 @@ pub mod project_creation;
 pub mod templates;
 pub mod write_to_controllers_mod;
 pub mod write_to_main;
+pub mod controllers;
 
+pub use controllers::*;
 pub use file::*;
 pub use general::*;
 pub use migrations::*;
