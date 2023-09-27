@@ -27,5 +27,5 @@ dotenv = "0.15.0"
 bcrypt = "0.14.0"
 color-eyre = "0.6.2"
 [dependencies.sqlx]
-features = ["postgres", "macros", "chrono", "json", "uuid", "offline"]
-version = "0.6.2"
+features = ["postgres", "macros", "chrono", "json", "uuid", "runtime-tokio"]
+version = "0.7.2"
