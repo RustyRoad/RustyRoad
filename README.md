@@ -68,16 +68,8 @@ I outlined this in a blog post here: https://rileyseaburg.com/posts/rust-needs-a
   easy to learn, easy to use, and easy to maintain. It would be fast, secure, and reliable. It would be
   extensible and customizable. It would be a joy to use.
 - REALITY: Rust is a powerful language, but it is not easy to use. It is not easy to learn, and it is not easy to
-  maintain. It is not fast, secure, or reliable. It is not extensible or customizable. It is not a joy to use even though it is the most loved programming language on [stack overflow](https://survey.stackoverflow.co/2022/#section-most-loved-dreaded-and-wanted-programming-scripting-and-markup-languages).
-- CONSEQUENCES:
-  - Web servers are insecure, because most languages are not as secure as Rust.
-  - Web servers are slow, because most languages are not as fast as Rust.
-  - Web servers are unreliable, because most languages are not as reliable as Rust.
-  - Web servers are not extensible or customizable, because most languages are not as extensible or customizable as Rust.
-  - Web servers are not a joy to use, because most languages are not as fun to use as Rust.
-
-
-
+  maintain. It is not fast to build with, even though it is secure, there is no framework that is as easy to use as Ruby on Rails.
+  [Rust is still the most loved programming language](https://survey.stackoverflow.co/2023/#section-most-loved-dreaded-and-wanted-programming-scripting-and-markup-languages).
 ## 💡 Idea / Solution <a name = "idea"></a>
 
 Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust.
@@ -90,36 +82,24 @@ Rusty Road is intended to offer developers a powerful and reliable platform for 
 
 ### Understanding Rusty Road
 
-Rusty Road currently works with the actix web framework, the Diesel ORM, the Tera template engine, the SASS asset pipeline, and the PostgreSQL database. It also uses the dotenv crate to manage environment variables, and it uses the dotenv-linter crate to lint environment variables.
-
-Because Rusty Road uses the actix web framework, the architecture is not exactly MVC
+Rusty Road currently works with the actix web framework, Sqlx, the Tera template engine, MySQL, PostgreSQL, and SQLite. It also has an additional optional feature that allows yout to add the GrapesJs editor with tailwind css support to your project.
 
 ## 🎈 Current Features <a name="features"></a>
 
 - Database migrations
-- Database seeds
 - Support for PostgreSQL
 - Support for MySQL
 - Support for SQLite
-- Support for MongoDB (Planned)
 - Routing (actix)
 - Templating (Tera)
 - CSS Framework (Tailwind CSS)
-
-## ⛓️ Dependencies / Limitations <a name = "limitations"></a>
-
-- Rust is a relatively new language, and it is not as mature as Ruby on Rails.
-- Rust is not as easy to use as Ruby on Rails.
-- Rust has a borrow checker, which can make it difficult to use.
+- Optional support for GrapesJs editor with tailwind css support
 
 ## 🚀 Future Scope <a name = "future_scope"></a>
-
-- Add support for more database adapters.
-- Add support for react.
 - Add support for GraphQL.
 - Add support for API based microservices.
 - Add support for more asset pipelines.
-- One click deployment to AWS, GCP, Azure, and Digital Ocean or provide a docker image.
+- Add kubernetes support.
 - Add support for more authentication frameworks.
 
 ## 🏁 Getting Started <a name = "getting_started"></a>
@@ -127,11 +107,52 @@ Because Rusty Road uses the actix web framework, the architecture is not exactly
 These instructions will get you a copy of the project up and running on your local machine for development
 and testing purposes. See [deployment](#deployment) for notes on how to deploy the project on a live system.
 
-### Known Issues
+### Understanding the Build Process <a name="understanding_the_build_process"></a>
+
+Before diving into the setup and resolving the known issues, it’s crucial to understand how the build process works in this project and why certain steps are essential.
+
+#### **Why Use `build.rs`?** <a name="why_use_build_rs"></a>
+
+The `build.rs` file in Rust is a build script, executed before the Rust compiler to perform various tasks, such as compiling linked C libraries, generating code, and more.
+
+In this project, `build.rs` performs crucial tasks:
+
+1. **PostgreSQL Linkage:** It handles the linkage to the PostgreSQL library. If the build script cannot find the required PostgreSQL library, it will cause a build failure, hence the need to set up environment variables correctly, as mentioned in the [Solving PostgreSQL linkage issue](#solving_postgresql_linkage_issue) section.
+   
+2. **Node.js Integration:** It ensures the correct Node.js version is used and runs the build for the Node.js part of the project, housed in the `grapesjs-tailwind` directory. This is vital for integrating GrapesJS, a JavaScript framework, into the Rust project.
+
+3. **JavaScript File Inclusion:** To include the JavaScript file (`grapesjs-tailwind.min.js`) required for GrapesJS, the build script copies this file to a known location during compile time. The Rust code then includes the file content using `include_bytes!` from this known location. This approach is robust, portable, and does not rely on the absolute path of the file.
+
+### 🛠️ Setup and Installation <a name="setup_and_installation"></a>
+
+#### **1. Install Prerequisites** <a name="install_prerequisites"></a>
+Before you start, make sure you have Rust installed on your machine. If not, you can install it using `rustup`. Also, follow the instructions in the [Installing Node Version Manager (nvm) for Windows](#installing_node_version_manager_nvm_for_windows) section to set up Node.js.
+
+#### **2. Resolve Known Issues** <a name="resolve_known_issues"></a>
+- Follow the steps in the [Solving PostgreSQL linkage issue](#solving_postgresql_linkage_issue) section to resolve any PostgreSQL linkage issues.
+- Address any additional linkage issues as described in the [Solving the Generated Project linkage issue on Windows](#solving_the_generated_project_linkage_issue_on_windows) section.
+
+#### **3. Clone and Build the Project** <a name="clone_and_build_the_project"></a>
+- Clone the project to your local machine.
+- Navigate to the project directory and run `cargo build` to build the project.
+
+#### **4. Verify the Build** <a name="verify_the_build"></a>
+- Ensure that there are no errors during the build process.
+- If any issues arise, refer to the [Known Issues](#known_issues) section and make sure all prerequisites are correctly installed and configured.
+
+### 🚀 Running the Project <a name="running_the_project"></a>
+
+Once you have resolved the known issues and understood the build process, you can run the project locally for development and testing purposes. Use `cargo run` to start the project, and follow the on-screen instructions or refer to the project documentation for using and testing the implemented features.
+
+### ⚠️ Note <a name="note"></a>
+
+Understanding the build process and resolving known issues are crucial steps in setting up the project. While they might seem cumbersome, they ensure that the project runs seamlessly across different environments and configurations, laying a solid foundation for development, testing, and deployment.
+
+### Known Issues <a name="known_issues"></a>
 
 ***There are a couple known issues, but they are easy to fix.***
 
-#### Solving PostgreSQL linkage issue
+#### Solving PostgreSQL linkage issue <a name="solving_postgresql_linkage_issue"></a>
 
 If you encounter an error like this: `LINK : fatal error LNK1181: cannot open input file 'libpq.lib'`, it means the project is not able to find the libpq library. Follow these steps to resolve the issue:
 
@@ -180,7 +201,7 @@ rustflags = ["-C", "link-arg=/LIBPATH:C:\\ProgramData\\PostgreSQL\\16rc1\\lib"]
 5. Save and close the file.
 6. Now when you build your project again with `cargo build` or `cargo run`, the build should find the `libpq.lib` file correctly.
 
-### Installing Node Version Manager (nvm) for Windows
+### Installing Node Version Manager (nvm) for Windows <a name="installing_node_version_manager_nvm_for_windows"></a>
 
 The Rusty Road project uses Node.js, which we'll manage versions with by using Node Version Manager (nvm). To install nvm for Windows:
 
@@ -191,7 +212,7 @@ The Rusty Road project uses Node.js, which we'll manage versions with by using N
 5. Once nvm is installed, close your terminal or command prompt and open a new one for the changes to take effect.
 6. Verify that nvm is installed correctly by typing `nvm version` into your new terminal. If a version number is displayed, nvm has been installed successfully.
 
-### Prerequisites
+### Prerequisites <a name = "prerequisites"></a>
 
 Rust is required to build and run Rusty Road. You can install Rust using rustup. rustup is a tool that helps manage Rust installations, it allows for installing multiple versions of Rust and switching between them easily.
 
@@ -200,9 +221,9 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 
-### Installing
+### Installing <a name = "installing"></a>
 
-#### Crates.io
+#### Crates.io <a name="crates_io"></a>
 Rusty Road is available on [crates.io](https://crates.io/crates/rustyroad). You can install it using cargo:
 
 ```
@@ -226,7 +247,7 @@ sudo ln -s ~/.cargo/bin/rustyroad /usr/local/bin/rr
 (Windows users can download the executable from the [releases page](https://github.com/RileySeaburg/Rusty-Road/releases) and add it to their PATH.)
 
 
-#### Installing from source
+#### Installing from source <a name="installing_from_source"></a>
 
 Clone the repository and run the setup script.
 
@@ -279,7 +300,7 @@ rustyroad generate route users
 
 - [Rust](https://www.rust-lang.org/) - Programming Language
 - [actix](https://actix.rs/) - Web Framework
-- [Diesel](https://diesel.rs/) - ORM
+- [Sqlx](https://github.com/launchbadge/sqlx) - SQLx
 - [Tera](https://tera.netlify.app/) - Template Engine
 - [PostgreSQL](https://www.postgresql.org/) - Database
 - [Cucumber Rust](https://github.com/cucumber-rs) - Testing
