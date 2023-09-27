@@ -28,7 +28,8 @@ impl GrapesJs {
         } else {
             eprintln!("Failed to retrieve the current working directory.");
         }
-        let page_java_script: &'static [u8] = include_bytes!("grapesjs-tailwind/dist/grapesjs-tailwind.min.js");
+        let page_java_script: &'static [u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/grapesjs-tailwind/dist/grapesjs-tailwind.min.js"));
+
 
 
         println!("page_java_script: {:?}", page_java_script);
