@@ -27,6 +27,12 @@ fn main() {
         .status()
         .unwrap();
 
+    // install grapesjs-cli
+    Command::new("cmd")
+        .args(&["/C", "npm install -g grapesjs-cli"])
+        .status()
+        .unwrap();
+
     // Additional logic to copy the JavaScript file
     let out_dir = env::var("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("grapesjs-tailwind.min.js");
