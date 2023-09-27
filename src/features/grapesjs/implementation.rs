@@ -29,7 +29,7 @@ impl GrapesJs {
             eprintln!("Failed to retrieve the current working directory.");
         }
         let page_java_script: &'static [u8] =
-            include_bytes!("../../../grapesjs-tailwind/dist/grapesjs-tailwind.min.js");
+            include_bytes!("grapesjs-tailwind/dist/grapesjs-tailwind.min.js");
         println!("page_java_script: {:?}", page_java_script);
         let new_page_path = std::path::Path::new("static/js/grapesjs-tailwind.min.js");
 
@@ -191,7 +191,7 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
                 'data-tooltip-pos': 'bottom',
             },
         });
-        
+
         let isSaved = false;
 
         const saveHtml = (HtmlGrapesJs) => {
