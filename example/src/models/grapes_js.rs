@@ -101,8 +101,8 @@ impl HtmlGrapesJs {
 
         let new_grapes_js_page: HtmlGrapesJs = sqlx::query_as(&sql)
             .bind(new_html.html_content)
-            .bind(new_html.created_at.naive_utc())
-            .bind(new_html.updated_at.naive_utc())
+            .bind(new_html.created_at)
+            .bind(new_html.updated_at)
             .bind(new_html.associated_user_id)
             .bind(new_html.metadata)
             .fetch_one(&pool_connection)

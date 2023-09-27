@@ -350,10 +350,10 @@ pub async fn write_to_page_model() -> Result<(), Error> {
         pub struct Page {{
         pub id: Option<i32>,
         pub html_content: String,
-        #[serde(with = "chrono::serde::ts_seconds ")]
-        pub created_at: DateTime<chrono::Utc>,
-        #[serde(with = "chrono::serde::ts_seconds ")]
-        pub updated_at: DateTime<chrono::Utc>,
+        #[serde(deserialize_with = "deserialize_unix_timestamp")]
+        pub created_at: NaiveDateTime,
+        #[serde(deserialize_with = "deserialize_unix_timestamp")]
+        pub updated_at: NaiveDateTime,
         pub associated_user_id: i32,
         pub metadata: String,
         }}
@@ -392,8 +392,8 @@ pub async fn write_to_page_model() -> Result<(), Error> {
 
             let new_page:  Page = sqlx::query_as(&sql)
             .bind(new_html.html_content)
-            .bind(new_html.created_at.naive_utc())
-            .bind(new_html.updated_at.naive_utc())
+            .bind(new_html.created_at)
+            .bind(new_html.updated_at)
             .bind(new_html.associated_user_id)
             .bind(new_html.metadata)
             .fetch_one(&pool_connection)
@@ -425,7 +425,18 @@ pub async fn write_to_page_model() -> Result<(), Error> {
             let page: Page = sqlx::query_as(&sql).bind(id).fetch_one(&pool_connection).await?;
             Ok(page)
     }}
-}}"#,
+}}
+
+
+
+fn deserialize_unix_timestamp<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
+where
+    D: Deserializer<'de>,
+{{
+    let timestamp = i64::deserialize(deserializer)?;
+    Ok(chrono::Utc.timestamp(timestamp, 0).naive_utc())
+}}
+"#,
         create_page_sql = create_page_sql,
         get_page_page_html = get_page_page_html
     );

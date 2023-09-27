@@ -1,7 +1,7 @@
 use actix_web::web::to;
         use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
     use rustyroad::database::{Database, DatabaseType, PoolConnection};
-    use serde::{Deserialize, Serialize};
+    use serde::{Deserialize, Serialize, Deserializer};
     use sqlx::{postgres::PgRow, FromRow, Row};
 
     /// # Name: Page
@@ -49,10 +49,10 @@ use actix_web::web::to;
         pub struct Page {
         pub id: Option<i32>,
         pub html_content: String,
-        #[serde(with = "chrono::serde::ts_seconds ")]
-        pub created_at: DateTime<chrono::Utc>,
-        #[serde(with = "chrono::serde::ts_seconds ")]
-        pub updated_at: DateTime<chrono::Utc>,
+        #[serde(deserialize_with = "deserialize_unix_timestamp")]
+        pub created_at: NaiveDateTime,
+        #[serde(deserialize_with = "deserialize_unix_timestamp")]
+        pub updated_at: NaiveDateTime,
         pub associated_user_id: i32,
         pub metadata: String,
         }
@@ -62,8 +62,8 @@ use actix_web::web::to;
                 Self {
                     id: None,
                     html_content: "".to_string(),
-                    created_at: chrono::Utc::now(),
-                    updated_at: chrono::Utc::now(),
+                    created_at: chrono::Utc::now().naive_utc(),
+                    updated_at: chrono::Utc::now().naive_utc(),
                     associated_user_id: 0,
                     metadata: "".to_string(),
                 }
@@ -101,8 +101,8 @@ use actix_web::web::to;
 
             let new_page:  Page = sqlx::query_as(&sql)
             .bind(new_html.html_content)
-            .bind(new_html.created_at.naive_utc())
-            .bind(new_html.updated_at.naive_utc())
+            .bind(new_html.created_at)
+            .bind(new_html.updated_at)
             .bind(new_html.associated_user_id)
             .bind(new_html.metadata)
             .fetch_one(&pool_connection)
@@ -142,4 +142,13 @@ use actix_web::web::to;
             let page: Page = sqlx::query_as(&sql).bind(id).fetch_one(&pool_connection).await?;
             Ok(page)
     }
+}
+
+
+fn deserialize_unix_timestamp<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let timestamp = i64::deserialize(deserializer)?;
+    Ok(chrono::Utc.timestamp(timestamp, 0).naive_utc())
 }

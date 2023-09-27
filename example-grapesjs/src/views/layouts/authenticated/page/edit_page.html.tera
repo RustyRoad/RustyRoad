@@ -1,0 +1,152 @@
+
+   <!DOCTYPE html>
+<html class='bg-gray-50 h-full' lang='en'>
+
+<head>
+    {% block head %}
+    {% include 'sections/header.html.tera' %}
+    {% endblock head %}
+</head>
+
+    <body id='app' class='h-full'>
+        {% include 'components/navbar.html.tera'%}
+        <div id="gjs" style="height: 100%; width: 100%;">
+            <div style="margin:100px 100px 25px; padding:25px; font:caption">
+                This is a demo content from _index.html. You can use this template file for development purpose. It
+                won't be stored in your git repository
+            </div>
+        </div>
+
+        <style>
+            body,
+            html {
+                height: 100%;
+                margin: 0;
+                }
+
+            .gjs-block {
+                padding: 0 !important;
+                width: 100% !important;
+                min-height: auto !important;
+                }
+
+            .gjs-block svg {
+                width: 100%;
+                }
+
+            .change-theme-button {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                margin: 5px;
+                }
+
+            .change-theme-button:focus {
+                /* background-color: yellow; */
+                outline: none;
+                box-shadow: 0 0 0 2pt #c5c5c575;
+            }
+
+
+            .gjs-pn-views-container {
+                height: auto !important;
+            }
+            </style>
+
+
+            <script src="/static/js/grapesjs-tailwind.min.js"></script>
+
+        <script>
+                const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
+
+            window.editor = grapesjs.init({
+                height: '100%',
+                container: '#gjs',
+                showOffsets: true,
+                fromElement: true,
+                noticeOnUnload: false,
+                storageManager: false,
+                selectorManager: { escapeName },
+                plugins: ['grapesjs-tailwind'],
+                pluginsOpts: {
+                    'grapesjs-tailwind': { /* Test here your options  */ }
+                }
+                });
+
+            editor.Panels.addButton('options', {
+                id: 'update-theme',
+                className: 'fa fa-adjust',
+                command: 'open-update-theme',
+                attributes: {
+                    title: 'Update Theme',
+                    'data-tooltip-pos': 'bottom',
+                },
+            });
+
+            let isSaved = false;
+
+const saveHtml = (HtmlGrapesJs) => {
+    if (!isSaved) {
+        // save html to database
+        fetch('http://localhost:8080/page', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(
+                HtmlGrapesJs
+            ),
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                sender.set('active', 1); // turn on the button
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                sender.set('active', 1); // turn on the button
+            });
+        isSaved = true;
+    }
+};
+
+editor.Commands.add('savePage', {
+    run(editor, sender) {
+        sender.set('active', 0); // turn off the button
+        // get html from editor
+        var html = editor.getHtml();
+        // create object to save to database
+        const now = Date.now();  // milliseconds since 1970-01-01T00:00:00Z
+        const HtmlGrapesJs = {
+            html_content: html,
+            created_at: Math.floor(now / 1000),  // convert to seconds
+            updated_at: Math.floor(now / 1000),  // convert to seconds
+            associated_user_id: 1,
+            metadata: JSON.stringify({
+                title: 'test',
+                description: 'test',
+                keywords: 'test',
+            }),
+        };
+        saveHtml(HtmlGrapesJs);
+    }
+});
+
+editor.Panels.addButton('options', {
+    id: 'savePage',
+    className: 'fa fa-save',
+    command: 'savePage',
+    attributes: {
+        title: 'Save HTML',
+        'data-tooltip-pos': 'bottom',
+    },
+});
+        </script>
+        <div id='footer'>
+            {% block footer %}
+            {% include 'sections/footer' ignore missing %}
+            {% endblock footer %}
+        </div>
+        </body>
+</html>
+    
