@@ -1,5 +1,6 @@
-extern crate pkg_config;
 use std::env;
+use std::fs;
+use std::path::Path;
 use std::process::Command;
 
 fn main() {
@@ -19,9 +20,18 @@ fn main() {
             println!("cargo:rustc-link-search=native=/lib");
         }
     }
+
     Command::new("cmd")
         .args(&["/C", "nvm use 18.17.1 && npm run build"])
         .current_dir("./grapesjs-tailwind")
         .status()
         .unwrap();
+
+    // Additional logic to copy the JavaScript file
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let dest_path = Path::new(&out_dir).join("grapesjs-tailwind.min.js");
+    fs::copy(
+        "grapesjs-tailwind/dist/grapesjs-tailwind.min.js",
+        &dest_path,
+    ).unwrap_or_else(|err| panic!("Failed to copy file: {}", err));
 }
