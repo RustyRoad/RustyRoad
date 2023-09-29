@@ -42,7 +42,7 @@ pub fn create_new_controller(
             }
             CRUDType::Update => {
                 // create the controller
-                create_update_controller_in_existing_folder(controller_name.clone()).unwrap_or_else(
+                create_update_controller_in_existing_folder().unwrap_or_else(
                     |why| {
                         println!("Failed to create update controller: {:}", why.to_string());
                     },
@@ -76,7 +76,7 @@ pub fn create_new_controller(
             }
             CRUDType::Update => {
                 // create the controller
-                create_update_controller_in_existing_folder(controller_name.clone()).unwrap_or_else(
+                create_update_controller_in_existing_folder().unwrap_or_else(
                     |why| {
                         println!("Failed to create update controller: {:}", why.to_string());
                     },
