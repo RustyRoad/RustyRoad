@@ -4,5 +4,5 @@
 <title>{% block title %}{% endblock title %} - example2/src/views/sections/header.html.tera</title>
 <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
 <script src="https://unpkg.com/grapesjs"></script>
-<script src="/static/js/grapesjs-tailwind.min.js"></script>
+<script src="https://unpkg.com/@rustyroad/editor@0.0.1/dist/grapesjs-tailwind.min.js"></script>
     
