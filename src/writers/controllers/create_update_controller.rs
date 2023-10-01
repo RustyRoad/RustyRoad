@@ -25,14 +25,8 @@ use std::fs::create_dir;
 ///
 /// write_to_new_update_controller(controller_name);
 /// ```
-pub fn create_update_controller_in_existing_folder() -> Result<(), Error> {
-    // ask the user the name of the controller
-    println!("What is the name of the model you want to create a controller for?: ");
-    println!("In order to work out of the box, ensure the model already exists.");
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input).unwrap();
-    // this pattern needs to be repeated for each CRUD type
-    let model_name = input.trim();
+pub fn create_update_controller_in_existing_folder(model_name: &str) -> Result<(), Error> {
+
 
     // find the folder in the controllers directory with the name of the controller
     // if the folder does not exist, let the user know and ask them if they want to create
