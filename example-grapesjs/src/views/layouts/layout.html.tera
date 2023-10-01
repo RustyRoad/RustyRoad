@@ -1,22 +1,10 @@
 {% extends 'base.html.tera' %}
 {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
-{% block head %}
-{{ super() }}
-{% endblock head %}
+
 {% block content %}
 
 
-<!--
-    This example requires updating your template:
-  
-    ```
-    <html class="h-full bg-white">
-    <body class="h-full">
-    ```
-  -->
-{% block sidebar %}
-<!-- Sidebar content here -->
-{% endblock sidebar %}
+
 
 
 <main class="py-10 lg:pl-72">

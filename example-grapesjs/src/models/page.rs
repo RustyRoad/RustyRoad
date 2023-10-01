@@ -1,5 +1,5 @@
-use actix_web::web::to;
-        use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+    use actix_web::web::to;
+    use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
     use rustyroad::database::{Database, DatabaseType, PoolConnection};
     use serde::{Deserialize, Serialize, Deserializer};
     use sqlx::{postgres::PgRow, FromRow, Row};
@@ -142,6 +142,40 @@ use actix_web::web::to;
             let page: Page = sqlx::query_as(&sql).bind(id).fetch_one(&pool_connection).await?;
             Ok(page)
     }
+    
+
+pub async fn update_page(id: i32, page_update: Page) -> color_eyre::Result<Page, color_eyre::eyre::Error> {
+    let database = Database::get_database_from_rustyroad_toml().unwrap();
+    let pool = rustyroad::database::Database::get_db_pool(database).await.unwrap();
+
+    let pool_connection = match pool {
+        PoolConnection::Pg(pool) => pool,
+
+        _ => panic!("Error getting pg pool"),
+    };
+
+
+
+    let page: Page = sqlx::query_as(
+
+        r#"
+        UPDATE page
+        SET html_content = $1, updated_at = $2, metadata = $3
+        WHERE id = $4
+        RETURNING *
+        "#
+    )
+    .bind(page_update.html_content)
+    .bind(page_update.updated_at)
+    .bind(page_update.metadata)
+    .bind(id)
+    .fetch_one(&pool_connection)
+    .await?;
+
+    Ok(page)
+}
+
+    
 }
 
 

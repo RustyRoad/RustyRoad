@@ -7,6 +7,32 @@
 
 
 {% block authenticated_content %}
+
+<nav id="side-bar">
+    {% include 'components/sidebar.html.tera'%}
+</nav>
+
+</div>
+</div>
+
+
+<script>
+
+
+    let closeSidebar = document.getElementById('close-sidebar');
+
+    let navOverlay = document.getElementById('nav-overlay');
+    let nav = document.getElementById('nav');
+
+    closeSidebar.addEventListener('click', () => {
+        navOverlay.classList.remove('flex');
+        navOverlay.classList.add('hidden');
+        nav.classList.remove('translate-x-0');
+        nav.classList.add('translate-x-full');
+
+    });
+</script>
+
 <!-- Custom main content for this page -->
 {% endblock authenticated_content %}
 

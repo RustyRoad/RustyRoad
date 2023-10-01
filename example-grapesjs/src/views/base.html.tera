@@ -6,9 +6,9 @@
         {% include 'sections/header.html.tera' %}
         {% endblock head %}
     </head>
-
+    
+    {% include 'components/navbar.html.tera'%}
     <body id='app' class='h-full'>
-        {% include 'components/navbar.html.tera'%}
         <div id='content'>{% block content %}{% endblock content %}</div>
         <div id='footer'>
             {% block footer %}
@@ -17,5 +17,6 @@
         </div>
     </body>
     <script src='/static/js/index.js'></script>
+
 
 </html>

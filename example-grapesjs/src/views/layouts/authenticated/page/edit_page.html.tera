@@ -1,12 +1,11 @@
-{% extends 'layouts/authenticated.html.tera' %}
+{% extends 'layouts/authenticated/authenticated.html.tera' %}
 {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
 
 {% block authenticated_content %}
-{{ super() }}
+
 
 
     <body id='app' class='h-full'>
-        {% include 'components/navbar.html.tera'%}
         <div id="gjs" style="height: 100%; width: 100%;">
             <div style="margin:100px 100px 25px; padding:25px; font:caption">
                 This is a demo content from _index.html. You can use this template file for development purpose. It

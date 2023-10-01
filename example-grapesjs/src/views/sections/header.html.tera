@@ -6,3 +6,4 @@
 <script src="https://unpkg.com/grapesjs"></script>
 <script src="https://unpkg.com/@rustyroad/editor@0.0.1/dist/grapesjs-tailwind.min.js"></script>
     
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
