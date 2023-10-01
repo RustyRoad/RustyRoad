@@ -1100,7 +1100,7 @@ static/styles.css
                         .expect("Failed to read line");
                     let controller_type_choice_int =
                         controller_type_choice.trim().parse::<u32>().unwrap();
-                    let name = match controller_type_choice_int {
+                    let crud_type = match controller_type_choice_int {
                         1 => CRUDType::Read,
                         2 => CRUDType::Create,
                         3 => CRUDType::Update,
@@ -1111,12 +1111,18 @@ static/styles.css
                         }
                     };
 
-                    match create_new_controller(format!("{:?}",name), name) {
-                        Ok(_) => {
-                            println!("You selected the {:?} controller", name);
-                        }
-                        Err(e) => println!("Error creating controller: {}", e),
-                    }
+                    // ask the user the name of the controller
+                    println!("What is the name of the model you want to create a controller for?: ");
+                    println!("In order to work out of the box, ensure the model already exists.");
+                    let mut input = String::new();
+                    std::io::stdin().read_line(&mut input).unwrap();
+                    // this pattern needs to be repeated for each CRUD type
+                    let model_name = input.trim();
+
+                    let _ = create_new_controller(model_name.to_string(), crud_type)
+                        .await
+                        .expect("Error creating controller");
+
                 }
                 Some(("model", _matches)) => {
                     todo!("Implement this");
