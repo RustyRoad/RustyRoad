@@ -2,11 +2,14 @@ use rustyline::DefaultEditor;
 use std::io::{self, Error};
 use std::ops::Deref;
 
-use crate::database::{
-    category::DataTypeCategory,
-    databasetype::{DatabaseType, DatabaseTypeTrait, PostgresDatabaseType},
-    Database, PostgresTypes,
-};
+use crate::database::{category::DataTypeCategory, databasetype::{DatabaseType, DatabaseTypeTrait, PostgresDatabaseType}, Database, PostgresTypes, MySqlDatabaseType};
+
+
+pub struct MigrationAndStruct {
+    pub up_sql_contents: String,
+    pub rust_struct_contents: String,
+}
+
 
 /// # Name: column_loop
 /// ## Description
@@ -29,7 +32,7 @@ use crate::database::{
 /// ```
 /// ## Notes
 /// * This function is used in the `create_migration` function in `src\database\migrations\create_migration.rs`.
-pub fn column_loop(num_columns: i32, migration_name: String) -> Result<String, Error> {
+pub fn column_loop(num_columns: i32, migration_name: String) -> Result<MigrationAndStruct, Error> {
     // Initialize the rustyline Editor with the default helper and in-memory history
     let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
         panic!("Failed to create rustyline editor: {}", why.to_string());
@@ -42,6 +45,12 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<String, E
     let database_type = database.database_type;
     println!("Database Type: {:?}", database_type);
     // let types_for_database = TypesForDatabase::new();
+
+
+    let mut struct_fields = String::new();  // To hold the struct fields
+
+    let struct_name = migration_name.chars().next().unwrap().to_uppercase().to_string() + &migration_name[1..];  // Capitalize the first letter
+
 
     for _ in 0..num_columns {
         let column_name = rl.readline("Enter the name of the column: ").unwrap();
@@ -77,7 +86,8 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<String, E
         let database_types = match database_type {
             DatabaseType::Postgres => PostgresDatabaseType
                 .get_database_types(&data_types_for_category, &data_type_category),
-            DatabaseType::Mysql => todo!("Implement MySqlDatabaseType.get_database_types"),
+            DatabaseType::Mysql => MySqlDatabaseType
+                .get_database_types(&data_types_for_category, &data_type_category),
             DatabaseType::Sqlite => todo!("Implement SqliteDatabaseType.get_database_types"),
             DatabaseType::Mongo => todo!("Implement MongoDatabaseType.get_database_types"),
         };
@@ -184,6 +194,14 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<String, E
                     }
                     _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid input")),
                 }
+
+                // Append to struct_fields based on the selected_type and nullable settings
+                // This is a simplified example; you might need to map the SQL types to appropriate Rust types
+                struct_fields.push_str(&format!(
+                    "    pub {}: Vec<{}>,\n",
+                    column_name.to_lowercase(),
+                    selected_type[0]  // Replace this with appropriate mapping to Rust types
+                ));
             }
             _ => {
                 column_string.push_str(&format!(
@@ -193,8 +211,19 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<String, E
                     nullable,
                     column_constraints
                 ));
+
+                // Append to struct_fields based on the selected_type and nullable settings
+                // This is a simplified example; you might need to map the SQL types to appropriate Rust types
+                struct_fields.push_str(&format!(
+                    "    pub {}: {},\n",
+                    column_name.to_lowercase(),
+                    selected_type[0]  // Replace this with appropriate mapping to Rust types
+                ));
             }
         }
+
+
+
 
         println!("Column type selected: {:?}", selected_type);
     }
@@ -208,7 +237,21 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<String, E
         column_string.trim_end_matches(',')
     );
 
-    Ok(up_sql_contents)
+    let struct_contents = format!(
+        r#"
+    pub struct {} {{
+    {}
+    }}"#,
+        struct_name,
+        struct_fields.trim_end_matches(',')
+    );
+
+    // create new struct with the struct name and struct fields
+    let new_migration_struct = MigrationAndStruct {
+        up_sql_contents,
+        rust_struct_contents: struct_contents,
+    };
+    Ok(new_migration_struct)
 }
 
 #[cfg(test)]
