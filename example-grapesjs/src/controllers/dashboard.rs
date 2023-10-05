@@ -5,8 +5,6 @@ use tera::{Context, Tera};
 
 #[get("/dashboard")]
 async fn dashboard_controller(tmpl: web::Data<Tera>, user: Option<Identity>) -> HttpResponse {
-
-
     if let Some(user) = user {
         let mut context = tera::Context::new();
         context.insert("username", &user.id().unwrap());

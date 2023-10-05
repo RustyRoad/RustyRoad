@@ -1,16 +1,13 @@
 {% extends 'layouts/authenticated/authenticated.html.tera' %}
-{% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
+{% block title %}{{title | default(value="Edit Page", boolean=true)}}{% endblock title %}
 
 {% block authenticated_content %}
-
+{{ super() }}
 
 
     <body id='app' class='h-full'>
         <div id="gjs" style="height: 100%; width: 100%;">
-            <div style="margin:100px 100px 25px; padding:25px; font:caption">
-                This is a demo content from _index.html. You can use this template file for development purpose. It
-                won't be stored in your git repository
-            </div>
+            {{html_content|safe}}
         </div>
 
         <style>
@@ -49,6 +46,9 @@
             }
             </style>
 
+
+            <script src="/static/js/grapesjs-tailwind.min.js"></script>
+
         <script>
                 const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
 
@@ -76,13 +76,13 @@
                 },
             });
 
-            let isupdated = false;
+            let isSaved = false;
 
-const updateHtml = (HtmlGrapesJs) => {
-    if (!isupdated) {
-        // update html to database
-        fetch('http://localhost:8080/page', {
-            method: 'PUT',
+const saveHtml = (HtmlGrapesJs) => {
+    if (!isSaved) {
+        // save html to database
+        fetch('/page/{{page_id}}', {
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -99,16 +99,16 @@ const updateHtml = (HtmlGrapesJs) => {
                 console.error('Error:', error);
                 sender.set('active', 1); // turn on the button
             });
-        isupdated = true;
+        isSaved = true;
     }
 };
 
-editor.Commands.add('updatePage', {
+editor.Commands.add('savePage', {
     run(editor, sender) {
         sender.set('active', 0); // turn off the button
         // get html from editor
         var html = editor.getHtml();
-        // create object to update to database
+        // create object to save to database
         const now = Date.now();  // milliseconds since 1970-01-01T00:00:00Z
         const HtmlGrapesJs = {
             html_content: html,
@@ -121,19 +121,20 @@ editor.Commands.add('updatePage', {
                 keywords: 'test',
             }),
         };
-        updateHtml(HtmlGrapesJs);
+        saveHtml(HtmlGrapesJs);
     }
 });
 
 editor.Panels.addButton('options', {
-    id: 'updatePage',
-    className: 'fa fa-update',
-    command: 'updatePage',
+    id: 'savePage',
+    className: 'fa fa-save',
+    command: 'savePage',
     attributes: {
-        title: 'Update Page',
+        title: 'Save HTML',
         'data-tooltip-pos': 'bottom',
     },
 });
+
         </script>
         
         {% endblock authenticated_content %}

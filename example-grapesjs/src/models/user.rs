@@ -1,5 +1,6 @@
 use actix_identity::Identity;
 use actix_web::HttpMessage;
+use actix_web::HttpResponseBuilder;
 use actix_web::web;
 use actix_web::Error;
 use actix_web::HttpRequest;
@@ -66,17 +67,13 @@ impl UserLogin {
                         if password_match {
                             // Here you can set the identity directly
                             Identity::login(&request.extensions(), self.username.clone()).unwrap();
+                            return Ok(
+                                // Forwards the request to the dashboard
+                                HttpResponse::Found() // <- Redirect to the dashboard
+                                    .append_header(("Location", "/dashboard"))
+                                    .finish(),
+                            );
 
-
-                            ctx.insert("username", &self.username.clone());
-                            ctx.insert("route_name", "dashboard");
-                            ctx.insert("title", "Dashboard");
-                            let body = tmpl
-                                .render("pages/dashboard.html.tera", &ctx)
-                                .unwrap();
-                            return Ok(HttpResponse::Ok()
-                                .append_header((actix_web::http::header::LOCATION, "/dashboard"))
-                                .body(body));
                         } else {
                             ctx.insert("error", "Invalid username or password");
                             let rendered = tmpl.render("pages/login.html.tera", &ctx).unwrap();

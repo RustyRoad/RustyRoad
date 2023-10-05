@@ -84,7 +84,7 @@
 const saveHtml = (HtmlGrapesJs) => {
     if (!isSaved) {
         // save html to database
-        fetch('http://localhost:8080/page', {
+        fetch('/page', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

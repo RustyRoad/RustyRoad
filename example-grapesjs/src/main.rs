@@ -70,6 +70,7 @@ async fn main() -> std::io::Result<()> {
             .service(controllers::page::get_create_page_view)
             .service(controllers::page::get_page_by_id)
             .service(controllers::page::update_page)
+            .service( controllers::page::get_all_pages)
             .service(Files::new("/static", "./static")) // Add this line
     })
     .bind(("127.0.0.1", 8080))

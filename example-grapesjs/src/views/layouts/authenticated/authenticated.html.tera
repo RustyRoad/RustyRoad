@@ -32,24 +32,27 @@
   //  });
 
 
-    document.addEventListener("DOMContentLoaded", function() {
-        console.log("DOM fully loaded and parsed");
+  document.addEventListener("DOMContentLoaded", function() {
+    console.log("DOM fully loaded and parsed");
+    
+    console.log("Current Pathname is: ", window.location.pathname); // Debugging line
+    
+    const pathnameParts = window.location.pathname.split('/');
+    const isPagePath = window.location.pathname === '/page' || (window.location.pathname.startsWith('/page/') && window.location.pathname.endsWith('/edit'));
+
+    if (isPagePath) {
+        const sidebar = document.getElementById('side-bar');
         
-        console.log("Current Pathname is: ", window.location.pathname); // Debugging line
-        
-        if (window.location.pathname === '/page') {
-            const sidebar = document.getElementById('side-bar');
-            
-            if (sidebar) {
-                console.log("Sidebar found. Hiding it now."); // Debugging line
-                sidebar.style.display = 'none';
-            } else {
-                console.log("Sidebar element with ID 'side-bar' not found"); // Debugging line
-            }
+        if (sidebar) {
+            console.log("Sidebar found. Hiding it now."); // Debugging line
+            sidebar.style.display = 'none';
         } else {
-            console.log("This is not the /page URL. Sidebar will not be hidden."); // Debugging line
+            console.log("Sidebar element with ID 'side-bar' not found"); // Debugging line
         }
-    });
+    } else {
+        console.log("This is not the /page URL. Sidebar will not be hidden."); // Debugging line
+    }
+});
     
 </script>
 
