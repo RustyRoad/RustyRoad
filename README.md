@@ -47,8 +47,8 @@
 
 - Rusty Road now includes GrapeJS, a drag and drop website builder. You can add it to your project by running `rustyroad feature add grapesjs`.
   <!-- tell them where to read more -->
-  a. You can read more about GrapeJS [here](https://grapesjs.com/).
-  b. Find the example project [here](/example-grapesjs/README.md).
+  1. You can read more about GrapeJS [here](https://grapesjs.com/).
+  2. Find the example project [here](/example-grapesjs/README.md).
 - Stable release of PostgreSQL support.
 - Beta release of MySQL support.
 - Beta release of SQLite support.
