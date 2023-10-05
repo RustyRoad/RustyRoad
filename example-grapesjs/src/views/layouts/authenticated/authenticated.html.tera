@@ -19,18 +19,38 @@
 <script>
 
 
-    let closeSidebar = document.getElementById('close-sidebar');
+  //  let closeSidebar = document.getElementById('close-sidebar');
 
-    let navOverlay = document.getElementById('nav-overlay');
-    let nav = document.getElementById('nav');
+   // let navOverlay = document.getElementById('nav-overlay');
+   // let nav = document.getElementById('nav');
 
-    closeSidebar.addEventListener('click', () => {
-        navOverlay.classList.remove('flex');
-        navOverlay.classList.add('hidden');
-        nav.classList.remove('translate-x-0');
-        nav.classList.add('translate-x-full');
+ //  closeSidebar.addEventListener('click', () => {
+ //       navOverlay.classList.remove('flex');
+  //      navOverlay.classList.add('hidden');
+  //      nav.classList.remove('translate-x-0');
+  //      nav.classList.add('translate-x-full');
+  //  });
 
+
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log("DOM fully loaded and parsed");
+        
+        console.log("Current Pathname is: ", window.location.pathname); // Debugging line
+        
+        if (window.location.pathname === '/page') {
+            const sidebar = document.getElementById('side-bar');
+            
+            if (sidebar) {
+                console.log("Sidebar found. Hiding it now."); // Debugging line
+                sidebar.style.display = 'none';
+            } else {
+                console.log("Sidebar element with ID 'side-bar' not found"); // Debugging line
+            }
+        } else {
+            console.log("This is not the /page URL. Sidebar will not be hidden."); // Debugging line
+        }
     });
+    
 </script>
 
 <!-- Custom main content for this page -->
@@ -38,3 +58,4 @@
 
 
 {% endblock main_content %}
+

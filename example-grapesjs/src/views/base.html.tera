@@ -8,7 +8,7 @@
     </head>
     
     {% include 'components/navbar.html.tera'%}
-    <body id='app' class='h-full'>
+    <body id='app' class='h-full dark:bg-slate-800'>
         <div id='content'>{% block content %}{% endblock content %}</div>
         <div id='footer'>
             {% block footer %}
