@@ -1,10 +1,10 @@
 
 use eyre::Error;
 use crate::{CRUDType};
-use crate::writers::{create_create_controller_in_existing_folder, create_create_controller_in_new_folder, create_read_controller_in_existing_folder, create_read_controller_in_new_folder, create_update_controller_in_existing_folder};
+use crate::writers::{create_create_controller_in_existing_folder, create_create_controller_in_new_folder, create_read_controller_in_existing_folder, create_read_controller_in_new_folder, create_update_controller_in_existing_folder, create_update_model};
 
-pub fn create_new_controller(
-    controller_name: String,
+pub async fn create_new_controller(
+    model_name: String,
     controller_type: CRUDType,
 ) -> Result<(), Error> {
     // the controller will need to check the current directory to see if it is a rustyroad project
@@ -19,12 +19,14 @@ pub fn create_new_controller(
     std::io::stdin().read_line(&mut input).unwrap();
     let input = input.trim();
 
+
+
     // if the user enters y, ask the user if they want to add this controller to the file for that controller
     if input == "y" {
         match controller_type {
             CRUDType::Read => {
                 // create the controller
-                create_read_controller_in_existing_folder(controller_name.clone()).unwrap_or_else(
+                create_read_controller_in_existing_folder(model_name.clone()).unwrap_or_else(
                     |why| {
                         println!("Failed to create read controller: {:}", why.to_string());
                     },
@@ -33,7 +35,7 @@ pub fn create_new_controller(
             }
             CRUDType::Create => {
                 // create the controller
-               create_create_controller_in_existing_folder(controller_name.clone()).unwrap_or_else(
+               create_create_controller_in_existing_folder(model_name.clone()).unwrap_or_else(
                     |why| {
                         println!("Failed to create create controller: {:}", why.to_string());
                     },
@@ -42,11 +44,14 @@ pub fn create_new_controller(
             }
             CRUDType::Update => {
                 // create the controller
-                create_update_controller_in_existing_folder(controller_name.clone()).unwrap_or_else(
+                create_update_controller_in_existing_folder(&model_name).unwrap_or_else(
                     |why| {
                         println!("Failed to create update controller: {:}", why.to_string());
                     },
                 );
+
+                // Create the update model
+                create_update_model(&model_name).await.expect("Failed to create update model");
                 Ok(())
             }
             CRUDType::Delete => {
@@ -58,7 +63,7 @@ pub fn create_new_controller(
         match controller_type {
             // if the user enters n, continue with the rest of the code and create a new controller that will be added to the controllers/mod.rs file
             CRUDType::Read => {
-               create_read_controller_in_new_folder(controller_name.clone()).unwrap_or_else(
+               create_read_controller_in_new_folder(model_name.clone()).unwrap_or_else(
                     |why| {
                         println!("Failed to create read controller: {:}", why.to_string());
                     },
@@ -67,7 +72,7 @@ pub fn create_new_controller(
             }
             CRUDType::Create => {
                 // create the controller
-                create_create_controller_in_new_folder(controller_name.clone()).unwrap_or_else(
+                create_create_controller_in_new_folder(model_name.clone()).unwrap_or_else(
                     |why| {
                         println!("Failed to create create controller: {:}", why.to_string());
                     },
@@ -76,7 +81,7 @@ pub fn create_new_controller(
             }
             CRUDType::Update => {
                 // create the controller
-                create_update_controller_in_existing_folder(controller_name.clone()).unwrap_or_else(
+                create_update_controller_in_existing_folder(&model_name).unwrap_or_else(
                     |why| {
                         println!("Failed to create update controller: {:}", why.to_string());
                     },

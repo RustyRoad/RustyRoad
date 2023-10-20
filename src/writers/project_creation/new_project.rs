@@ -76,6 +76,7 @@ pub fn new(name: String) -> Project {
     let forgot_password_controller = format!("{}/forgot_password.rs", controllers);
     let dashboard_controller = format!("{}/dashboard.rs", controllers);
     let navbar_component = format!("{}/navbar.html.tera", template_components);
+    let sidebar_component = format!("{}/sidebar.html.tera", template_components);
     let header_section = format!("{}/header.html.tera", template_sections);
 
     Project {
@@ -152,6 +153,7 @@ pub fn new(name: String) -> Project {
         forgot_password_controller,
         dashboard_controller,
         navbar_component,
+        sidebar_component,
         header_section,
         env,
     }

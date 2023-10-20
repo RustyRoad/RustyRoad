@@ -2,13 +2,39 @@
 {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
 
 
-
 {% block main_content %}
 
-
+<nav id="side-bar">
+    {% include 'components/sidebar.html.tera'%}
+</nav>
 {% block authenticated_content %}
-<!-- Custom main content for this page -->
 {% endblock authenticated_content %}
+<script>
 
+  document.addEventListener("DOMContentLoaded", function() {
+    console.log("DOM fully loaded and parsed");
+    
+    console.log("Current Pathname is: ", window.location.pathname); // Debugging line
+    
+    const pathnameParts = window.location.pathname.split('/');
+    const isPagePath = window.location.pathname === '/page' || (window.location.pathname.startsWith('/page/') && window.location.pathname.endsWith('/edit'));
 
+    if (isPagePath) {
+        const sidebar = document.getElementById('side-bar');
+        
+        if (sidebar) {
+            console.log("Sidebar found. Hiding it now."); // Debugging line
+            sidebar.style.display = 'none';
+        } else {
+            console.log("Sidebar element with ID 'side-bar' not found"); // Debugging line
+        }
+    } else {
+        console.log("This is not the /page URL. Sidebar will not be hidden."); // Debugging line
+    }
+});
+    
+</script>
+<!-- Custom main content for this page -->
 {% endblock main_content %}
+
+

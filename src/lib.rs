@@ -173,6 +173,7 @@ pub struct Project {
     pub forgot_password_controller: String,
     pub dashboard_controller: String,
     pub navbar_component: String,
+    pub sidebar_component: String,
     pub header_section: String,
 }
 
@@ -529,6 +530,11 @@ static/styles.css
             println!("Failed to write to navbar: {:?}", why.to_string());
         });
 
+        // write to sidebar
+        write_to_sidebar(&project).unwrap_or_else(|why| {
+            println!("Failed to write to sidebar: {:?}", why.to_string());
+        });
+
         // write to the dashboard page
         write_to_dashboard(project.clone()).unwrap_or_else(|why| {
             println!("Failed to write to dashboard: {:?}", why.to_string());
@@ -789,12 +795,10 @@ static/styles.css
                     .subcommand(
                         Command::new("controller")
                             .about("Generates a new controller")
-                            .arg(arg!(<name> "The name of the controller"))
-                            .subcommand_help_heading("SUBCOMMANDS:")
-                            // if no subcommand is provided, print help
-                            .subcommand_required(true)
-                            .arg_required_else_help(true)
-                            .allow_external_subcommands(true),
+                            .subcommand_required(false)
+                            .arg_required_else_help(false)
+                            .allow_external_subcommands(false)
+                           ,
                     )
                     .subcommand(
                         Command::new("model")
@@ -808,13 +812,7 @@ static/styles.css
                     )
                     .subcommand(
                         Command::new("controller")
-                            .about("Generates a new controller")
-                            .arg(arg!(<name> "The name of the controller"))
-                            .subcommand_help_heading("SUBCOMMANDS:")
-                            // if no subcommand is provided, print help
-                            .subcommand_required(true)
-                            .arg_required_else_help(true)
-                            .allow_external_subcommands(true),
+                            .about("Generates a new controller"),
                     )
                     .subcommand(
                         Command::new("migration")
@@ -1095,43 +1093,42 @@ static/styles.css
             }
             // Generate new controllers, models, controllers and migrations
             Some(("generate", matches)) => match matches.subcommand() {
-                Some(("controller", matches)) => {
-                    let name = matches.get_one::<String>("name").unwrap().to_string();
-                    let controller_type = match matches.get_one::<CRUDType>("type") {
-                        Some(controller_type) => controller_type.clone(),
-                        None => {
-                            println!("What type of controller would you like to create?");
-                            println!("1. GET");
-                            println!("2. POST");
-                            println!("3. PUT");
-                            println!("4. DELETE");
-                            let mut controller_type_choice = String::new();
-
-                            std::io::stdin()
-                                .read_line(&mut controller_type_choice)
-                                .expect("Failed to read line");
-
-                            let controller_type_choice_int =
-                                controller_type_choice.trim().parse::<u32>().unwrap();
-
-                            match controller_type_choice_int {
-                                1 => CRUDType::Read,
-                                2 => CRUDType::Create,
-                                3 => CRUDType::Update,
-                                4 => CRUDType::Delete,
-                                _ => {
-                                    println!("Invalid controller type choice");
-                                    return;
-                                }
-                            }
+                Some(("controller", _matches)) => {
+                    // because we removed the arguments from the user, we need to auto define the controller name below
+                    println!("What type of controller would you like to create?");
+                    println!("1. GET");
+                    println!("2. POST");
+                    println!("3. PUT");
+                    println!("4. DELETE");
+                    let mut controller_type_choice = String::new();
+                    std::io::stdin()
+                        .read_line(&mut controller_type_choice)
+                        .expect("Failed to read line");
+                    let controller_type_choice_int =
+                        controller_type_choice.trim().parse::<u32>().unwrap();
+                    let crud_type = match controller_type_choice_int {
+                        1 => CRUDType::Read,
+                        2 => CRUDType::Create,
+                        3 => CRUDType::Update,
+                        4 => CRUDType::Delete,
+                        _ => {
+                            println!("Invalid controller type choice");
+                            return;
                         }
                     };
-                    match create_new_controller(name, controller_type) {
-                        Ok(_) => {
-                            println!("You selected the {:?} controller", controller_type);
-                        }
-                        Err(e) => println!("Error creating controller: {}", e),
-                    }
+
+                    // ask the user the name of the controller
+                    println!("What is the name of the model you want to create a controller for?: ");
+                    println!("In order to work out of the box, ensure the model already exists.");
+                    let mut input = String::new();
+                    std::io::stdin().read_line(&mut input).unwrap();
+                    // this pattern needs to be repeated for each CRUD type
+                    let model_name = input.trim();
+
+                    let _ = create_new_controller(model_name.to_string(), crud_type)
+                        .await
+                        .expect("Error creating controller");
+
                 }
                 Some(("model", _matches)) => {
                     todo!("Implement this");

@@ -1,6 +1,6 @@
 [package]
 name = "rustyroad"
-version = "0.1.8-beta-2.0.3"
+version = "0.1.8-beta-2.0.4"
 edition = "2021"
 license = "MIT"
 description = "Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust."
@@ -17,9 +17,7 @@ clap = { version = "4.0.32", features = ["derive"] }
 serde = {version = "1.0.152", features = ["derive"] }
 toml = "0.8.1"
 pkg-config = {version = "0.3.26", optional = true}
-diesel = { version = "2.0", features = [  "r2d2"]}
 clap_complete = "4.1.5"
-diesel_migrations = "2.0"
 regex = "1.0"
 serde_regex = "1.0"
 rustyline = {version = "12.0.0", features = ["with-file-history"]} 
@@ -28,7 +26,7 @@ tempfile = "3.5.0"
 postgres = "0.19.5"
 r2d2 = "0.8.10"
 mysql = "24.0.0"
-sqlx = { version = "0.7.2", features = ["sqlite", "postgres", "time", "uuid", "mysql"] }
+sqlx = { version = "0.7.2", features = ["sqlite", "postgres", "time", "uuid", "mysql", "runtime-tokio"] }
 tokio = { version = "1.27.0", features = ["full"] }
 tokio-postgres = "0.7.8"
 futures-util = "0.3.28"

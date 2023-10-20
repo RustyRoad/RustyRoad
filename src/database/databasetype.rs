@@ -1,7 +1,7 @@
 use strum::IntoEnumIterator;
 
 use super::{category::DataTypeCategory, types_for_database::TypesForDatabase};
-use crate::database::PostgresTypes;
+use crate::database::{MySqlTypes, PostgresTypes};
 use std::fmt::{self, Display, Formatter};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DatabaseType {
@@ -89,6 +89,56 @@ impl DatabaseTypeTrait for PostgresDatabaseType {
 
         let types_for_database = vec![types_for_database];
         types_for_database
+    }
+}
+
+impl DatabaseTypeTrait for MySqlDatabaseType {
+    type DatabaseType = MySqlTypes;
+    type DataType = TypesForDatabase;
+    type DataTypeCategory = DataTypeCategory;
+
+    /// # Name: get_database_types
+    /// ## Description
+    /// This function returns a vector of all the database types for the given data type category.
+    /// ## Parameters
+    /// * `data_types_for_category` - A reference to a vector of data types for the given data type category.
+    /// * `data_type_category` - A reference to the data type category.
+    /// ## Returns
+    /// A vector of all the database types for the given data type category.
+    /// ## Example
+    /// ```
+    /// use rustyroad::database::{DatabaseTypeTrait, MySqlDatabaseType, types_for_database::TypesForDatabase, category::DataTypeCategory, databasetype::DatabaseType};
+    /// let mysql_database_type = MySqlDatabaseType;
+    /// let data_types_for_category = TypesForDatabase::new();
+    /// let data_type_category = DataTypeCategory::new("Text");
+    ///
+    /// match data_type_category {
+    ///   Some(data_type_category) => {
+    ///     let database_types = mysql_database_type.get_database_types(&data_types_for_category, &data_type_category);
+    ///    assert_eq!(database_types.len(), 1);
+    ///  assert_eq!(database_types[0].get_mysql_types(&data_type_category).len(), 5);
+    /// }
+    /// None => {
+    ///  println!("No data type category found");
+    /// }
+    /// }
+    /// ```
+    fn get_database_types(&self, data_types_for_category: &Self::DataType, data_type_category: &Self::DataTypeCategory) -> Vec<TypesForDatabase> {
+        let   database_types = MySqlTypes::iter();
+
+        let mut types_for_database = TypesForDatabase::new();
+
+        for data_type in database_types {
+            let _data_type = data_type.to_string();
+            let _data_type = data_type_category.get_data_types_from_data_type_category(DatabaseType::Mysql);
+            let data_type = data_types_for_category.get_mysql_types(data_type_category);
+            types_for_database.add_mysql_type(data_type_category.to_string(), data_type).expect("Failed to add mysql type");
+        }
+
+        let types_for_database = vec![types_for_database];
+        types_for_database
+
+
     }
 }
 

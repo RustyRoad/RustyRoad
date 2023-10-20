@@ -31,8 +31,8 @@ pub fn create_delete_controller_in_existing_folder(controller_name: String) -> R
     // if the user enters y, add the controller to the file for that controller
     if input == "y" {
         // ask the user the name of the controller
-        println!("What is the name of the controller that already exists?: ");
-        println!("In order to work out of the box, it should match the model that you are creating.");
+        println!("What is the name of the model you want to create a controller for?: ");
+        println!("In order to work out of the box, ensure the model already exists.");
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
         let input = input.trim();

@@ -23,6 +23,8 @@
 
 > Note: Rusty Road is still in development. Please use the release candidate or the cargo crate. Do not use master for production purposes. It is still under heavy development and is not ready for production use.
 
+
+
 <p align="center">
   Rusty Road is a powerful and reliable web framework for the Rust programming language, inspired by Ruby on Rails. Combining the familiar conventions and ease of use of Rails with the performance and efficiency of Rust, Rusty Road empowers developers to build cutting-edge web applications with confidence.
   <br>
@@ -40,6 +42,16 @@
   Don't let your web development be held back any longer. With Rusty Road, you can build fast and reliable applications that will delight your users and set you apart from the competition. Embrace the power of Rusty Road and elevate your web development today!
 </p>
 
+<!-- Whats new Section -->
+## 🆕 What's New in Rusty Road 0.1.8 <a name = "whats_new"></a>
+
+- Rusty Road now includes GrapeJS, a drag and drop website builder. You can add it to your project by running `rustyroad feature add grapesjs`.
+  <!-- tell them where to read more -->
+  1. You can read more about GrapeJS [here](https://grapesjs.com/).
+  2. Find the example project [here](/example-grapesjs/README.md).
+- Stable release of PostgreSQL support.
+- Beta release of MySQL support.
+- Beta release of SQLite support.
 
 
 

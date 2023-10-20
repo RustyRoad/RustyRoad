@@ -37,8 +37,10 @@ const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 ///
 /// create_migration("create_users_table").unwrap();
 /// ```
-pub async fn create_migration(name: &str) -> Result<(), io::Error> {
+pub async fn create_migration(name: &str) -> Result<String, io::Error> {
     let name = name.to_owned();
+
+
 
     let path = std::env::current_dir().unwrap();
 
@@ -122,8 +124,61 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
     };
 
     // loop through the number of columns and ask the user for the column name and type
-    let up_sql_contents = column_loop(num_columns, table_name.clone())
+    // we need to modify column_loop to return the model and the up.sql contents
+    let migration_and_struct  = column_loop(num_columns, table_name.clone())
         .expect("Failed to loop through columns and add them to the up.sql file. Please see documentation for more information.");
+
+    let up_sql_contents = migration_and_struct.up_sql_contents;
+
+    let mut contents = String::new();
+
+
+    // Check the database type
+    let database = Database::get_database_from_rustyroad_toml().unwrap();
+    let row_with_database_type = match database.database_type {
+        DatabaseType::Postgres => "postgres::PgRow",
+        DatabaseType::Sqlite => "sqlite::SqliteRow",
+        DatabaseType::Mysql => "mysql::MySqlRow",
+
+        _ => {
+            "error"
+        }
+    };
+
+    let imports = format!("use actix_web::web::to;
+use chrono::{{DateTime, NaiveDateTime, TimeZone, Utc}};
+use rustyroad::database::{{Database, DatabaseType, PoolConnection}};
+use serde::{{Deserialize, Serialize, Deserializer}};
+use sqlx::{{{}, FromRow, Row}};", row_with_database_type);
+
+    // Split the imports into lines
+    let import_lines: Vec<&str> = imports.lines().collect();
+
+    // Check each import line individually
+    for import_line in import_lines.iter() {
+        let trimmed_import_line = import_line.trim();
+        if !contents.contains(trimmed_import_line) {
+            // Add the trimmed import line to the file followed by a newline
+            contents.push_str(trimmed_import_line);
+            contents.push_str("\n");
+        }
+    }
+
+
+    // Check the struct
+    let struct_name = format!("{} {{", table_name);
+    if !contents.contains(&struct_name) {
+        // Add the struct name to the file followed by a newline
+        contents.push_str(&struct_name);
+        contents.push_str("\n");
+    }
+
+
+
+
+    contents.push_str(&migration_and_struct.rust_struct_contents);
+
+
 
     down_sql_contents.push_str(&format!("DROP TABLE {};", table_name));
 
@@ -135,7 +190,7 @@ pub async fn create_migration(name: &str) -> Result<(), io::Error> {
         panic!("Failed to write to {}: {}", &down_file, why.to_string());
     });
 
-    Ok(())
+    Ok(contents)
 }
 
 /// ## Name: initialize_migration
