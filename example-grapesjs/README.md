@@ -37,10 +37,9 @@ rustyroad feature add grapesjs
 
 ## Getting Started with this Example Project
 
-### Configure TailwindCSS
-
-To configure TailwindCSS, run `yarn tailwind init` to create a `tailwind.config.js` file. This file is used to configure TailwindCSS. You can read more about the configuration options [here](https://tailwindcss.com/docs/configuration).
-
+### Page Builder
+To access the page builder, go to the /page/{pageId} URL. For example, if you are running the server locally, log in and go to localhost/page/1 to access the page builder for the page with id 1.
+            
 ### Start the Server
  ```
  cargo run

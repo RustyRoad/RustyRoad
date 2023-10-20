@@ -1,6 +1,6 @@
+use crate::writers::write_to_new_update_controller;
 use crate::writers::{
-    add_new_controller_to_main_rs, write_to_controllers_mod, write_to_file, write_to_module,
-    write_to_new_get_controller_with_authorized_view, write_to_new_post_controller,
+    write_to_file, write_to_module, write_to_new_post_controller,
 };
 use chrono::Local;
 use std::env;
@@ -23,90 +23,87 @@ impl GrapesJs {
 
     pub async fn add_page(&mut self) -> Result<(), Error> {
         // move the contents of the page folder to the static folder
+        // create the edit page directory if it doesn't exist
         if let Ok(current_dir) = env::current_dir() {
-            println!("Current working directory: {:?}", current_dir);
-        } else {
-            eprintln!("Failed to retrieve the current working directory.");
-        }
-      
-        // create the edit page directory
-        create_dir("src/controllers/edit_page").expect("Couldn't create edit_page directory");
-
-        // create the edit page controller
-        create_file("src/controllers/edit_page/edit_page.rs")
-            .expect("Couldn't create edit_page.rs controller file");
-
-        // create the edit page module file
-        create_file("src/controllers/edit_page/mod.rs")
-            .expect("Couldn't create edit_page mod.rs file");
-
-        let mut component = Vec::new();
-
-        component.push("edit_page".to_string());
-
-        append_graped_js_to_header().expect("Couldn't append page to header");
-
-        add_new_controller_to_main_rs(Some("edit_page"), "edit_page")
-            .expect("Couldn't add new controller to main.rs");
-
-        write_to_module(&"src/controllers/edit_page/mod.rs".to_string(), component)
-            .expect("Couldn't write to edit_page mod.rs");
-
-        write_to_controllers_mod(
-            &"src/controllers/mod.rs".to_string(),
-            "edit_page".to_string(),
-        )
-        .expect("Couldn't write to controllers/mod.rs");
-
-        create_dir("src/views/layouts/authenticated/page").expect("Couldn't create page directory");
-
-        write_to_new_get_controller_with_authorized_view(
-            "edit_page".to_string(),
-            "page".to_string(),
-        )
-        .expect("Couldn't write to new get controller");
-
-        write_to_new_post_controller("page".to_string())
-            .expect("Couldn't write to new post controller");
-
-        match write_to_edit_page_html() {
-            Ok(_) => {
-                println!("Successfully wrote to edit_page.html");
+            // create the page directory
+            let page_directory = format!("{}/src/views/layouts/authenticated/page", current_dir.display());
+            // check if the page directory exists
+            let path_path = std::path::Path::new(&page_directory);
+            if !path_path.exists() {
+                // create the page directory
+                create_dir(page_directory.clone()).expect("Couldn't create page directory");
             }
-            Err(e) => {
-                println!("Error: {}", e);
+
+            println!("Writing to post controller");
+            write_to_new_post_controller("page".to_string())
+                .expect("Couldn't write to new post controller");
+
+            write_to_new_update_controller("page".to_string())
+                .expect("Couldn't write to new update controller");
+
+            match write_to_edit_page_html() {
+                Ok(_) => {
+                    println!("Successfully wrote to edit_page.html");
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                }
             }
-        }
 
-        // shifting to the get pages now
-        println!("Writing to get_page_by_id.rs");
-        write_to_get_page_by_id()
-            .await
-            .expect("Couldn't write to get_page_by_id.rs");
+            match write_to_create_page_html() {
+                Ok(_) => {
+                    println!("Successfully wrote to create_page.html");
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                }
+            }
 
-        write_to_page_model()
-            .await
-            .expect("Couldn't write to page model");
+            // shifting to the get pages now
+            println!("Writing to get_page_by_id.rs");
+            write_to_get_page_by_id()
+                .await
+                .expect("Couldn't write to get_page_by_id.rs");
 
-        // run the migrations
-        run_migration("page".to_string(), MigrationDirection::Up)
-            .await
-            .expect("Couldn't run page migration");
+            write_to_page_model()
+                .await
+                .expect("Couldn't write to page model");
 
+            // run the migrations
+            run_migration("page".to_string(), MigrationDirection::Up)
+                .await
+                .expect("Couldn't run page migration");
+
+                let readme_path = format!("{}/README.md", current_dir.display());
+
+                let readme_text = r#"
+                ### Page Builder
+To access the page builder, go to the /page/{pageId} URL. For example, if you are running the server locally, log in and go to localhost/page/1 to access the page builder for the page with id 1.
+"#;
+        
+
+                // write to the readme
+                write_to_file(&readme_path, readme_text.as_bytes())
+                    .expect("Couldn't write to readme");
+    
+            
+            } else {
+                println!("Couldn't get current directory");
+            }
         Ok(())
     }
+    
 }
 
 pub fn write_to_edit_page_html() -> Result<(), Error> {
     let contents: String = r#"
-   <!DOCTYPE html>
-<html class='bg-gray-50 h-full' lang='en'>
-
-<head>
-    {% block head %}
-    {% include 'sections/header.html.tera' %}
-    {% endblock head %}
-</head>
+    {% extends 'layouts/authenticated/authenticated.html.tera' %}
+    {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
+    
+    {% block authenticated_content %}
+    {{ super() }}
+    
+    
 
     <body id='app' class='h-full'>
         {% include 'components/navbar.html.tera'%}
@@ -184,8 +181,8 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
         const saveHtml = (HtmlGrapesJs) => {
             if (!isSaved) {
                 // save html to database
-                fetch('http://localhost:8080/page', {
-                    method: 'POST',
+                fetch('/page/{{page_id}}', {
+                    method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -248,14 +245,14 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
     "#
     .to_string();
 
-    create_file("src/views/layouts/authenticated/page/edit_page.html.tera")
-        .unwrap_or_else(|_| panic!("Error: Could not create edit_page.html.tera"));
+    create_file("src/views/layouts/authenticated/page/create_page.html.tera")
+        .unwrap_or_else(|_| panic!("Error: Could not create create_page.html.tera"));
 
     write_to_file(
-        "src/views/layouts/authenticated/page/edit_page.html.tera",
+        "src/views/layouts/authenticated/page/create_page.html.tera",
         contents.as_bytes(),
     )
-    .unwrap_or_else(|_| panic!("Error: Could not write to edit_page.html"));
+    .unwrap_or_else(|_| panic!("Error: Could not write to create_page.html"));
     Ok(())
 }
 
@@ -293,6 +290,8 @@ pub async fn write_to_page_model() -> Result<(), Error> {
         RETURNING *;\
         \"#;"
     );
+
+    let update_page_sql = format!("r#\"UPDATE page SET html_content = $1, updated_at = $2, metadata = $3 WHERE id = $4 RETURNING *;\"#;");
 
     let get_page_page_html = format!("r#\"SELECT * FROM page WHERE id = $1\"#;");
 
@@ -344,11 +343,10 @@ pub async fn write_to_page_model() -> Result<(), Error> {
     };
 
     let page_model_contents = format!(
-        r#"use actix_web::web::to;
-        use chrono::{{DateTime, NaiveDateTime, TimeZone, Utc}};
-    use rustyroad::database::{{Database, DatabaseType, PoolConnection}};
-    use serde::{{Deserialize, Serialize}};
-    use sqlx::{{postgres::PgRow, FromRow, Row}};
+        r#"use chrono::{{NaiveDateTime, TimeZone}};
+        use rustyroad::database::{{Database, PoolConnection}};
+        use sqlx::FromRow;
+    
 
     /// # Name: Page
     /// ### Description: A struct that represents a page created with page
@@ -391,13 +389,11 @@ pub async fn write_to_page_model() -> Result<(), Error> {
     ///
     /// let result = Page::get_db_pool();
     /// ```
-        #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+        #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize, FromRow)]
         pub struct Page {{
         pub id: Option<i32>,
         pub html_content: String,
-        #[serde(deserialize_with = "deserialize_unix_timestamp")]
         pub created_at: NaiveDateTime,
-        #[serde(deserialize_with = "deserialize_unix_timestamp")]
         pub updated_at: NaiveDateTime,
         pub associated_user_id: i32,
         pub metadata: String,
@@ -408,8 +404,8 @@ pub async fn write_to_page_model() -> Result<(), Error> {
                 Self {{
                     id: None,
                     html_content: "".to_string(),
-                    created_at: chrono::Utc::now(),
-                    updated_at: chrono::Utc::now(),
+                    created_at: chrono::Utc::now().naive_utc(),
+                    updated_at: chrono::Utc::now().naive_local(),
                     associated_user_id: 0,
                     metadata: "".to_string(),
                 }}
@@ -436,13 +432,13 @@ pub async fn write_to_page_model() -> Result<(), Error> {
             {pool_connection_code}
 
             let new_page:  Page = sqlx::query_as(&sql)
-            .bind(new_html.html_content)
-            .bind(new_html.created_at)
-            .bind(new_html.updated_at)
-            .bind(new_html.associated_user_id)
-            .bind(new_html.metadata)
-            .fetch_one(&pool_connection)
-            .await?;
+                .bind(new_html.html_content)
+                .bind(new_html.created_at)
+                .bind(new_html.updated_at)
+                .bind(new_html.associated_user_id)
+                .bind(new_html.metadata)
+                .fetch_one(&pool_connection)
+                .await?;
 
             Ok(serde_json::json!({{
                 "status": "success",
@@ -470,16 +466,51 @@ pub async fn write_to_page_model() -> Result<(), Error> {
             let page: Page = sqlx::query_as(&sql).bind(id).fetch_one(&pool_connection).await?;
             Ok(page)
     }}
+
+
+    /// # Name: update_page
+    /// ### Description: Updates a page
+    /// ### Parameters: id: i32, new_html: Page
+    /// ### Returns: Result<serde_json::Value, sqlx::Error>
+    /// ### Example:
+    /// ```
+    /// use rustyroad::models::page::Page;
+    /// let id = 1;
+    /// let new_html = Page::new();
+    /// let result = Page::update_page(id, new_html);
+    /// ```
+    pub async fn update_page(
+        id: i32,
+        new_html: Page,
+    ) -> Result<serde_json::Value, sqlx::Error> {{
+        let sql = {update_page_sql};
+        let database = Database::get_database_from_rustyroad_toml().unwrap();
+        {pool_connection_code}
+        let updated_page: Page = sqlx::query_as(&sql)
+            .bind(new_html.html_content)
+            .bind(new_html.updated_at)
+            .bind(new_html.metadata)
+            .bind(id)
+            .fetch_one(&pool_connection)
+            .await?;
+
+        Ok(serde_json::json!({{
+            "status": "success",
+            "message": "Page updated successfully",
+            "data": updated_page
+        }}))
+
+    }}
 }}
 
 
 
 fn deserialize_unix_timestamp<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
 where
-    D: Deserializer<'de>,
+    D: serde::Deserializer<'de>,
 {{
     let timestamp = i64::deserialize(deserializer)?;
-    Ok(chrono::Utc.timestamp(timestamp, 0).naive_utc())
+    Ok(chrono::Utc.timestamp_opt(timestamp, 0).single().unwrap().naive_utc())
 }}
 "#,
         create_page_sql = create_page_sql,
@@ -620,3 +651,159 @@ pub fn append_graped_js_to_header() -> Result<(), Error> {
 // need to add method to save the html to the database
 // this will need a special connection pool
 // we need to determine the database type from the rustyroad.toml
+
+
+pub fn write_to_create_page_html() -> Result<(), Error> {
+    let contents: String = r#"
+    {% extends 'layouts/authenticated/authenticated.html.tera' %}
+{% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
+
+{% block authenticated_content %}
+{{ super() }}
+
+
+        <div id="gjs" class="h-full" style="height: 100%; width: 100%;">
+            <div style="margin:100px 100px 25px; padding:25px; font:caption">
+                This is a demo content from _index.html. You can use this template file for development purpose. It
+                won't be stored in your git repository
+            </div>
+        </div>
+
+        <style>
+            body,
+            html {
+                height: 100%;
+                margin: 0;
+                }
+
+            .gjs-block {
+                padding: 0 !important;
+                width: 100% !important;
+                min-height: auto !important;
+                }
+
+            .gjs-block svg {
+                width: 100%;
+                }
+
+            .change-theme-button {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                margin: 5px;
+                }
+
+            .change-theme-button:focus {
+                /* background-color: yellow; */
+                outline: none;
+                box-shadow: 0 0 0 2pt #c5c5c575;
+            }
+
+
+            .gjs-pn-views-container {
+                height: auto !important;
+            }
+            </style>
+
+        <script>
+        const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
+
+        window.editor = grapesjs.init({
+            height: '100%',
+            container: '#gjs',
+            showOffsets: true,
+            fromElement: true,
+            noticeOnUnload: false,
+            storageManager: false,
+            selectorManager: { escapeName },
+            plugins: ['grapesjs-tailwind'],
+            pluginsOpts: {
+                'grapesjs-tailwind': { /* Test here your options  */ }
+            }
+        });
+        editor.Panels.addButton('options', {
+            id: 'update-theme',
+            className: 'fa fa-adjust',
+            command: 'open-update-theme',
+            attributes: {
+                title: 'Update Theme',
+                'data-tooltip-pos': 'bottom',
+            },
+        });
+
+        let isSaved = false;
+
+        const saveHtml = (HtmlGrapesJs) => {
+            if (!isSaved) {
+                // save html to database
+                fetch('/page', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(
+                        HtmlGrapesJs
+                    ),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+                        sender.set('active', 1); // turn on the button
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        sender.set('active', 1); // turn on the button
+                    });
+                isSaved = true;
+            }
+        };
+
+        editor.Commands.add('savePage', {
+            run(editor, sender) {
+                sender.set('active', 0); // turn off the button
+                // get html from editor
+                var html = editor.getHtml();
+                // create object to save to database
+                const now = Date.now();  // milliseconds since 1970-01-01T00:00:00Z
+                const HtmlGrapesJs = {
+                    html_content: html,
+                    created_at: Math.floor(now / 1000),  // convert to seconds
+                    updated_at: Math.floor(now / 1000),  // convert to seconds
+                    associated_user_id: 1,
+                    metadata: JSON.stringify({
+                        title: 'test',
+                        description: 'test',
+                        keywords: 'test',
+                    }),
+                };
+                saveHtml(HtmlGrapesJs);
+            }
+        });
+
+        editor.Panels.addButton('options', {
+            id: 'savePage',
+            className: 'fa fa-save',
+            command: 'savePage',
+            attributes: {
+                title: 'Save HTML',
+                'data-tooltip-pos': 'bottom',
+            },
+        });
+        </script>
+        {% endblock authenticated_content %}
+    "#
+    .to_string();
+
+    let path = std::path::Path::new("src/views/layouts/authenticated/page/create_page.html.tera");
+    if !path.exists() {
+        println!("Creating the create_page.html.tera file...");
+        create_file("src/views/layouts/authenticated/page/create_page.html.tera")
+            .expect("Error creating the create_page.html.tera file");
+    }
+    write_to_file(
+        "src/views/layouts/authenticated/page/create_page.html.tera",
+        contents.as_bytes(),
+    )
+    .unwrap_or_else(|_| panic!("Error: Could not write to create_page.html"));
+    Ok(())
+}       

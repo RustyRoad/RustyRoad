@@ -17,13 +17,13 @@ pub fn write_to_cargo_toml(project: &Project, database_data: &Database) -> Resul
     let dependencies = match database_data.database_type {
         DatabaseType::Postgres => {
             r#"[dependencies.sqlx]
-features = ["postgres", "macros", "chrono", "json", "uuid", "offline"]
-version = "0.6.2""#
+features = ["postgres", "macros", "chrono", "json", "uuid", "runtime-tokio"]
+version = "0.7.2""#
         }
         DatabaseType::Mysql => {
             r#"[dependencies.sqlx]
-features = ["mysql", "macros", "chrono", "json", "uuid", "offline"]
-version = "0.6.2""#
+features = ["mysql", "macros", "chrono", "json", "uuid", "runtime-tokio"]
+version = "0.7.2""#
         }
         DatabaseType::Sqlite => {
             r#"[dependencies.rusqlite]
@@ -60,13 +60,14 @@ local-ip-address = "0.5.0"
 futures = "0.3.23"
 tera = "1.17.1"
 reqwest = "0.11"
-rustyroad = "0.1.7"
+rustyroad = {{ path = "../RustyRoad" }}
 rand = "0.8.5"
-chrono = "0.4.24"
+chrono = {{ version = "0.4.24", features = ["serde"] }}
 base64 = "0.21.0"
 dotenv = "0.15.0"
 bcrypt = "0.14.0"
 color-eyre = "0.6.2"
+serde_derive = "1.0.189"
 {}
 "#,
         &project.name, dependencies

@@ -2332,7 +2332,7 @@ dependencies = [
 
 [[package]]
 name = "rustyroad"
-version = "0.1.8-beta-2.0.3"
+version = "0.1.8-beta-2.0.4"
 dependencies = [
  "bcrypt",
  "chrono",
@@ -2684,6 +2684,8 @@ dependencies = [
  "sqlformat",
  "thiserror",
  "time 0.3.20",
+ "tokio",
+ "tokio-stream",
  "tracing",
  "url",
  "uuid",
@@ -2724,6 +2726,7 @@ dependencies = [
  "sqlx-sqlite",
  "syn 1.0.109",
  "tempfile",
+ "tokio",
  "url",
 ]
 
@@ -3094,6 +3097,17 @@ dependencies = [
  "socket2 0.5.2",
  "tokio",
  "tokio-util",
+]
+
+[[package]]
+name = "tokio-stream"
+version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "397c988d37662c7dda6d2208364a706264bf3d6138b11d436cbac0ad38832842"
+dependencies = [
+ "futures-core",
+ "pin-project-lite",
+ "tokio",
 ]
 
 [[package]]

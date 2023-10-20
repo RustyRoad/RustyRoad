@@ -3,16 +3,16 @@
 
     <head>
         {% block head %}
-        {% include 'sections/header.html.tera' %}
+        {% include 'sections/header.html.tera' ignore missing %}
         {% endblock head %}
     </head>
     
     {% include 'components/navbar.html.tera'%}
     <body id='app' class='h-full dark:bg-slate-800'>
-        <div id='content'>{% block content %}{% endblock content %}</div>
+       {% block content %}{% endblock content %}
         <div id='footer'>
             {% block footer %}
-            {% include 'sections/footer' ignore missing %}
+            {% include 'sections/footer.html.tera' ignore missing %}
             {% endblock footer %}
         </div>
     </body>

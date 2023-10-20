@@ -11,9 +11,9 @@ pub fn write_to_base_html(name: &String) -> Result<(), std::io::Error> {
         {% endblock head %}
     </head>
 
-    <body id='app' class='h-full'>
+    <body id='app' class='h-full flex flex-col'>
         {% include 'components/navbar.html.tera'%}
-        <div id='content'>{% block content %}{% endblock content %}</div>
+        <div class="h-full" id='content'>{% block content %}{% endblock content %}</div>
         <div id='footer'>
             {% block footer %}
             {% include 'sections/footer' ignore missing %}

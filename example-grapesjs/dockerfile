@@ -1,0 +1,29 @@
+# Use an official Rust runtime as a parent image
+FROM rust:latest as builder
+
+# Set the current working directory inside the container
+WORKDIR /usr/src/rustyroad-grapesjs-example
+
+# Copy the current directory contents into the container
+COPY . .
+
+# Install PostgreSQL client libraries including libpq
+RUN apt-get update && apt-get install -y libpq-dev
+
+# Create a dummy main.rs to build dependencies and cache them
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs
+
+# Build the Rust project
+RUN cargo build --release
+
+# Use a smaller image for the final build
+FROM debian:buster-slim
+
+# Install libpq for runtime
+RUN apt-get update && apt-get install -y libpq5 && rm -rf /var/lib/apt/lists/*
+
+# Copy the binary from the builder stage to the final image
+COPY --from=builder /usr/src/rustyroad-grapesjs-example/target/release/rustyroad-grapesjs-example /usr/local/bin/
+
+# Set the command to run your application
+CMD ["rustyroad-grapesjs-example"]

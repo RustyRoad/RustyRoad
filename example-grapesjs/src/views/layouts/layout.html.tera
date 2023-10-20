@@ -3,10 +3,6 @@
 
 {% block content %}
 
-
-
-
-
 <main class="py-10 lg:pl-72">
   <div id='content'>
     {% block main_content %}

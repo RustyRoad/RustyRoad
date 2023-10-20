@@ -17,8 +17,9 @@ async fn dashboard_controller(tmpl: web::Data<Tera>, user: Option<Identity>) -> 
         context.insert("title", "Login");
         context.insert("route_name", "login");
         context.insert("error", "You must be logged in to view this page.");
+        let rendered = tmpl.render("pages/login.html.tera", &context).unwrap();
         HttpResponse::Found()
-            .append_header((actix_web::http::header::LOCATION, "/login"))
-            .finish()
+            .status(actix_web::http::StatusCode::UNAUTHORIZED)
+            .body(rendered)
     }
 }

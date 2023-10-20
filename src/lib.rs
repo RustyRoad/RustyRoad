@@ -173,6 +173,7 @@ pub struct Project {
     pub forgot_password_controller: String,
     pub dashboard_controller: String,
     pub navbar_component: String,
+    pub sidebar_component: String,
     pub header_section: String,
 }
 
@@ -527,6 +528,11 @@ static/styles.css
         // write to navbar
         write_to_navbar(&project).unwrap_or_else(|why| {
             println!("Failed to write to navbar: {:?}", why.to_string());
+        });
+
+        // write to sidebar
+        write_to_sidebar(&project).unwrap_or_else(|why| {
+            println!("Failed to write to sidebar: {:?}", why.to_string());
         });
 
         // write to the dashboard page

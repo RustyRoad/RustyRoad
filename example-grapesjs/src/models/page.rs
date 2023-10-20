@@ -1,8 +1,19 @@
-        use actix_web::web::to;
+        use std::fs::Metadata;
+
+use actix_web::web::to;
         use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
         use rustyroad::database::{Database, DatabaseType, PoolConnection};
         use serde::{Deserialize, Serialize, Deserializer};
         use sqlx::{postgres::PgRow, FromRow, Row};
+
+
+use sqlx::{Decode, Type, Postgres, TypeInfo, ValueRef};
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow, sqlx::Type)]
+pub struct PageMetadata {
+    keywords: String,
+}
+
 
         /// # Name: Page
         /// ### Description: A struct that represents a page created with page
@@ -46,26 +57,32 @@
         /// let result = Page::get_db_pool();
         /// ```
             #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-            pub struct Page {
+            pub struct Page { 
             pub id: Option<i32>,
+            pub title: String,
+            pub slug: String,
             pub html_content: String,
             #[serde(deserialize_with = "deserialize_unix_timestamp")]
             pub created_at: NaiveDateTime,
             #[serde(deserialize_with = "deserialize_unix_timestamp")]
             pub updated_at: NaiveDateTime,
             pub associated_user_id: i32,
-            pub metadata: String,
+            pub metadata: PageMetadata
             }
 
             impl Page {
                 pub fn new() -> Self {
                     Self {
                         id: None,
+                        title: "".to_string(),
+                        slug: "".to_string(),
                         html_content: "".to_string(),
                         created_at: chrono::Utc::now().naive_utc(),
                         updated_at: chrono::Utc::now().naive_utc(),
                         associated_user_id: 0,
-                        metadata: "".to_string(),
+                        metadata: PageMetadata {
+                            keywords: "".to_string(),
+                        }
                     }
                 }
 
@@ -81,8 +98,8 @@
             /// let result = Page::create_new_database_page(new_html);
             /// ```
             pub async fn create_page(new_html: Page) -> Result<serde_json::Value, sqlx::Error> {
-                let sql = r#"INSERT INTO page (html_content, created_at, updated_at, associated_user_id, metadata)
-            VALUES ($1, $2, $3, $4, $5)
+                let sql = r#"INSERT INTO page (title, slug, html_content,  created_at, updated_at, associated_user_id, array_agg(metadata.keywords))  as "metadata: PageMetadata"
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *;"#;
 
                 let database = Database::get_database_from_rustyroad_toml().unwrap();
@@ -102,7 +119,7 @@
                 .bind(new_html.created_at)
                 .bind(new_html.updated_at)
                 .bind(new_html.associated_user_id)
-                .bind(new_html.metadata)
+                .bind(new_html.metadata.keywords)
                 .fetch_one(&pool_connection)
                 .await?;
 
@@ -158,7 +175,7 @@
 
             r#"
             UPDATE page
-            SET html_content = $1, updated_at = $2, metadata = $3
+            SET title = $1, slug = $2, html_content = $3, updated_at = $4, metadata = $5
             WHERE id = $4
             RETURNING *
             "#
@@ -202,10 +219,10 @@
 }
 
 
-    fn deserialize_unix_timestamp<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let timestamp = i64::deserialize(deserializer)?;
-        Ok(chrono::Utc.timestamp(timestamp, 0).naive_utc())
-    }
+fn deserialize_unix_timestamp<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
+where
+    D: Deserializer<'de>,   
+{
+    let timestamp = i64::deserialize(deserializer)?;
+    Ok(chrono::Utc.timestamp_opt(timestamp, 0).naive_utc())
+}

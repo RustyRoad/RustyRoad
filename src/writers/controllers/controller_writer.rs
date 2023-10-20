@@ -222,8 +222,10 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
                 "./src/controllers/{}/{}.rs",
                 model_name, model_name
             );
+            // Create the file
+            std::fs::File::create(PathBuf::from(&path)).unwrap();
             // Add the controller to the controllers/mod.rs file
-
+            
             // read the contents of the file so we don't overwrite it
             let mut file_contents = fs::read_to_string(&path).unwrap();
 
@@ -239,7 +241,13 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
                         Some(&model_name),
                         &format!("create_{}", &model_name),
                     )
-                    .unwrap();
+                    .unwrap_or_else(|why| {
+                        println!(
+                            "Couldn't add the create_{} controller to the main.rs file: {}",
+                            &model_name,
+                            why.to_string()
+                        );
+                    });
 
                     let mut components = Vec::new();
 
@@ -275,8 +283,18 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
 
             match fs::write(PathBuf::from(&path), file_contents.as_bytes()) {
                 Ok(()) => {
-                    add_new_controller_to_main_rs(Some(&model_name), &model_name)
-                        .unwrap();
+                    add_new_controller_to_main_rs(
+                        Some(&model_name),
+                        &format!("create_{}", &model_name),
+                    )
+                    .unwrap_or_else(|why| {
+                        println!(
+                            "Couldn't add the create_{} controller to the main.rs file: {}",
+                            &model_name,
+                            why.to_string()
+                        );
+                    });
+
 
                     let mut components = Vec::new();
 
@@ -298,6 +316,12 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
             "./src/controllers/{}/{}.rs",
             model_name, model_name
         );
+
+        // Create the file
+        std::fs::File::create(PathBuf::from(&path)).unwrap();
+        // Add the controller to the controllers/mod.rs file
+        
+
         // Write the contents to the file
         // The write_to_file function is assumed to be a function that takes a path and a byte slice and writes the bytes to the file at the path
         // If the file doesn't exist, the function will create it, and if it does exist, the function will overwrite it
@@ -313,15 +337,30 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
 
         match fs::write(PathBuf::from(&path), file_contents.as_bytes()) {
             Ok(()) => {
-                add_new_controller_to_main_rs(Some(&model_name), &model_name).unwrap();
+                add_new_controller_to_main_rs(
+                    Some(&model_name),
+                    &format!("create_{}", &model_name),
+                )
+                .unwrap_or_else(|why| {
+                    println!(
+                        "Couldn't add the create_{} controller to the main.rs file: {}",
+                        &model_name,
+                        why.to_string()
+                    );
+                });
 
                 let mut components = Vec::new();
 
                 components.push(format!("{}", &model_name));
 
-                let module_path = format!("src/controllers/{}/mod.rs", &model_name);
+                let module_file = format!("src/controllers/{}/mod.rs", &model_name);
+                let module_file_path = std::path::Path::new(&module_file);
 
-                write_to_module(&module_path, components)
+                if !module_file_path.exists() {
+                    create_file(&module_file).expect("Couldn't create edit_page mod.rs file");
+                }
+
+                write_to_module(&module_file, components)
                     .expect("Error writing the module to the controllers module");
 
                 println!("Successfully written to {}.rs", model_name)
@@ -329,6 +368,8 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
             Err(e) => println!("Failed to write to {}.rs: {:?}", model_name, e),
         }
     }
+    // we need to manually add the "create "
+
     // Return Ok if everything succeeded
     Ok(())
 }
@@ -437,17 +478,11 @@ pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
     let capitalized_model_name = crate::helpers::helpers::capitalize_first(&model_name);
 
     let contents = format!(
-        r#"
-
-        use actix_identity::Identity;
-        use actix_web::{{patch, web, HttpResponse}};
-        use crate::models::{};
-
-        /// Alert: This is a generated controller.
+        r#"/// Alert: This is a generated controller.
         /// The controller is generated by the rustyroad CLI.
         /// It is a best guess at what the controller should look like.
         /// Please review the controller and make any necessary changes.
-        #[patch("/{}")]
+        #[actix_web::patch("/{}")]
         pub async fn update_{}(id: web::Path<i32>, {}: web::Json<{}>, user: Option<Identity>) -> HttpResponse {{
             if let Some(user) = user {{
                 let result = {}::update_{}(*id, {}.into_inner()).await;
@@ -465,12 +500,11 @@ pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
                     .finish()
             }}
         }}"#,
+        &model_name,
+        &model_name,
+        &model_name,
         &capitalized_model_name,
         &model_name,
-        &model_name,
-        &model_name,
-        &model_name,
-        &capitalized_model_name,
         &capitalized_model_name,
         &model_name,
         &model_name
@@ -788,17 +822,24 @@ async fn login_function(
     db: web::Data<Database>,
     req: HttpRequest
 ) -> Result<HttpResponse, actix_web::Error> {
-     form.user_login(tmpl, db.get_ref().clone(), req).await
+     form.user_login(req, tmpl, db.get_ref().clone()).await
 }
 
 
 #[get("/logout")]
 async fn user_logout(
     tmpl: web::Data<Tera>,
-    req: HttpRequest, // Add the HttpRequest
+    user: Option<actix_identity::Identity>,
 ) -> Result<HttpResponse, Error> {
- let database = rustyroad::database::Database::get_database_from_rustyroad_toml().unwrap();
-    UserLogin::user_logout(tmpl, database, req).await
+    if let Some(user) = user {
+        UserLogin::user_logout(tmpl, user).await
+   } else {
+         let mut context = Context::new();
+         context.insert("controller_name", "login");
+         context.insert("error", "You must be logged in to logout.");
+         let rendered = tmpl.render("pages/login.html.tera", &context).unwrap();
+         Ok(HttpResponse::Ok().body(rendered))
+   }
 }
 "#
     .to_string();

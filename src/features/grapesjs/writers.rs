@@ -8,37 +8,68 @@ use eyre::Error;
 
 pub async fn write_to_get_page_by_id() -> Result<(), Error> {
     let contents = r#"use crate::models;
-use actix_web::{get, web, HttpRequest, HttpResponse};
-use color_eyre::eyre::Error;
-use tera::Tera;
-
-#[get("/page/{id}")]
-async fn get_page_by_id(
-    tmpl: web::Data<Tera>,
-    id: web::Path<i32>
-) -> HttpResponse {
-    let result = models::Page::get_page_by_id(id.into_inner()).await;
-    match result {
-        Ok(page) => {
-            let mut context = tera::Context::new();
-
-            let html_content = page.html_content;
-
-            context.insert("html_content", &html_content);
-            let s = tmpl.render("pages/page.html.tera", &context).unwrap();
-            HttpResponse::Ok().body(s)
+    use actix_web::{get, web, HttpResponse};
+    use actix_identity::Identity;
+    use tera::Tera;
+    // I want this to be only after the page is created
+    // we can create another controller for just loading the editor instead of get_by_id
+    #[get("/page/{id}")]
+    async fn get_page_by_id(
+        tmpl: web::Data<Tera>,
+        id: web::Path<i32>,
+        user: Option<Identity>
+    ) -> HttpResponse {
+        if let Some(_user) = user {
+            let result = models::Page::get_page_by_id(id.into_inner()).await;
+            match result {
+                Ok(page) => {
+                    let mut context = tera::Context::new();
+                    context.insert("title", "Page");
+                    context.insert("route_name", "page");
+                    context.insert("page", &page);
+                    context.insert("html_content", &page.html_content);
+                    context.insert("page_id", &page.id);
+                    let s = tmpl.render("layouts/authenticated/page/edit_page.html.tera", &context).unwrap();
+                    HttpResponse::Ok().body(s)
+                }
+                Err(e) => {
+                    let mut context = tera::Context::new();
+                    context.insert("message", "create your page");
+                    let s = tmpl.render("layouts/authenticated/page/create_page.html.tera", &context).unwrap();
+                    HttpResponse::Ok().body(s)
+                }
+            }
+        } else {
+            let result = models::Page::get_page_by_id(id.into_inner()).await;
+            match result {
+                Ok(page) => {
+                    let mut context = tera::Context::new();
+                    context.insert("title", "Create Page");
+                    context.insert("route_name", "create_page");
+                    context.insert("html_content", &page.html_content);
+                    context.insert("page_id", &page.id);
+                    let s = tmpl.render("pages/page.html.tera", &context).unwrap();
+                    HttpResponse::Ok().body(s)
+                }
+                Err(e) => {
+                    let mut context = tera::Context::new();
+                    context.insert("error", &e.to_string());
+                    let s = tmpl.render("pages/404.html.tera", &context).unwrap();
+                    HttpResponse::Ok().body(s)
+                }
+            }   
         }
-        Err(e) => {
-            let mut context = tera::Context::new();
-            context.insert("error", &e.to_string());
-            let s = tmpl.render("pages/404.html.tera", &context).unwrap();
-            HttpResponse::Ok().body(s)
+    }    
+"#;
+    let page_controllers_path = std::path::Path::new("src/controllers/page");
+    if !page_controllers_path.exists() {
+        println!("Creating the page controllers directory...");
+        if (create_dir("src/controllers/page")).is_err() {
+          println!("Error creating the page controllers directory");
+        } else {
+            println!("Page controllers directory created successfully!");
         }
     }
-}
-"#;
-    create_dir("src/controllers/page").expect("Error creating the page controllers directory");
-    println!("Page controllers directory created successfully!");
     println!("adding the page controllers module to the controllers module...");
     write_to_controllers_mod(&"src/controllers/mod.rs".to_string(), "page".to_string())
         .expect("Error writing the page controllers module to the controllers module");

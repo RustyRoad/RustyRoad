@@ -54,9 +54,9 @@ impl UserLogin {
     }
     pub async fn user_login(
         &self,
+        request: HttpRequest,
         tmpl: web::Data<Tera>,
         database: Database,
-        request: HttpRequest
     ) -> Result<HttpResponse, Error> {
         let mut ctx = Context::new();
 
@@ -182,6 +182,7 @@ impl UserLogin {
     }
     pub async fn user_login(
         &self,
+        request: HttpRequest,
         tmpl: web::Data<Tera>,
         database: Database
     ) -> Result<HttpResponse, Error> {
@@ -242,9 +243,7 @@ impl UserLogin {
        tmpl: web::Data<Tera>,
        user: Identity,
     ) -> Result<HttpResponse, Error> {
-
-            user.logout();
-
+       user.logout();
        let mut context = Context::new();
        context.insert("route_name", "login");
        context.insert("message", "You have been logged out.");
@@ -311,6 +310,7 @@ let row: (String,) = sqlx::query_as("SELECT password FROM Users WHERE username =
 }
 pub async fn user_login(
     &self,
+    request: HttpRequest,
     tmpl: web::Data<Tera>,
     database: Database
 ) -> Result<HttpResponse, Error> {
@@ -366,8 +366,7 @@ pub async fn user_login(
        tmpl: web::Data<Tera>,
        user: Identity,
     ) -> Result<HttpResponse, Error> {
-        user.logout();
-
+       user.logout();
        let mut context = Context::new();
        context.insert("route_name", "login");
        context.insert("message", "You have been logged out.");
