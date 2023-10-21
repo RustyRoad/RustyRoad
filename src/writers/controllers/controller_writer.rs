@@ -504,8 +504,8 @@ pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
         &model_name,
         &model_name,
         &capitalized_model_name,
-        &model_name,
         &capitalized_model_name,
+        &model_name,
         &model_name,
         &model_name
     );

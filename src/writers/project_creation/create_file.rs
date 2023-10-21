@@ -51,6 +51,7 @@ pub fn create_files(project: &Project) -> Result<(), Error> {
         &project.dashboard_controller,
         &project.index_js,
         &project.navbar_component,
+        &project.sidebar_component,
         &project.header_section,
     ];
 

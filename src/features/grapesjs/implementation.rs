@@ -344,9 +344,10 @@ pub async fn write_to_page_model() -> Result<(), Error> {
 
     let page_model_contents = format!(
         r#"use chrono::{{NaiveDateTime, TimeZone}};
-        use rustyroad::database::{{Database, PoolConnection}};
-        use sqlx::FromRow;
-    
+use rustyroad::database::{{Database, PoolConnection}};
+use serde::{{Deserialize, Deserializer}};
+use sqlx::FromRow;
+        
 
     /// # Name: Page
     /// ### Description: A struct that represents a page created with page

@@ -60,7 +60,7 @@ local-ip-address = "0.5.0"
 futures = "0.3.23"
 tera = "1.17.1"
 reqwest = "0.11"
-rustyroad = {{ path = "../RustyRoad" }}
+rustyroad = "0.1.8-beta-2.0.5"
 rand = "0.8.5"
 chrono = {{ version = "0.4.24", features = ["serde"] }}
 base64 = "0.21.0"

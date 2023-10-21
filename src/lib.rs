@@ -33,7 +33,7 @@ use sqlx::mysql::MySqlConnectOptions;
 use sqlx::postgres::PgConnectOptions;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
-use std::{env};
+use std::env;
 use std::{fs::OpenOptions, io::Write};
 use tokio::io;
 
@@ -545,6 +545,9 @@ static/styles.css
             println!("Failed to write to login: {:?}", why.to_string());
         });
 
+        write_to_authenticated_layout(project.clone()).unwrap_or_else(|why| {
+            println!("Failed to write to authenticated layout: {:?}", why.to_string());
+        });
         // We need to tell Diesel where to find our database. We do this by setting the DATABASE_URL environment variable.
         // We can do this by running the following command in the terminal:
         let temp_database = &database_data.clone();

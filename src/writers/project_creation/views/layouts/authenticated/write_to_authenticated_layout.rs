@@ -1,4 +1,4 @@
-use crate::writers::{controller_writer, write_to_controllers_mod, write_to_file};
+use crate::writers::write_to_file;
 use color_eyre::eyre::Result;
 use crate::Project;
 use std::io::Error;

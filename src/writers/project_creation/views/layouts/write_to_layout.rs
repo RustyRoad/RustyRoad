@@ -1,5 +1,9 @@
-pub fn write_to_layout(project: Project) -> Result<(), Error> {
-    let contents = r#"{% extends 'base.html.tera' %}
+use eyre::Error;
+
+use crate::Project;
+
+pub fn write_to_layout(_project: Project) -> Result<(), Error> {
+    let _contents = r#"{% extends 'base.html.tera' %}
 {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
 {% block head %}
 {{ super() }}
@@ -29,12 +33,12 @@ pub fn write_to_layout(project: Project) -> Result<(), Error> {
 </main>
 {% endblock content %}"#.to_string();
 
-    write_to_file(&project.layout, contents.as_bytes()).unwrap_or_else(|why| {
-        panic!(
-            "Couldn't write to {}: {}",
-            &project.layout, why
-        )
-    });
+    // write_to_file(&project., contents.as_bytes()).unwrap_or_else(|why| {
+    //     panic!(
+    //         "Couldn't write to {}: {}",
+    //         &project.layout, why
+    //     )
+    // });
 
     Ok(())
 }
