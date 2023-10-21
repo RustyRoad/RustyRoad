@@ -235,24 +235,18 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
             },
         });
         </script>
-        <div id='footer'>
-            {% block footer %}
-            {% include 'sections/footer' ignore missing %}
-            {% endblock footer %}
-        </div>
-        </body>
-</html>
+        {% endblock authenticated_content %}
     "#
     .to_string();
 
-    create_file("src/views/layouts/authenticated/page/create_page.html.tera")
-        .unwrap_or_else(|_| panic!("Error: Could not create create_page.html.tera"));
+    create_file("src/views/layouts/authenticated/page/edit_page.html.tera")
+        .unwrap_or_else(|_| panic!("Error: Could not create edit_page.html.tera"));
 
     write_to_file(
-        "src/views/layouts/authenticated/page/create_page.html.tera",
+        "src/views/layouts/authenticated/page/edit_page.html.tera",
         contents.as_bytes(),
     )
-    .unwrap_or_else(|_| panic!("Error: Could not write to create_page.html"));
+    .unwrap_or_else(|_| panic!("Error: Could not write to edit_page.html"));
     Ok(())
 }
 

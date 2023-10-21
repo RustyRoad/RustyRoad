@@ -61,6 +61,7 @@ pub fn new(name: String) -> Project {
     let forgot_password_page_html = format!("{}/forgot_password.html.tera", template_pages);
     let dashboard_page_html = format!("{}/dashboard.html.tera", template_pages);
     let authenticated_layout = format!("{}/authenticated.html.tera", auth_template_layouts);
+    let layout_template = format!("{}/layout.html.tera", template_layouts);
     let user_controller_directory = format!("{}/user", controllers);
     let user_controller = format!("{}/user.rs", user_controller_directory);
     let user_controller_module = format!("{}/mod.rs", user_controller_directory);
@@ -95,6 +96,7 @@ pub fn new(name: String) -> Project {
         template_layouts,
         authenticated_layout,
         auth_template_layouts,
+        layout_template,
         template_pages,
         static_css,
         static_js,

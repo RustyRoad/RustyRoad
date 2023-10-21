@@ -115,6 +115,7 @@ pub struct Project {
     pub template_layouts: String,
     pub auth_template_layouts: String,
     pub authenticated_layout: String,
+    pub layout_template: String,
     pub template_pages: String,
     pub static_css: String,
     pub static_js: String,
@@ -547,6 +548,10 @@ static/styles.css
 
         write_to_authenticated_layout(project.clone()).unwrap_or_else(|why| {
             println!("Failed to write to authenticated layout: {:?}", why.to_string());
+        });
+
+        write_to_layout(project.clone()).unwrap_or_else(|why| {
+            println!("Failed to write to layout template: {:?}", why.to_string());
         });
         // We need to tell Diesel where to find our database. We do this by setting the DATABASE_URL environment variable.
         // We can do this by running the following command in the terminal:

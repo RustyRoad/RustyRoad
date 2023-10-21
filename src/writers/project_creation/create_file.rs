@@ -37,6 +37,7 @@ pub fn create_files(project: &Project) -> Result<(), Error> {
         &project.forgot_password_page_html,
         &project.dashboard_page_html,
         &project.authenticated_layout,
+        &project.layout_template,
         &project.user_controller,
         &project.user_model,
         &project.initial_migration_up,
