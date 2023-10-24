@@ -1,6 +1,5 @@
 use actix_identity::Identity;
 use actix_web::HttpMessage;
-use actix_web::HttpResponseBuilder;
 use actix_web::web;
 use actix_web::Error;
 use actix_web::HttpRequest;
@@ -42,16 +41,20 @@ impl UserLogin {
     }
     pub async fn user_login(
         &self,
+        request: HttpRequest,
         tmpl: web::Data<Tera>,
-        database: Database,
-        request: HttpRequest
+        database: Database
     ) -> Result<HttpResponse, Error> {
         let mut ctx = Context::new();
 
         // Create the database URL
         let database_url = format!(
             "postgres://{}:{}@{}:{}/{}",
-            database.username, database.password, database.host, database.port, database.name
+            database.username,
+            database.password,
+            database.host,
+            database.port,
+            database.name
         );
 
         // Create the database connection pool
@@ -59,7 +62,7 @@ impl UserLogin {
             .await
             .expect("Failed to connect to Postgres.");
 
-        // Retrieve the hashed password from the database
+      // Retrieve the hashed password from the database
         match Self::get_hashed_password_from_db(&self.username, &db_pool).await {
             Ok(hashed_password) => {
                 match verify(&self.password, &hashed_password) {
@@ -67,13 +70,17 @@ impl UserLogin {
                         if password_match {
                             // Here you can set the identity directly
                             Identity::login(&request.extensions(), self.username.clone()).unwrap();
-                            return Ok(
-                                // Forwards the request to the dashboard
-                                HttpResponse::Found() // <- Redirect to the dashboard
-                                    .append_header(("Location", "/dashboard"))
-                                    .finish(),
-                            );
 
+
+                            ctx.insert("username", &self.username.clone());
+                            ctx.insert("route_name", "dashboard");
+                            ctx.insert("title", "Dashboard");
+                            let body = tmpl
+                                .render("pages/dashboard.html.tera", &ctx)
+                                .unwrap();
+                            return Ok(HttpResponse::Ok()
+                                .append_header((actix_web::http::header::LOCATION, "/dashboard"))
+                                .body(body));
                         } else {
                             ctx.insert("error", "Invalid username or password");
                             let rendered = tmpl.render("pages/login.html.tera", &ctx).unwrap();
@@ -84,7 +91,7 @@ impl UserLogin {
                         panic!("Failed to verify password: {}", e);
                     }
                 }
-            }
+            },
             Err(e) => {
                 panic!("Failed to retrieve hashed password from database: {}", e);
             }
@@ -96,11 +103,11 @@ impl UserLogin {
        user: Identity,
     ) -> Result<HttpResponse, Error> {
        user.logout();
-
        let mut context = Context::new();
        context.insert("route_name", "login");
        context.insert("message", "You have been logged out.");
        let rendered = tmpl.render("pages/login.html.tera", &context).unwrap();
        Ok(HttpResponse::Ok().body(rendered))
     }
+
 }

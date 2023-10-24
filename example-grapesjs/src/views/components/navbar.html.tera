@@ -1,14 +1,18 @@
 <header class='relative'>
     <div class='bg-gray-900 pt-6'>
         <nav class='relative mx-auto flex max-w-7xl items-center justify-between px-6' aria-label='Global'>
-            <div class='flex items-center'>
+            <div class='flex flex-1 items-center'>
                 <div class='flex w-full items-center justify-between md:w-auto'>
+                    {% if username %}
+
+                    {% else %}
                     <a href='/'>
-                        <span class='sr-only'>Your Company</span>
-                        <img class='h-8 w-auto sm:h-10'
-                            src='https://tailwindui.com/img/logos/mark.svg?from-color=teal&from-shade=200&to-color=cyan&to-shade=400&toShade=400'
-                            alt=''>
-                    </a>
+                      <span class='sr-only'>Your Company</span>
+                      <img class='h-8 w-auto sm:h-10'
+                          src='https://tailwindui.com/img/logos/mark.svg?from-color=teal&from-shade=200&to-color=cyan&to-shade=400&toShade=400'
+                          alt=''>
+                  </a>
+                      {% endif %}
                     <div class='-mr-2 flex items-center md:hidden'>
                         <button type='button'
                             class='focus-ring-inset inline-flex items-center justify-center rounded-md bg-gray-900 p-2 text-gray-400 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-white'
@@ -24,13 +28,6 @@
                     </div>
                 </div>
             </div>
-            <!-- if logged in show dashboard button -->
-            {% if username %}
-            <div class='hidden md:flex md:items-center md:space-x-6'>
-                <a href="/dashboard"
-                    class='text-base font-medium text-white hover:text-gray-300'>Dashboard</a>
-            </div>
-            {% endif %}
             <div class='hidden md:flex md:items-center md:space-x-6'>
               {% if username %}
                 <a href="/logout" class="text-base font-medium text-white hover:text-gray-300">Logout</a>

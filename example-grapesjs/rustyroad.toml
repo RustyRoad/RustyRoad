@@ -1,7 +1,7 @@
 [rustyroad_project]
-name = "example2"
+name = "example-grapesjs"
 [database]
-database_name = "example_db2"
+database_name = "example_grapesjs"
 database_user = "postgres"
 database_password = "spike2"
 database_host = "localhost"

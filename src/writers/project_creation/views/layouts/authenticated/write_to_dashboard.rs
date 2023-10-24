@@ -23,7 +23,7 @@ pub fn write_to_dashboard(project: Project) -> Result<(), Error> {
         )
     });
 
-    controller_writer::write_to_initial_get_controller_rs(project.dashboard_controller.clone())
+    controller_writer::write_to_initial_get_controller(project.dashboard_controller.clone())
         .unwrap_or_else(|why| {
             panic!(
                 "Couldn't write to the: {}: {}",

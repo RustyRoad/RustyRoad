@@ -24,7 +24,7 @@ pub fn write_to_layout(project: Project) -> Result<(), Error> {
 {% endblock sidebar %}
 
 
-<main class="py-10 lg:pl-72">
+<main class="lg:pl-72">
   <div id='content'>
     {% block main_content %}
     <!-- Main content here -->

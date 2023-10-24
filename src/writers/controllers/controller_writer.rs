@@ -5,6 +5,18 @@ use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
+/// # Name: write_to_controller_name_html
+/// This function generates the html for a controller's view.
+/// It is a standard template that can be used for any controller.
+/// # Arguments:
+/// * controller_name: &str
+/// # Returns:
+/// * Result<(), Error>
+/// # Example:
+/// ```
+/// use rustyroad::writers::write_to_controller_name_html;
+/// write_to_controller_name_html("test");
+/// ```
 pub fn write_to_controller_name_html(controller_name: &str) -> Result<(), Error> {
     let contents = format!(
         r#"{{% extends 'base.html.tera' %}}
@@ -37,6 +49,19 @@ pub fn write_to_controller_name_html(controller_name: &str) -> Result<(), Error>
     Ok(())
 }
 
+/// # Name: write_to_controller_name_html_with_authorized_view
+/// This function generates the html for a controller's view with an authorized view.
+/// It is a standard template that can be used for any controller that requires authorization.
+/// # Arguments:
+/// * controller_name: &str
+/// * folder_name: &str
+/// # Returns:
+/// * Result<(), Error>
+/// # Example:
+/// ```
+/// use rustyroad::writers::write_to_controller_name_html_with_authorized_view;
+/// write_to_controller_name_html_with_authorized_view("test", "authenticated");
+/// ```
 pub fn write_to_controller_name_html_with_authorized_view(
     controller_name: &str,
     folder_name: &str,
@@ -472,9 +497,18 @@ pub fn write_to_new_delete_controller(model_name: String) -> Result<(), Error> {
     }
 }
 
+/// # Name: write_to_new_update_controller
+/// This function writes to a new update controller.
+/// # Arguments:
+/// * `controller_name` - The name of the controller, which is used to name the file, the handler function, and the URL path of the controller.
+/// # Returns:
+/// * `Ok(())` if the content was successfully written to the file, or an Error if something went wrong.
+/// # Example:
+/// ```
+/// use rustyroad::writers::write_to_new_update_controller;
+/// write_to_new_update_controller("user".to_string());
+/// ```
 pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
-
-
     let capitalized_model_name = crate::helpers::helpers::capitalize_first(&model_name);
 
     let contents = format!(
@@ -559,6 +593,18 @@ pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
     }
 }
 
+/// # Name: write_to_new_get_controller_with_authorized_view
+/// This function writes to a new get controller with an authorized view.
+/// # Arguments:
+/// * `controller_name` - The name of the controller, which is used to name the file, the handler function, and the URL path of the controller.
+/// * `folder_name` - The name of the folder that the controller will be written to.
+/// # Returns:
+/// * `Ok(())` if the content was successfully written to the file, or an Error if something went wrong.
+/// # Example:
+/// ```
+/// use rustyroad::writers::write_to_new_get_controller_with_authorized_view;
+/// write_to_new_get_controller_with_authorized_view("user".to_string(), "authenticated".to_string());
+/// ```
 pub fn write_to_new_get_controller_with_authorized_view(
     controller_name: String,
     folder_name: String,
@@ -620,23 +666,32 @@ pub fn write_to_new_get_controller_with_authorized_view(
     Ok(())
 }
 
-pub fn write_to_previous_get_controller(
-    previous_controller_name: String,
-    new_controller_name: String,
-) -> Result<(), Error> {
+/// # Name: write_to_previous_get_controller
+/// This function writes a GET controller to a controller that already exists.
+/// # Arguments:
+/// * `previous_controller_name` - The name of the controller that the new controller will be written to.
+/// * `new_controller_name` - The name of the new controller.
+/// # Returns:
+/// * `Ok(())` if the content was successfully written to the file, or an Error if something went wrong.
+/// # Example:
+/// ```
+/// use rustyroad::writers::write_to_previous_get_controller;
+/// write_to_previous_get_controller("user".to_string(), "get_user".to_string());
+/// ```
+pub fn write_to_previous_get_controller(previous_controller_name: String, new_controller_name: String ) -> Result<(), Error> {
     // Define the contents to be written to the file
     // This includes importing necessary Actix Web and Tera modules, defining the controller handler function,
     // and setting up the Tera template rendering
     let contents = format!(
         r#"
 
-#[get("/{}/{}")]
-async fn {}(tmpl: web::Data<Tera>) -> impl Responder {{
-    let mut context = Context::new();
-    context.insert("controller_name", "{}");
-    let rendered = tmpl.render("pages/{}.html.tera", &context).unwrap();
-    HttpResponse::Ok().body(rendered)
-}}"#,
+        #[get("/{}/{}")]
+        async fn {}(tmpl: web::Data<Tera>) -> impl Responder {{
+            let mut context = Context::new();
+            context.insert("controller_name", "{}");
+            let rendered = tmpl.render("pages/{}.html.tera", &context).unwrap();
+            HttpResponse::Ok().body(rendered)
+        }}"#,
         previous_controller_name,
         new_controller_name,
         new_controller_name,
@@ -669,7 +724,18 @@ async fn {}(tmpl: web::Data<Tera>) -> impl Responder {{
     Ok(())
 }
 
-
+/// # Name: write_to_previous_create_controller
+/// This function writes a POST controller to a controller that already exists.
+/// # Arguments:
+/// * `previous_controller_name` - The name of the controller that the new controller will be written to.
+/// * `new_controller_name` - The name of the new controller.
+/// # Returns:
+/// * `Ok(())` if the content was successfully written to the file, or an Error if something went wrong.
+/// # Example:
+/// ```
+/// use rustyroad::writers::write_to_previous_create_controller;
+/// write_to_previous_create_controller("user".to_string(), "create_user".to_string());
+/// ```
 pub fn write_to_previous_create_controller(
     previous_controller_name: String,
     new_controller_name: String,
@@ -748,9 +814,18 @@ pub fn write_to_previous_create_controller(
     Ok(())
 }
 
-
-
-pub fn write_to_initial_get_controller_rs(controller_name: String) -> Result<(), Error> {
+/// # Name: write_to_initial_get_controller
+/// This function writes a new GET controller handler function to a Rust source file.
+/// # Arguments:
+/// * `controller_name` - The name of the controller, which is used to name the file, the handler function, and the URL path of the controller.
+/// # Returns:
+/// * `Ok(())` if the content was successfully written to the file, or an Error if something went wrong.
+/// # Example:
+/// ```
+/// use rustyroad::writers::write_to_initial_get_controller;
+/// write_to_initial_get_controller("user".to_string());
+/// ```
+pub fn write_to_initial_get_controller(controller_name: String) -> Result<(), Error> {
     // trim the controller_name to remove the text before the last slash and the text before the .rs
     let new_controller_name = controller_name
         .trim_start_matches("./src/controllers/")
@@ -854,7 +929,18 @@ async fn user_logout(
     Ok(())
 }
 
-
+/// # Name: write_to_initial_get_controller_authorized_view
+/// This function writes a new GET controller that requires authentication to a Rust source file.
+/// # Arguments:
+/// * `controller_name` - The name of the controller, which is used to name the file, the handler function, and the URL path of the controller.
+/// * `folder_name` - The name of the folder that the controller will be written to.
+/// # Returns:
+/// * `Ok(())` if the content was successfully written to the file, or an Error if something went wrong.
+/// # Example:
+/// ```
+/// use rustyroad::writers::write_to_initial_get_controller_authorized_view;
+/// write_to_initial_get_controller_authorized_view("user".to_string(), "authenticated".to_string());
+/// ```
 pub fn write_to_initial_get_controller_authorized_view(
     controller_name: String,
     folder_name: String,
@@ -916,4 +1002,77 @@ pub async fn {}_controller_with_authorized_view(
     Ok(())
 }
 
+/// # Name: write_to_new_get_all_controller
+/// This function writes a new GET controller that gets all of the items of a model to a Rust source file.
+/// # Arguments:
+/// * `model_name` - The name of the model that the controller will get all of the items of.
+/// * `path` - The path to the file that the controller will be written to.
+/// # Returns:
+/// * `Ok(())` if the content was successfully written to the file, or an Error if something went wrong.
+/// # Example:
+/// ```
+/// use rustyroad::writers::write_to_new_get_all_controller;
+/// write_to_new_get_all_controller("user".to_string());
+/// ```
+pub fn write_to_new_get_all_controller(model_name: String, path: String) -> Result<(), Error> {
 
+    // look for the model in the models folder
+    let model_path = format!("./src/models/{}.rs", model_name);
+    let model_file_path = std::path::Path::new(&model_path);
+    if (!model_file_path.exists()) {
+        println!("The model {} does not exist. Would you like to create it? (y/n)", model_name);
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        if input.trim() == "y" {
+          println!("Do it yourself for now");
+        } else {
+            return Err(Error::new(
+                ErrorKind::Other,
+                "Model creation aborted by user",
+            ));
+        }
+    }
+
+    let capitalize_model_name = crate::helpers::helpers::capitalize_first(&model_name);
+
+
+    let controller_contents = format!(
+        r#"
+        use actix_web::{{get, web, HttpResponse}};
+        use crate::models::{};
+
+        #[get("/{}/all")]
+        pub async fn get_all_{}s() -> HttpResponse {{
+            let result = {}::get_all_{}().await;
+            match result {{
+                Ok({}) => HttpResponse::Ok().json({}),
+                Err(e) => HttpResponse::BadRequest().json(e.to_string()),
+            }}
+        }}"#,
+        &model_name,
+        &model_name,
+        &model_name,
+        &capitalize_model_name,
+        &model_name,
+        &capitalize_model_name,
+        &capitalize_model_name
+    );
+
+    // read the contents of the file so we don't overwrite it
+    let mut file_contents = fs::read_to_string(&path).unwrap();
+
+    // add two new lines to the end of the file
+    file_contents.push_str("\n\n");
+
+    // add the contents to the file
+    file_contents.push_str(&controller_contents);
+
+    match fs::write(PathBuf::from(&path), file_contents.as_bytes()) {
+        Ok(()) => {
+            add_new_controller_to_main_rs(Some(&model_name), &format!("get_all_{}", &model_name)).unwrap();
+            println!("Successfully written to {}.rs", model_name);
+            Ok(())
+        }
+        Err(e) => Err(e),
+    }
+}

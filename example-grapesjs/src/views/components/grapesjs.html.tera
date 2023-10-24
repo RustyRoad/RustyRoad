@@ -1,0 +1,42 @@
+<div id="gjs" style="height: 100%; width: 100%;">
+    <div style="margin:100px 100px 25px; padding:25px; font:caption">
+        This is a demo content from _index.html. You can use this template file for development purpose. It
+        won't be stored in your git repository
+    </div>
+</div>
+
+<style>
+    body,
+    html {
+        height: 80%;
+        margin: 0;
+        }
+
+    .gjs-block {
+        padding: 0 !important;
+        width: 100% !important;
+        min-height: auto !important;
+        }
+
+    .gjs-block svg {
+        width: 100%;
+        }
+
+    .change-theme-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin: 5px;
+        }
+
+    .change-theme-button:focus {
+        /* background-color: yellow; */
+        outline: none;
+        box-shadow: 0 0 0 2pt #c5c5c575;
+    }
+
+
+    .gjs-pn-views-container {
+        height: auto !important;
+    }
+    </style>

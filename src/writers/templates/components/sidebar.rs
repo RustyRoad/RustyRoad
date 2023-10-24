@@ -5,9 +5,9 @@ use std::io::Error;
 pub fn write_to_sidebar(project: &Project) -> Result<(), Error> {
     let contents = r#"
     <!-- Static sidebar for desktop -->
-    <div class='hidden lg:fixed left-0 lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col dark:bg-slate-800'>
+    <div class='hidden lg:fixed left-0 lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col dark:bg-slate-900'>
       <!-- Sidebar component, swap this element with another sidebar if you like -->
-      <div class='flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4 dark:bg-slate-800'>
+      <div class='flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 dark:border-gray-900 bg-white px-6 pb-4 dark:bg-slate-900'>
         <div class='flex h-16 shrink-0 items-center'>
           <img class='h-8 w-auto' src='https://tailwindui.com/img/logos/mark.svg?color=white' alt='Your Company'>
         </div>

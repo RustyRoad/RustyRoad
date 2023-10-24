@@ -70,7 +70,7 @@ pub fn write_to_login_page(project: Project) -> Result<(), Error> {
     write_to_file(&project.login_page_html, contents.as_bytes())
         .unwrap_or_else(|why| panic!("Couldn't write to {}: {}", &project.login_page_html, why));
 
-    controller_writer::write_to_initial_get_controller_rs(project.login_controller.clone())
+    controller_writer::write_to_initial_get_controller(project.login_controller.clone())
         .unwrap_or_else(|why| {
             panic!(
                 "Couldn't write to the: {}: {}",

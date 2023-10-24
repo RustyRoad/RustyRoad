@@ -1,4 +1,4 @@
-use crate::writers::write_to_new_update_controller;
+use crate::writers::{create_get_all_controller, write_to_new_get_all_controller, write_to_new_update_controller};
 use crate::writers::{
     write_to_file, write_to_module, write_to_new_post_controller,
 };
@@ -34,12 +34,19 @@ impl GrapesJs {
                 create_dir(page_directory.clone()).expect("Couldn't create page directory");
             }
 
+            // create a the pages contoller the get all pages controller
+            write_to_new_get_all_controller("page".to_string())
+                .expect("Couldn't write to new get all controller");
+
             println!("Writing to post controller");
             write_to_new_post_controller("page".to_string())
                 .expect("Couldn't write to new post controller");
 
             write_to_new_update_controller("page".to_string())
                 .expect("Couldn't write to new update controller");
+
+            create_get_all_controller("page".to_string())
+                .expect("Couldn't write to new get all controller");
 
             match write_to_edit_page_html() {
                 Ok(_) => {
@@ -105,14 +112,10 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
     
     
 
-    <body id='app' class='h-full'>
-        {% include 'components/navbar.html.tera'%}
-        <div id="gjs" style="height: 100%; width: 100%;">
-            <div style="margin:100px 100px 25px; padding:25px; font:caption">
-                This is a demo content from _index.html. You can use this template file for development purpose. It
-                won't be stored in your git repository
-            </div>
-        </div>
+<div style="height: 92vh; width: 100%;">
+{% include 'components/grapesjs.html.tera' ignore missing %}
+</div>
+
 
         <style>
             body,
@@ -496,8 +499,28 @@ use sqlx::FromRow;
         }}))
 
     }}
-}}
 
+
+    /// # Name: get_all_pages
+    /// ### Description: Gets all pages
+    /// ### Returns: Result<serde_json::Value, sqlx::Error>
+    /// ### Example:
+    /// ```
+    /// use rustyroad::models::page::Page;
+    /// let result = Page::get_all_pages();
+    /// ```
+    pub async fn get_all_pages() -> Result<serde_json::Value, sqlx::Error> {{
+        let sql = "SELECT * FROM page";
+        let database = Database::get_database_from_rustyroad_toml().unwrap();
+        {pool_connection_code}
+        let pages: Vec<Page> = sqlx::query_as(&sql).fetch_all(&pool_connection).await?;
+        Ok(serde_json::json!({{
+            "status": "success",
+            "message": "Pages retrieved successfully",
+            "data": pages
+        }}))
+    }}
+}}
 
 
 fn deserialize_unix_timestamp<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
@@ -657,134 +680,103 @@ pub fn write_to_create_page_html() -> Result<(), Error> {
 {{ super() }}
 
 
-        <div id="gjs" class="h-full" style="height: 100%; width: 100%;">
-            <div style="margin:100px 100px 25px; padding:25px; font:caption">
-                This is a demo content from _index.html. You can use this template file for development purpose. It
-                won't be stored in your git repository
-            </div>
-        </div>
-
-        <style>
-            body,
-            html {
-                height: 100%;
-                margin: 0;
-                }
-
-            .gjs-block {
-                padding: 0 !important;
-                width: 100% !important;
-                min-height: auto !important;
-                }
-
-            .gjs-block svg {
-                width: 100%;
-                }
-
-            .change-theme-button {
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                margin: 5px;
-                }
-
-            .change-theme-button:focus {
-                /* background-color: yellow; */
-                outline: none;
-                box-shadow: 0 0 0 2pt #c5c5c575;
-            }
-
-
-            .gjs-pn-views-container {
-                height: auto !important;
-            }
-            </style>
+<div style="height: 92vh; width: 100%;">
+{% include 'components/grapesjs.html.tera' ignore missing %}
+</div>
 
         <script>
-        const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
+                const escapeName = (name) => `${name}`.trim().replace(/([^a-z0-9\w-:/]+)/gi, '-');
 
-        window.editor = grapesjs.init({
-            height: '100%',
-            container: '#gjs',
-            showOffsets: true,
-            fromElement: true,
-            noticeOnUnload: false,
-            storageManager: false,
-            selectorManager: { escapeName },
-            plugins: ['grapesjs-tailwind'],
-            pluginsOpts: {
-                'grapesjs-tailwind': { /* Test here your options  */ }
-            }
-        });
-        editor.Panels.addButton('options', {
-            id: 'update-theme',
-            className: 'fa fa-adjust',
-            command: 'open-update-theme',
-            attributes: {
-                title: 'Update Theme',
-                'data-tooltip-pos': 'bottom',
+            window.editor = grapesjs.init({
+                height: '100%',
+                width: '100%',
+                container: '#gjs',
+                showOffsets: true,
+                fromElement: true,
+                noticeOnUnload: false,
+                storageManager: false,
+                selectorManager: { escapeName },
+                plugins: ['grapesjs-tailwind'],
+                pluginsOpts: {
+                    'grapesjs-tailwind': { /* Test here your options  */ }
+                }
+                });
+
+            editor.Panels.addButton('options', {
+                id: 'update-theme',
+                className: 'fa fa-adjust',
+                command: 'open-update-theme',
+                attributes: {
+                    title: 'Update Theme',
+                    'data-tooltip-pos': 'bottom',
+                },
+            });
+
+            let isSaved = false;
+
+const saveHtml = (HtmlGrapesJs) => {
+    if (!isSaved) {
+        // save html to database
+        fetch('/page', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
             },
-        });
+            body: JSON.stringify(
+                HtmlGrapesJs
+            ),
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                sender.set('active', 1); // turn on the button
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                sender.set('active', 1); // turn on the button
+            });
+        isSaved = true;
+    }
+};
 
-        let isSaved = false;
-
-        const saveHtml = (HtmlGrapesJs) => {
-            if (!isSaved) {
-                // save html to database
-                fetch('/page', {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(
-                        HtmlGrapesJs
-                    ),
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Success:', data);
-                        sender.set('active', 1); // turn on the button
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                        sender.set('active', 1); // turn on the button
-                    });
-                isSaved = true;
-            }
+editor.Commands.add('savePage', {
+    run(editor, sender) {
+        sender.set('active', 0); // turn off the button
+        // get html from editor
+        var html = editor.getHtml();
+        // create object to save to database
+        const now = Date.now();  // milliseconds since 1970-01-01T00:00:00Z
+        const HtmlGrapesJs = {
+            html_content: html,
+            created_at: Math.floor(now / 1000),  // convert to seconds
+            updated_at: Math.floor(now / 1000),  // convert to seconds
+            associated_user_id: 1,
+            metadata: JSON.stringify({
+                title: 'test',
+                description: 'test',
+                keywords: 'test',
+            }),
         };
+        saveHtml(HtmlGrapesJs);
+    }
+});
 
-        editor.Commands.add('savePage', {
-            run(editor, sender) {
-                sender.set('active', 0); // turn off the button
-                // get html from editor
-                var html = editor.getHtml();
-                // create object to save to database
-                const now = Date.now();  // milliseconds since 1970-01-01T00:00:00Z
-                const HtmlGrapesJs = {
-                    html_content: html,
-                    created_at: Math.floor(now / 1000),  // convert to seconds
-                    updated_at: Math.floor(now / 1000),  // convert to seconds
-                    associated_user_id: 1,
-                    metadata: JSON.stringify({
-                        title: 'test',
-                        description: 'test',
-                        keywords: 'test',
-                    }),
-                };
-                saveHtml(HtmlGrapesJs);
-            }
-        });
-
-        editor.Panels.addButton('options', {
-            id: 'savePage',
-            className: 'fa fa-save',
-            command: 'savePage',
-            attributes: {
-                title: 'Save HTML',
-                'data-tooltip-pos': 'bottom',
-            },
-        });
-        </script>
+editor.Panels.addButton('options', {
+    id: 'savePage',
+    className: 'fa fa-save',
+    command: 'savePage',
+    attributes: {
+        title: 'Save HTML',
+        'data-tooltip-pos': 'bottom',
+    },
+});
+</script>
+<style>
+        .gjs-pn-views-container {
+                height: 100% !important;
+                overflow: scroll;
+        }
+</style>
         {% endblock authenticated_content %}
     "#
     .to_string();
@@ -801,4 +793,54 @@ pub fn write_to_create_page_html() -> Result<(), Error> {
     )
     .unwrap_or_else(|_| panic!("Error: Could not write to create_page.html"));
     Ok(())
-}       
+}
+
+
+
+// next step, create the controller to render the page that loads all the pages.
+/// Name: create_page_list_page
+/// Description: Creates the page that loads all the pages
+/// Returns: Result<(), Error>
+/// Example:
+/// ```
+/// use rustyroad::features::grapesjs::implementation::create_page_list_page;
+/// let result = create_page_list_page();
+/// ```
+/// ToDo: Add the page_list.html.tera to the page_list.rs controller
+/// ToDo: Finish this method
+pub fn create_page_list_page() -> Result<(), Error> {
+    let contents: String = r#"
+    {% extends 'layouts/authenticated/authenticated.html.tera' %}
+{% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
+
+{% block authenticated_content %}
+{{ super() }}
+
+
+<div style="height: 92vh; width: 100%;">
+{% include 'components/grapesjs.html.tera' ignore missing %}
+
+"#.to_string();
+
+        let path = std::path::Path::new("src/views/layouts/authenticated/page/page_list.html.tera");
+        if !path.exists() {
+            println!("Creating the page_list.html.tera file...");
+            create_file("src/views/layouts/authenticated/page/page_list.html.tera")
+                .expect("Error creating the page_list.html.tera file");
+        }
+        write_to_file(
+            "src/views/layouts/authenticated/page/page_list.html.tera",
+            contents.as_bytes(),
+        )
+        .unwrap_or_else(|_| panic!("Error: Could not write to page_list.html"));
+        Ok(())
+    }
+
+
+// also need a controller that will load the page by the slug
+// need to update the page model to include the slug
+
+
+
+// also create the template for the page that loads all the pages
+

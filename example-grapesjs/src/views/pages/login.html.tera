@@ -9,7 +9,7 @@
     <div>
       <img class='mx-auto h-10 w-auto' src='https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600'
         alt='Your Company'>
-      <h2 class='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900 dark:text-white'>Sign in to your account
+      <h2 class='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900'>Sign in to your account
       </h2>
     </div>
     <!-- Error message section -->
@@ -24,14 +24,13 @@
         <div>
           <label for='username' class='sr-only'>Username</label>
           <input id='username' name='username' type='text' autocomplete='username' required
-            class='relative block w-full rounded-t-md border-0 py-1.5 text-gray-900 ring-1 ring-inset dark:bg-slate-800 dark:text-white ring-gray-100 placeholder:text-gray-400 dark:placeholder:text-white focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 bg-blue-700'
+            class='relative block w-full rounded-t-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-100 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
             placeholder='Email address'>
-
         </div>
         <div>
           <label for='password' class='sr-only'>Password</label>
           <input id='password' name='password' type='password' autocomplete='current-password' required
-            class='relative block w-full rounded-b-md border-0 py-1.5 text-gray-900 ring-1 ring-inset dark:bg-slate-800 dark:text-white ring-gray-100 placeholder:text-gray-400 dark:placeholder:text-white focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
+            class='relative block w-full rounded-b-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-100 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
             placeholder='Password'>
         </div>
       </div>
@@ -40,7 +39,7 @@
         <div class='flex items-center'>
           <input id='remember-me' name='remember-me' type='checkbox'
             class='h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600'>
-          <label for='remember-me' class='ml-3 block text-sm leading-6 text-gray-900 dark:text-white'>Remember me</label>
+          <label for='remember-me' class='ml-3 block text-sm leading-6 text-gray-900'>Remember me</label>
         </div>
 
         <div class='text-sm leading-6'>
