@@ -29,13 +29,13 @@ pub async fn write_to_get_page_by_id() -> Result<(), Error> {
                     context.insert("page", &page);
                     context.insert("html_content", &page.html_content);
                     context.insert("page_id", &page.id);
-                    let s = tmpl.render("layouts/authenticated/page/edit_page.html.tera", &context).unwrap();
+                    let s = tmpl.render("layouts/authenticated_page/page/edit_page.html.tera", &context).unwrap();
                     HttpResponse::Ok().body(s)
                 }
                 Err(e) => {
                     let mut context = tera::Context::new();
                     context.insert("message", "create your page");
-                    let s = tmpl.render("layouts/authenticated/page/create_page.html.tera", &context).unwrap();
+                    let s = tmpl.render("layouts/authenticated_page/page/create_page.html.tera", &context).unwrap();
                     HttpResponse::Ok().body(s)
                 }
             }
@@ -71,7 +71,7 @@ pub async fn write_to_get_page_by_id() -> Result<(), Error> {
         }
     }
     println!("adding the page controllers module to the controllers module...");
-    write_to_controllers_mod(&"src/controllers/mod.rs".to_string(), "page".to_string())
+    write_to_controllers_mod(&"src/controllers/authenticated_page".to_string(), "page".to_string())
         .expect("Error writing the page controllers module to the controllers module");
     // create the get_page_by_id controller file
     println!("Creating the get_page_by_id controller file...");
@@ -89,7 +89,7 @@ pub async fn write_to_get_page_by_id() -> Result<(), Error> {
     // add the get_page_by_id module to the components vector
     components.push("get_page_by_id".to_string());
     // define the module path
-    let module_path = "src/controllers/page/mod.rs".to_string();
+    let module_path = "src/controllers/page/authenticated_page".to_string();
     // write the get_page_by_id module to the controllers module
     println!("Writing the get_page_by_id module to the controllers module...");
     write_to_module(&module_path, components)
@@ -120,3 +120,4 @@ pub fn write_to_get_page_by_id_html() -> Result<(), Error> {
 
     Ok(())
 }
+

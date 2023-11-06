@@ -1,12 +1,7 @@
-use std::fmt::format;
 use crate::generators::create_file;
-use crate::writers;
-use crate::writers::{add_new_controller_to_main_rs, write_to_controller_name_html, write_to_controllers_mod, write_to_new_get_all_controller, write_to_new_post_controller, write_to_new_update_controller};
+use crate::writers::write_to_new_get_all_controller;
 use eyre::Error;
-use std::fs;
-use std::fs::create_dir;
 use std::path::Path;
-
 
 pub fn create_get_all_controller(model_name: String) -> Result<(), Error> {
     // find the model in the models directory
@@ -24,7 +19,6 @@ pub fn create_get_all_controller(model_name: String) -> Result<(), Error> {
     // if not check if there is a file in the controllers directory with the name of the model
     let controller_with_folder_dir = format!("./src/controllers/{}/{}.rs", model_name, model_name);
     let mut has_controller = false;
-    let mut is_file = false;
     let controller_path = Path::new(&controller_with_folder_dir);
 
     if controller_path.exists() {
@@ -35,7 +29,6 @@ pub fn create_get_all_controller(model_name: String) -> Result<(), Error> {
     let controller_path = Path::new(&current_dir);
     if controller_path.exists() {
         has_controller = true;
-        is_file = true;
     }
 
     if !has_controller {
@@ -45,24 +38,10 @@ pub fn create_get_all_controller(model_name: String) -> Result<(), Error> {
         });
     }
 
-    if !is_file {
-        // add the controller to the file for that controller
-        let file_path = format!("./src/controllers/{}/{}.rs", model_name, model_name);
-
-        // add the controller to the file
-        write_to_new_get_all_controller(model_name.clone().to_string(), file_path).unwrap_or_else(|why| {
+        write_to_new_get_all_controller(model_name.clone().to_string()).unwrap_or_else(|why| {
             println!("Failed to write to controller: {:?}", why.to_string());
         });
-    } else {
-        // add the controller to the file for that controller
-        let file_path = format!("./src/controllers/{}.rs", model_name);
-
-        // add the controller to the file
-        write_to_new_get_all_controller(model_name.clone().to_string(), file_path).unwrap_or_else(|why| {
-            println!("Failed to write to controller: {:?}", why.to_string());
-        });
-    }
+    
 
     Ok(())
-
 }

@@ -14,7 +14,7 @@ if let Some(user) = user
       context.insert("controller_name", "edit_page");
       context.insert("page_id", &page.id.clone());
       context.insert("html_content", &page.html_content);
-      let rendered = tmpl.render("layouts/authenticated/page/edit_page.html.tera", &context).unwrap();
+      let rendered = tmpl.render("layouts/authenticated_page/page/edit_page.html.tera", &context).unwrap();
       HttpResponse::Ok().body(rendered)
 } else {
     let mut context = Context::new();

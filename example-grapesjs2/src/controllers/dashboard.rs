@@ -10,7 +10,7 @@ async fn dashboard_controller(tmpl: web::Data<Tera>, user: Option<Identity>) -> 
         context.insert("username", &user.id().unwrap());
         context.insert("title", "Dashboard");
         context.insert("controller_name", "dashboard");
-        let rendered = tmpl.render("layouts/authenticated/dashboard.html.tera", &context).unwrap();
+        let rendered = tmpl.render("layouts/authenticated_page/dashboard.html.tera", &context).unwrap();
         HttpResponse::Ok().body(rendered)
     } else {
         let mut context = tera::Context::new();

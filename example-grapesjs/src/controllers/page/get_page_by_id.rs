@@ -21,14 +21,14 @@ async fn get_page_by_id(
                 context.insert("html_content", &page.html_content);
                 context.insert("page_id", &page.id);
                 context.insert("username", &user.id().unwrap());
-                let s = tmpl.render("layouts/authenticated/page/edit_page.html.tera", &context).unwrap();
+                let s = tmpl.render("layouts/authenticated_page/page/edit_page.html.tera", &context).unwrap();
                 println!("rendering page: Edit Page");
                 HttpResponse::Ok().body(s)
             }
             Err(e) => {
                 let mut context = tera::Context::new();
                 context.insert("message", "create your page");
-                let s = tmpl.render("layouts/authenticated/page/create_page.html.tera", &context).unwrap();
+                let s = tmpl.render("layouts/authenticated_page/page/create_page.html.tera", &context).unwrap();
                 println!("rendering page: Create Page");
                 HttpResponse::Ok().body(s)
             }

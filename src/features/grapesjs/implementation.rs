@@ -1,7 +1,7 @@
-use crate::writers::{create_get_all_controller, write_to_new_get_all_controller, write_to_new_update_controller};
-use crate::writers::{
-    write_to_file, write_to_module, write_to_new_post_controller,
+use crate::writers::{write_to_get_all_pages_html, write_to_new_get_all_controller,
+                     write_to_new_update_controller,
 };
+use crate::writers::{write_to_file, write_to_module, write_to_new_post_controller};
 use chrono::Local;
 use std::env;
 use std::fs;
@@ -26,7 +26,10 @@ impl GrapesJs {
         // create the edit page directory if it doesn't exist
         if let Ok(current_dir) = env::current_dir() {
             // create the page directory
-            let page_directory = format!("{}/src/views/layouts/authenticated/page", current_dir.display());
+            let page_directory = format!(
+                "{}/src/views/layouts/authenticated_page/page",
+                current_dir.display()
+            );
             // check if the page directory exists
             let path_path = std::path::Path::new(&page_directory);
             if !path_path.exists() {
@@ -41,30 +44,14 @@ impl GrapesJs {
             println!("Writing to post controller");
             write_to_new_post_controller("page".to_string())
                 .expect("Couldn't write to new post controller");
-
+            println!("Writing to update controller");
             write_to_new_update_controller("page".to_string())
                 .expect("Couldn't write to new update controller");
 
-            create_get_all_controller("page".to_string())
-                .expect("Couldn't write to new get all controller");
-
-            match write_to_edit_page_html() {
-                Ok(_) => {
-                    println!("Successfully wrote to edit_page.html");
-                }
-                Err(e) => {
-                    println!("Error: {}", e);
-                }
-            }
-
-            match write_to_create_page_html() {
-                Ok(_) => {
-                    println!("Successfully wrote to create_page.html");
-                }
-                Err(e) => {
-                    println!("Error: {}", e);
-                }
-            }
+            println!("Writing to edit page html");
+            write_to_edit_page_html().expect("Couldn't write to edit page html");
+            println!("Writing to create page html");
+            write_to_create_page_html().expect("Couldn't write to create page html");
 
             // shifting to the get pages now
             println!("Writing to get_page_by_id.rs");
@@ -76,35 +63,33 @@ impl GrapesJs {
                 .await
                 .expect("Couldn't write to page model");
 
+            println!("Writing to get all pages html");
+            write_to_get_all_pages_html().expect("Couldn't write to get all pages html");
+
             // run the migrations
             run_migration("page".to_string(), MigrationDirection::Up)
                 .await
                 .expect("Couldn't run page migration");
 
-                let readme_path = format!("{}/README.md", current_dir.display());
+            let readme_path = format!("{}/README.md", current_dir.display());
 
-                let readme_text = r#"
+            let readme_text = r#"
                 ### Page Builder
 To access the page builder, go to the /page/{pageId} URL. For example, if you are running the server locally, log in and go to localhost/page/1 to access the page builder for the page with id 1.
 "#;
-        
 
-                // write to the readme
-                write_to_file(&readme_path, readme_text.as_bytes())
-                    .expect("Couldn't write to readme");
-    
-            
-            } else {
-                println!("Couldn't get current directory");
-            }
+            // write to the readme
+            write_to_file(&readme_path, readme_text.as_bytes()).expect("Couldn't write to readme");
+        } else {
+            println!("Couldn't get current directory");
+        }
         Ok(())
     }
-    
 }
 
 pub fn write_to_edit_page_html() -> Result<(), Error> {
     let contents: String = r#"
-    {% extends 'layouts/authenticated/authenticated.html.tera' %}
+    {% extends 'layouts/authenticated_page/authenticated_page.html.tera' %}
     {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
     
     {% block authenticated_content %}
@@ -242,11 +227,11 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
     "#
     .to_string();
 
-    create_file("src/views/layouts/authenticated/page/edit_page.html.tera")
+    create_file("src/views/layouts/authenticated_page/page/edit_page.html.tera")
         .unwrap_or_else(|_| panic!("Error: Could not create edit_page.html.tera"));
 
     write_to_file(
-        "src/views/layouts/authenticated/page/edit_page.html.tera",
+        "src/views/layouts/authenticated_page/page/edit_page.html.tera",
         contents.as_bytes(),
     )
     .unwrap_or_else(|_| panic!("Error: Could not write to edit_page.html"));
@@ -544,13 +529,13 @@ where
             )
         });
 
-    // add model to models/mod.rs
+    // add model to models/authenticated_page
     let mut components = Vec::new();
 
     components.push("page".to_string());
 
-    write_to_module(&"src/models/mod.rs".to_string(), components)
-        .expect("Error writing to models/mod.rs");
+    write_to_module(&"src/models/authenticated_page".to_string(), components)
+        .expect("Error writing to models/authenticated_page");
 
     let database = Database::get_database_from_rustyroad_toml()
         .expect("Failed to get database from rustyroad.toml");
@@ -670,10 +655,9 @@ pub fn append_graped_js_to_header() -> Result<(), Error> {
 // this will need a special connection pool
 // we need to determine the database type from the rustyroad.toml
 
-
 pub fn write_to_create_page_html() -> Result<(), Error> {
     let contents: String = r#"
-    {% extends 'layouts/authenticated/authenticated.html.tera' %}
+    {% extends 'layouts/authenticated_page/authenticated_page.html.tera' %}
 {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
 
 {% block authenticated_content %}
@@ -781,21 +765,19 @@ editor.Panels.addButton('options', {
     "#
     .to_string();
 
-    let path = std::path::Path::new("src/views/layouts/authenticated/page/create_page.html.tera");
+    let path = std::path::Path::new("src/views/layouts/authenticated_page/page/create_page.html.tera");
     if !path.exists() {
         println!("Creating the create_page.html.tera file...");
-        create_file("src/views/layouts/authenticated/page/create_page.html.tera")
+        create_file("src/views/layouts/authenticated_page/page/create_page.html.tera")
             .expect("Error creating the create_page.html.tera file");
     }
     write_to_file(
-        "src/views/layouts/authenticated/page/create_page.html.tera",
+        "src/views/layouts/authenticated_page/page/create_page.html.tera",
         contents.as_bytes(),
     )
     .unwrap_or_else(|_| panic!("Error: Could not write to create_page.html"));
     Ok(())
 }
-
-
 
 // next step, create the controller to render the page that loads all the pages.
 /// Name: create_page_list_page
@@ -810,7 +792,7 @@ editor.Panels.addButton('options', {
 /// ToDo: Finish this method
 pub fn create_page_list_page() -> Result<(), Error> {
     let contents: String = r#"
-    {% extends 'layouts/authenticated/authenticated.html.tera' %}
+    {% extends 'layouts/authenticated_page/authenticated_page.html.tera' %}
 {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
 
 {% block authenticated_content %}
@@ -820,27 +802,25 @@ pub fn create_page_list_page() -> Result<(), Error> {
 <div style="height: 92vh; width: 100%;">
 {% include 'components/grapesjs.html.tera' ignore missing %}
 
-"#.to_string();
+"#
+    .to_string();
 
-        let path = std::path::Path::new("src/views/layouts/authenticated/page/page_list.html.tera");
-        if !path.exists() {
-            println!("Creating the page_list.html.tera file...");
-            create_file("src/views/layouts/authenticated/page/page_list.html.tera")
-                .expect("Error creating the page_list.html.tera file");
-        }
-        write_to_file(
-            "src/views/layouts/authenticated/page/page_list.html.tera",
-            contents.as_bytes(),
-        )
-        .unwrap_or_else(|_| panic!("Error: Could not write to page_list.html"));
-        Ok(())
+    let path = std::path::Path::new("src/views/layouts/authenticated_page/page/page_list.html.tera");
+    if !path.exists() {
+        println!("Creating the page_list.html.tera file...");
+        create_file("src/views/layouts/authenticated_page/page/page_list.html.tera")
+            .expect("Error creating the page_list.html.tera file");
     }
-
+    write_to_file(
+        "src/views/layouts/authenticated_page/page/page_list.html.tera",
+        contents.as_bytes(),
+    )
+    .unwrap_or_else(|_| panic!("Error: Could not write to page_list.html"));
+    Ok(())
+}
 
 // also need a controller that will load the page by the slug
 // need to update the page model to include the slug
 
-
-
 // also create the template for the page that loads all the pages
-
+// this will be a table with the page title, description, and a link to the page builder

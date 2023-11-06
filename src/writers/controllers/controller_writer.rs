@@ -60,14 +60,14 @@ pub fn write_to_controller_name_html(controller_name: &str) -> Result<(), Error>
 /// # Example:
 /// ```
 /// use rustyroad::writers::write_to_controller_name_html_with_authorized_view;
-/// write_to_controller_name_html_with_authorized_view("test", "authenticated");
+/// write_to_controller_name_html_with_authorized_view("test", "authenticated_page");
 /// ```
 pub fn write_to_controller_name_html_with_authorized_view(
     controller_name: &str,
     folder_name: &str,
 ) -> Result<(), Error> {
     let contents = format!(
-        r"{{% extends 'layouts/authenticated/{}.html.tera' %}}
+        r"{{% extends 'layouts/authenticated_page/{}.html.tera' %}}
             {{% block title %}}Index{{% endblock title %}}
             {{% block head %}}
             {{{{ super() }}}}
@@ -86,7 +86,7 @@ pub fn write_to_controller_name_html_with_authorized_view(
     // write to the file
     write_to_file(
         &format!(
-            "src/views/layouts/authenticated/{}/{}.html.tera",
+            "src/views/layouts/authenticated_page/{}/{}.html.tera",
             folder_name, controller_name
         )
         .to_string(),
@@ -96,7 +96,7 @@ pub fn write_to_controller_name_html_with_authorized_view(
         println!(
             "Couldn't write to {}: {}",
             &format!(
-                "./views/layouts/authenticated/{}/{}.html.tera",
+                "./views/layouts/authenticated_page/{}/{}.html.tera",
                 folder_name, controller_name
             )
             .to_string(),
@@ -228,7 +228,7 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
 
     // Determine if a folder exists for the controller
     if !PathBuf::from(&format!("./src/controllers/{}", model_name)).exists() {
-        // If it doesn't exist, ask the user if they want to create it or add the controller to the controllers/mod.rs file
+        // If it doesn't exist, ask the user if they want to create it or add the controller to the controllers/authenticated_page file
         println!(
             "The folder ./src/controllers/{} does not exist. Would you like to create it? (y/n)",
             model_name
@@ -249,7 +249,7 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
             );
             // Create the file
             std::fs::File::create(PathBuf::from(&path)).unwrap();
-            // Add the controller to the controllers/mod.rs file
+            // Add the controller to the controllers/authenticated_page file
             
             // read the contents of the file so we don't overwrite it
             let mut file_contents = fs::read_to_string(&path).unwrap();
@@ -278,10 +278,10 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
 
                     components.push(format!("{}", &model_name));
 
-                    let module_path = format!("src/controllers/{}/mod.rs", &model_name);
+                    let module_path = format!("src/controllers/{}/authenticated_page", &model_name);
 
                     // create the edit page module file
-                    create_file(&module_path).expect("Couldn't create edit_page mod.rs file");
+                    create_file(&module_path).expect("Couldn't create edit_page authenticated_page file");
 
                     println!("module_path: {}", &module_path);
                     write_to_module(&module_path, components)
@@ -292,7 +292,7 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
                 Err(e) => println!("Failed to write to {}.rs: {:?}", model_name, e),
             }
         } else {
-            // If the user doesn't want to create the folder, add the controller to the controllers/mod.rs file and create the file
+            // If the user doesn't want to create the folder, add the controller to the controllers/authenticated_page file and create the file
             // define the path to the file
             let path = format!("./src/controllers/{}.rs", model_name);
             // create the file
@@ -325,7 +325,7 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
 
                     components.push(format!("{}", &model_name));
 
-                    let module_path = format!("src/controllers/mod.rs");
+                    let module_path = format!("src/controllers/authenticated_page");
 
                     write_to_module(&module_path, components)
                         .expect("Error writing the module to the controllers module");
@@ -344,7 +344,7 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
 
         // Create the file
         std::fs::File::create(PathBuf::from(&path)).unwrap();
-        // Add the controller to the controllers/mod.rs file
+        // Add the controller to the controllers/authenticated_page file
         
 
         // Write the contents to the file
@@ -378,11 +378,11 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
 
                 components.push(format!("{}", &model_name));
 
-                let module_file = format!("src/controllers/{}/mod.rs", &model_name);
+                let module_file = format!("src/controllers/{}/authenticated_page", &model_name);
                 let module_file_path = std::path::Path::new(&module_file);
 
                 if !module_file_path.exists() {
-                    create_file(&module_file).expect("Couldn't create edit_page mod.rs file");
+                    create_file(&module_file).expect("Couldn't create edit_page authenticated_page file");
                 }
 
                 write_to_module(&module_file, components)
@@ -487,7 +487,7 @@ pub fn write_to_new_delete_controller(model_name: String) -> Result<(), Error> {
             let mut components = Vec::new();
             components.push(format!("{}", &model_name));
 
-            let module_path = format!("src/controllers/{}/mod.rs", &model_name);
+            let module_path = format!("src/controllers/{}/authenticated_page", &model_name);
             write_to_module(&module_path, components).expect("Error writing the module to the controllers module");
 
             println!("Successfully written to {}.rs", model_name);
@@ -582,7 +582,7 @@ pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
     println!("The path is: {}", &path);
     match fs::write(PathBuf::from(&path), file_contents.as_bytes()) {
         Ok(()) => {
-            // Update the main.rs and mod.rs as needed, similar to the create controller
+            // Update the main.rs and authenticated_page as needed, similar to the create controller
             add_new_controller_to_main_rs(Some(&model_name), &format!("update_{}", &model_name)).unwrap();
 
 
@@ -603,7 +603,7 @@ pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
 /// # Example:
 /// ```
 /// use rustyroad::writers::write_to_new_get_controller_with_authorized_view;
-/// write_to_new_get_controller_with_authorized_view("user".to_string(), "authenticated".to_string());
+/// write_to_new_get_controller_with_authorized_view("user".to_string(), "authenticated_page".to_string());
 /// ```
 pub fn write_to_new_get_controller_with_authorized_view(
     controller_name: String,
@@ -628,7 +628,7 @@ pub fn write_to_new_get_controller_with_authorized_view(
                           context.insert("username", &user.id().unwrap());
                           context.insert("title", "{}");
                           context.insert("controller_name", "{}");
-                          let rendered = tmpl.render("layouts/authenticated/{}/{}.html.tera", &context).unwrap();
+                          let rendered = tmpl.render("layouts/authenticated_page/{}/{}.html.tera", &context).unwrap();
                           HttpResponse::Ok().body(rendered)
                     }} else {{
                         let mut context = Context::new();
@@ -939,7 +939,7 @@ async fn user_logout(
 /// # Example:
 /// ```
 /// use rustyroad::writers::write_to_initial_get_controller_authorized_view;
-/// write_to_initial_get_controller_authorized_view("user".to_string(), "authenticated".to_string());
+/// write_to_initial_get_controller_authorized_view("user".to_string(), "authenticated_page".to_string());
 /// ```
 pub fn write_to_initial_get_controller_authorized_view(
     controller_name: String,
@@ -971,7 +971,7 @@ pub async fn {}_controller_with_authorized_view(
         context.insert("username", &user.id().unwrap());
         context.insert("title", "{}");
         context.insert("controller_name", "{}");
-        let rendered = tmpl.render("layouts/authenticated/{}/{}.html.tera", &context).unwrap();
+        let rendered = tmpl.render("layouts/authenticated_page/{}/{}.html.tera", &context).unwrap();
         HttpResponse::Ok().body(rendered)
 }}
     }} else {{
@@ -1014,12 +1014,12 @@ pub async fn {}_controller_with_authorized_view(
 /// use rustyroad::writers::write_to_new_get_all_controller;
 /// write_to_new_get_all_controller("user".to_string());
 /// ```
-pub fn write_to_new_get_all_controller(model_name: String, path: String) -> Result<(), Error> {
+pub fn write_to_new_get_all_controller(model_name: String) -> Result<(), Error> {
 
     // look for the model in the models folder
     let model_path = format!("./src/models/{}.rs", model_name);
     let model_file_path = std::path::Path::new(&model_path);
-    if (!model_file_path.exists()) {
+    if !model_file_path.exists() {
         println!("The model {} does not exist. Would you like to create it? (y/n)", model_name);
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
@@ -1057,6 +1057,31 @@ pub fn write_to_new_get_all_controller(model_name: String, path: String) -> Resu
         &capitalize_model_name,
         &capitalize_model_name
     );
+
+    // search the controllers folder for the model name
+    let path = if PathBuf::from(format!("./src/controllers/{}.rs", &model_name)).exists() {
+        format!("./src/controllers/{}.rs", &model_name)
+    } else {
+        format!("./src/controllers/{}/{}.rs", &model_name, &model_name)
+    };
+
+    // we know one of the paths will exist
+    // ensure path exists
+    let result = PathBuf::from(&path).exists();
+
+    if !result {
+        println!("The controller {} does not exist. Would you like to create it? (y/n)", &model_name);
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        if input.trim() == "y" {
+            fs::create_dir(PathBuf::from(&path)).unwrap();
+        } else {
+            return Err(Error::new(
+                ErrorKind::Other,
+                "Controller creation aborted by user",
+            ));
+        }
+    }
 
     // read the contents of the file so we don't overwrite it
     let mut file_contents = fs::read_to_string(&path).unwrap();

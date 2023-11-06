@@ -3,7 +3,7 @@ use crate::Project;
 use std::io::Error;
 
 pub fn write_to_dashboard(project: Project) -> Result<(), Error> {
-    let contents = r#"{% extends 'layouts/authenticated/authenticated.html.tera' %}
+    let contents = r#"{% extends 'layouts/authenticated_page/authenticated_page.html.tera' %}
 {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
 
 {% block authenticated_content %}

@@ -61,7 +61,7 @@ pub async fn create_new_controller(
         }
     } else {
         match controller_type {
-            // if the user enters n, continue with the rest of the code and create a new controller that will be added to the controllers/mod.rs file
+            // if the user enters n, continue with the rest of the code and create a new controller that will be added to the controllers/authenticated_page file
             CRUDType::Read => {
                create_read_controller_in_new_folder(model_name.clone()).unwrap_or_else(
                     |why| {

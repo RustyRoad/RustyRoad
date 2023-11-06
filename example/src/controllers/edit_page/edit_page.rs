@@ -10,7 +10,7 @@ async fn edit_page(tmpl: web::Data<Tera>) -> impl Responder {
     context.insert("controller_name", "edit_page");
     let rendered = tmpl
         .render(
-            "layouts/authenticated/grapesjs/edit_page.html.tera",
+            "layouts/authenticated_page/grapesjs/edit_page.html.tera",
             &context,
         )
         .unwrap();

@@ -547,7 +547,7 @@ static/styles.css
         });
 
         write_to_authenticated_layout(project.clone()).unwrap_or_else(|why| {
-            println!("Failed to write to authenticated layout: {:?}", why.to_string());
+            println!("Failed to write to authenticated_page layout: {:?}", why.to_string());
         });
 
         write_to_layout(project.clone()).unwrap_or_else(|why| {

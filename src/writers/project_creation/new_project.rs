@@ -15,7 +15,7 @@ pub fn new(name: String) -> Project {
     let template_components = format!("{}/components", templates);
     let template_sections = format!("{}/sections", templates);
     let template_layouts = format!("{}/layouts", templates);
-    let auth_template_layouts = format!("{}/authenticated", template_layouts);
+    let auth_template_layouts = format!("{}/authenticated_page", template_layouts);
     let template_pages = format!("{}/pages", templates);
     let static_css = format!("{}/css", static_dir);
     let static_js = format!("{}/js", static_dir);
@@ -32,10 +32,10 @@ pub fn new(name: String) -> Project {
     let config_prod_db = format!("{}/prod.db", db);
     let config_test_db = format!("{}/test.db", db);
     let controllers = format!("{}/controllers", src_dir);
-    let controllers_module = format!("{}/mod.rs", controllers);
+    let controllers_module = format!("{}/authenticated_page", controllers);
     let controllers = format!("{}/controllers", src_dir);
     let models = format!("{}/models", src_dir);
-    let models_module = format!("{}/mod.rs", models);
+    let models_module = format!("{}/authenticated_page", models);
     let migrations = format!("{}/migrations", db);
     let seeders = format!("{}/seeders", name);
     let tests = format!("{}/tests", name);
@@ -60,11 +60,11 @@ pub fn new(name: String) -> Project {
     let reset_password_page_html = format!("{}/reset_password.html.tera", template_pages);
     let forgot_password_page_html = format!("{}/forgot_password.html.tera", template_pages);
     let dashboard_page_html = format!("{}/dashboard.html.tera", template_pages);
-    let authenticated_layout = format!("{}/authenticated.html.tera", auth_template_layouts);
+    let authenticated_layout = format!("{}/authenticated_page.html.tera", auth_template_layouts);
     let layout_template = format!("{}/layout.html.tera", template_layouts);
     let user_controller_directory = format!("{}/user", controllers);
     let user_controller = format!("{}/user.rs", user_controller_directory);
-    let user_controller_module = format!("{}/mod.rs", user_controller_directory);
+    let user_controller_module = format!("{}/authenticated_page", user_controller_directory);
     let user_model = format!("{}/user.rs", models);
     let initial_migration_directory = format!("{}/{}_user", migrations, timestamp);
     let initial_migration_up = format!("{}/up.sql", initial_migration_directory);

@@ -34,7 +34,7 @@ pub async fn get_create_page_view(tmpl: web::Data<tera::Tera>, user: Option<Iden
         context.insert("username", &user.id().unwrap());
         context.insert("title", "create_page");
         context.insert("controller_name", "create_page");
-        let rendered = tmpl.render("layouts/authenticated/page/create_page.html.tera", &context).unwrap();
+        let rendered = tmpl.render("layouts/authenticated_page/page/create_page.html.tera", &context).unwrap();
         HttpResponse::Ok().body(rendered)
     } else {
         let mut context = tera::Context::new();
@@ -83,7 +83,7 @@ pub async fn get_update_page_view(tmpl: web::Data<tera::Tera>, id: web::Path<i32
                 context.insert("title", "update_page");
                 context.insert("controller_name", "update_page");
                 context.insert("page_id", &id.to_string());
-                let rendered = tmpl.render("layouts/authenticated/page/update_page.html.tera", &context).unwrap();
+                let rendered = tmpl.render("layouts/authenticated_page/page/update_page.html.tera", &context).unwrap();
                 HttpResponse::Ok().body(rendered)
             },
             Err(_e) => {
@@ -116,7 +116,7 @@ pub async fn get_all_pages(tmpl: web::Data<tera::Tera>, user: Option<Identity>) 
             Err(e) => context.insert("error", &e.to_string()),
         }
 
-        let rendered = tmpl.render("layouts/authenticated/page/all_pages.html.tera", &context).unwrap();
+        let rendered = tmpl.render("layouts/authenticated_page/page/all_pages.html.tera", &context).unwrap();
         HttpResponse::Ok().body(rendered)
         
     } else {

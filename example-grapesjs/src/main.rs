@@ -65,9 +65,9 @@ async fn main() -> std::io::Result<()> {
             .service(controllers::login::login_controller)
             .service(controllers::login::login_function)
             .service(controllers::login::user_logout)
-.service(controllers::page::create_page)
-.service(controllers::page::update_page)
-.service(controllers::page::get_page_by_id)
+            .service(controllers::page::create_page)
+            .service(controllers::page::update_page)
+            .service(controllers::page::get_page_by_id)
             .service(Files::new("/static", "./static")) // Add this line
     })
     .bind(("127.0.0.1", 80))

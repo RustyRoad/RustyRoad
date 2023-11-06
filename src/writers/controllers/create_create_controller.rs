@@ -163,15 +163,15 @@ pub fn create_create_controller_in_new_folder(controller_name: String) -> Result
         },
     );
     // Create a new controller using the controllerName
-    // Update the controllers/mod.rs file
-    let full_file_name = format!("./src/controllers/mod.rs");
+    // Update the controllers/authenticated_page file
+    let full_file_name = format!("./src/controllers/authenticated_page");
     write_to_controllers_mod(&full_file_name, controller_name.clone())
         .unwrap_or_else(|why| {
             println!("Failed to write to controllers/mod: {:?}", why.to_string());
         });
 
-    // create the controllers/mod.rs file
-    create_file(&format!("./src/controllers/{}/mod.rs", controller_name))
+    // create the controllers/authenticated_page file
+    create_file(&format!("./src/controllers/{}/authenticated_page", controller_name))
         .unwrap_or_else(|why| {
             println!("Failed to create file: {:?}", why.to_string());
         });
@@ -180,13 +180,13 @@ pub fn create_create_controller_in_new_folder(controller_name: String) -> Result
     // Create a vector and push the controllerName to the vector
     components.push(controller_name.clone().to_string());
 
-    // Write to mod.rs file
+    // Write to authenticated_page file
     writers::write_to_module(
-        &format!("./src/controllers/{}/mod.rs", &controller_name),
+        &format!("./src/controllers/{}/authenticated_page", &controller_name),
         components,
     )
         .unwrap_or_else(|why| {
-            println!("Failed to write to mod.rs: {:?}", why.to_string());
+            println!("Failed to write to authenticated_page: {:?}", why.to_string());
         });
 
     // Create a new file with the controllerName.rs
