@@ -9,3 +9,4 @@ test_project/
 deno_text/
 .vite/
 Cargo.lock
+example-grapesjs2/
