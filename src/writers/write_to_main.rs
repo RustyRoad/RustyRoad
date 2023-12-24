@@ -2,9 +2,8 @@ use crate::writers::write_to_file;
 use crate::Project;
 use color_eyre::eyre::Result;
 use regex::Regex;
-use std::fs;
+use std::{env, fs};
 use std::io::Error;
-
 /// This function writes initial content to the main.rs file of a new RustyRoad project.
 /// The content includes setting up an Actix web server with three controllers: index, dashboard, and login.
 ///
@@ -21,7 +20,7 @@ use std::io::Error;
 /// use rustyroad::Project;
 ///
 /// let project = Project::new();
-/// write_to_main_rs(&project);
+/// write_to_main_rs(&project).expect("Failed to write to main.rs");
 /// ```
 pub fn write_to_main_rs(project: &Project) -> Result<(), Error> {
     // Define the contents to be written to the main.rs file
@@ -130,25 +129,58 @@ async fn main() -> std::io::Result<()> {
 /// ```rust
 /// use rustyroad::writers::write_to_main::add_new_controller_to_main_rs;
 ///
-/// add_new_controller_to_main_rs("about");
+/// add_new_controller_to_main_rs(None, None,"about").expect("Failed to add new controller to main.rs");
 /// ```
-pub fn add_new_controller_to_main_rs(
-    folder_name: Option<&str>,
-    controller_name: &str,
-) -> Result<(), Error> {
+pub fn add_new_controller_to_main_rs(project_name: Option<&str>,folder_or_file_name: Option<&str>, controller_name: &str) -> Result<(), Error> {
     println!("CONTROLLER NAME: {}", &controller_name);
     // Check for the current working directory
-    let current_dir = std::env::current_dir().unwrap();
+    let mut current_dir = match env::current_dir() {
+        Ok(dir) => dir,
+        Err(e) => return Err(Error::new(std::io::ErrorKind::Other, format!("Error getting current directory: {}", e))),
+    };
+    // backup the current directory
+    let backup_dir = current_dir.clone();
+    println!("Current directory is: {}", current_dir.display());
 
-    // Ensure that the project is a rustyroad project by looking for the rustyroad.toml file in the root directory
-    match std::fs::read_to_string(current_dir.join("rustyroad.toml")) {
-        Ok(_) => {}
-        Err(_) => {
-            return Err(Error::new(
-                std::io::ErrorKind::InvalidData,
-                "This is not a RustyRoad project",
-            ))
+    // Check if the current directory contains the project name and if it does, change into that directory
+    if let Some(proj_name) = project_name {
+        let project_path = current_dir.join(proj_name);
+        if project_path.is_dir() {
+            println!("Changing into project directory: {}", project_path.display());
+            env::set_current_dir(&project_path)?;
+            // verify the new directory is the project directory
+            current_dir = env::current_dir()?;
+            println!("Current directory is: {}", current_dir.display());
         }
+    }
+
+
+    // Check if main.rs exists in the src directory
+    let mut main_rs_path = current_dir.join("src");
+    main_rs_path.push("main.rs");
+    println!("main.rs path is: {}", main_rs_path.display());
+    if !main_rs_path.exists() || !main_rs_path.is_file() {
+        return Err(Error::new(std::io::ErrorKind::NotFound, "main.rs not found in src directory"));
+    }
+
+
+    // ensure that the controllers folder exists
+    let controllers_folder = current_dir.join("src/controllers");
+    if !controllers_folder.exists() {
+        fs::create_dir(controllers_folder)?;
+    }
+
+    // ensure that the controllers/mod.rs file exists
+    let controllers_mod_rs = current_dir.join("src/controllers/mod.rs");
+    if !controllers_mod_rs.exists() {
+        fs::write(controllers_mod_rs.clone(), "")?;
+    }
+
+    // ensure that the controllers/mod.rs file has a newline at the end
+    let mut contents = fs::read_to_string(&controllers_mod_rs)?;
+    if !contents.ends_with("\n") {
+        contents.push_str("\n");
+        fs::write(controllers_mod_rs, contents)?;
     }
 
     // Construct the path to the main.rs file
@@ -160,8 +192,8 @@ pub fn add_new_controller_to_main_rs(
     // Prepare the new controller
     let new_controller = format!(
         "\n.service({})",
-        if let Some(folder_name) = folder_name {
-            format!("controllers::{}::{}", folder_name, controller_name)
+        if let Some(folder_or_file_name) = folder_or_file_name {
+            format!("controllers::{}::{}", folder_or_file_name, controller_name)
         } else {
             format!("controllers::{}", controller_name)
         }
@@ -187,6 +219,9 @@ pub fn add_new_controller_to_main_rs(
     // Write the string back to the file
     fs::write(main_rs_path, contents)?;
 
+    // Change back to the original directory
+    env::set_current_dir(backup_dir)?;
+
     Ok(())
 }
 
@@ -201,17 +236,14 @@ pub fn add_new_controller_to_main_rs(
 /// ```rust
 /// use rustyroad::writers::write_to_main::add_new_controller_to_existing_module_in_main_rs;
 ///
-/// add_new_controller_to_existing_module_in_main_rs("page", "about");
+/// add_new_controller_to_existing_module_in_main_rs("page", "about").expect("Failed to add new controller to main.rs");
 /// ```
-pub fn add_new_controller_to_existing_module_in_main_rs(
-    existing_controller_name: &str,
-    new_controller_name: &str,
-) -> Result<(), Error> {
+pub fn add_new_controller_to_existing_module_in_main_rs(existing_controller_name: &str, new_controller_name: &str) -> Result<(), Error> {
     // Check for the current working directory
     let current_dir = std::env::current_dir().unwrap();
 
     // Ensure that the project is a rustyroad project by looking for the rustyroad.toml file in the root directory
-    match std::fs::read_to_string(current_dir.join("rustyroad.toml")) {
+    match fs::read_to_string(current_dir.join("rustyroad.toml")) {
         Ok(_) => {}
         Err(_) => {
             return Err(Error::new(

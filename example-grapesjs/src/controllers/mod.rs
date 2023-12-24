@@ -1,5 +1,12 @@
 pub mod index;
-pub use index::*;pub mod dashboard;
-pub use dashboard::*;pub mod login;
-pub use login::*;pub mod page;
+pub use index::*;pub mod login;
+pub use login::*;pub mod dashboard;
+
+pub mod page;
+
+pub mod image;
+pub use dashboard::*;
+
 pub use page::*;
+
+pub use image::*;

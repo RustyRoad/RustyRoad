@@ -3,7 +3,8 @@ use crate::Project;
 use std::io::Error;
 
 pub fn write_to_login_page(project: Project) -> Result<(), Error> {
-    let contents = r#"{% extends 'base.html.tera' %}
+    let contents = r#"
+{% extends 'base.html.tera' %}
 {% block title %}Login Page{% endblock title %}
 {% block head %}
 {{ super() }}
@@ -14,7 +15,9 @@ pub fn write_to_login_page(project: Project) -> Result<(), Error> {
     <div>
       <img class='mx-auto h-10 w-auto' src='https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600'
         alt='Your Company'>
-      <h2 class='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900'>Sign in to your account
+      <h2 class='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900 dark:text-white dark:text-opacity-75
+      dark:tracking-tight dark:font-bold'>
+        Sign in to your account
       </h2>
     </div>
     <!-- Error message section -->
@@ -44,7 +47,10 @@ pub fn write_to_login_page(project: Project) -> Result<(), Error> {
         <div class='flex items-center'>
           <input id='remember-me' name='remember-me' type='checkbox'
             class='h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600'>
-          <label for='remember-me' class='ml-3 block text-sm leading-6 text-gray-900'>Remember me</label>
+          <label for='remember-me' class='ml-3 block text-sm leading-6 text-gray-900 dark:text-white dark:text-opacity-75
+          dark:font-bold'>
+            Remember me
+          </label>
         </div>
 
         <div class='text-sm leading-6'>
@@ -59,13 +65,16 @@ pub fn write_to_login_page(project: Project) -> Result<(), Error> {
       </div>
     </form>
 
-    <p class='text-center text-sm leading-6 text-gray-500'>
+    <p class='text-center text-sm leading-6 text-gray-500 dark:text-white dark:text-opacity-75'>
       Not a member?
-      <a href='#' class='font-semibold text-indigo-600 hover:text-indigo-500'>Start a 14-day free trial</a>
+      <a href='#' class='font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400'>
+        Start a 14-day free trial
+      </a>
     </p>
   </div>
 </div>
-{% endblock content %}"#.to_string();
+{% endblock content %}
+"#.to_string();
 
     write_to_file(&project.login_page_html, contents.as_bytes())
         .unwrap_or_else(|why| panic!("Couldn't write to {}: {}", &project.login_page_html, why));

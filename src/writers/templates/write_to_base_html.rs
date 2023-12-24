@@ -20,7 +20,7 @@ pub fn write_to_base_html(name: &String) -> Result<(), std::io::Error> {
             {% endblock footer %}
         </div>
     </body>
-    <script src='/js/index.js'></script>
+    <script src='/static/js/index.js'></script>
 
 </html>"#;
     // write to file and use the result

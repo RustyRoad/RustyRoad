@@ -29,12 +29,12 @@ use color_eyre::eyre::Result;
 use dialoguer::Confirm;
 use eyre::Error;
 use serde::Deserialize;
-use sqlx::mysql::MySqlConnectOptions;
 use sqlx::postgres::PgConnectOptions;
-use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
 use std::env;
 use std::{fs::OpenOptions, io::Write};
+use sqlx::mysql::MySqlConnectOptions;
+use sqlx::sqlite::SqliteConnectOptions;
 use tokio::io;
 
 pub mod database;
@@ -338,15 +338,15 @@ static/styles.css
         class RustyRoad {{
             constructor() {{
                 this.name = \"{}\";
-        function greet() {{
-            console.log(\"Welcome to {} powered by Rusty Road\");
-        }}
+                this.greet = () => {{
+                    console.log(\"Welcome to {} powered by Rusty Road\");
+                }}
             }}
         }}
 
-        const rusty-road = new RustyRoad();
+        const rustyroad = new RustyRoad();
 
-        rusty-road.greet();
+        rustyroad.greet();
         ",
             self.name, self.name
         );
@@ -507,9 +507,7 @@ static/styles.css
         });
 
         // Write to index.html controller
-        write_to_index_controller(&project).unwrap_or_else(|why| {
-            println!("Failed to write to index.html: {:?}", why.to_string());
-        });
+        write_to_index_controller(&project).expect("Failed to write to index controller");
 
         // Write to gitignore file
         Self::write_to_gitignore(&project).unwrap_or_else(|why| {
@@ -536,18 +534,22 @@ static/styles.css
             println!("Failed to write to sidebar: {:?}", why.to_string());
         });
 
-        // write to the dashboard page
-        write_to_dashboard(project.clone()).unwrap_or_else(|why| {
-            println!("Failed to write to dashboard: {:?}", why.to_string());
-        });
-
         // write to the login page
         write_to_login_page(project.clone()).unwrap_or_else(|why| {
             println!("Failed to write to login: {:?}", why.to_string());
         });
 
+        write_to_404_html(&project.not_found_html).unwrap_or_else(|why| {
+            println!("Failed to write to 404: {:?}", why.to_string());
+        });
+
+        write_to_not_found_controller(&project).expect("Failed to write to not_found controller");
+
         write_to_authenticated_layout(project.clone()).unwrap_or_else(|why| {
-            println!("Failed to write to authenticated_page layout: {:?}", why.to_string());
+            println!(
+                "Failed to write to authenticated_page layout: {:?}",
+                why.to_string()
+            );
         });
 
         write_to_layout(project.clone()).unwrap_or_else(|why| {
@@ -773,18 +775,22 @@ static/styles.css
             }
         }
 
+        // write to the dashboard page
+        write_to_dashboard(project.clone()).unwrap_or_else(|why| {
+            println!("Failed to write to dashboard: {:?}", why.to_string());
+        });
+
         println!("Project {} created!", &project.name);
 
         // Create the database
         Ok(project)
     } // End of create_new_project function
 
-
     pub fn exit_program() {
         println!("Exiting...");
         std::process::exit(0);
     }
-
+    
     pub fn cli() -> Command {
         Command::new("RustyRoad")
             .about("CLI for Rusty Road")
@@ -805,8 +811,7 @@ static/styles.css
                             .about("Generates a new controller")
                             .subcommand_required(false)
                             .arg_required_else_help(false)
-                            .allow_external_subcommands(false)
-                           ,
+                            .allow_external_subcommands(false),
                     )
                     .subcommand(
                         Command::new("model")
@@ -818,10 +823,7 @@ static/styles.css
                             .arg_required_else_help(true)
                             .allow_external_subcommands(true),
                     )
-                    .subcommand(
-                        Command::new("controller")
-                            .about("Generates a new controller"),
-                    )
+                    .subcommand(Command::new("controller").about("Generates a new controller"))
                     .subcommand(
                         Command::new("migration")
                             .about("Generates a new migration")
@@ -1126,7 +1128,9 @@ static/styles.css
                     };
 
                     // ask the user the name of the controller
-                    println!("What is the name of the model you want to create a controller for?: ");
+                    println!(
+                        "What is the name of the model you want to create a controller for?: "
+                    );
                     println!("In order to work out of the box, ensure the model already exists.");
                     let mut input = String::new();
                     std::io::stdin().read_line(&mut input).unwrap();
@@ -1136,7 +1140,6 @@ static/styles.css
                     let _ = create_new_controller(model_name.to_string(), crud_type)
                         .await
                         .expect("Error creating controller");
-
                 }
                 Some(("model", _matches)) => {
                     todo!("Implement this");

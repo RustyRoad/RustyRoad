@@ -3,7 +3,7 @@ use crate::writers::write_to_new_get_all_controller;
 use eyre::Error;
 use std::path::Path;
 
-pub fn create_get_all_controller(model_name: String) -> Result<(), Error> {
+pub async fn create_get_all_controller(model_name: String) -> Result<(), Error> {
     // find the model in the models directory
     // if the model does not exist, let the user know and tell them to create a model with that name
     // we will later  use the migration to create the model
@@ -38,9 +38,8 @@ pub fn create_get_all_controller(model_name: String) -> Result<(), Error> {
         });
     }
 
-        write_to_new_get_all_controller(model_name.clone().to_string()).unwrap_or_else(|why| {
-            println!("Failed to write to controller: {:?}", why.to_string());
-        });
+    write_to_new_get_all_controller(model_name.clone().to_string())
+        .expect("Failed to write to new get all controller");
     
 
     Ok(())

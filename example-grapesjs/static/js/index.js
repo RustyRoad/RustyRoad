@@ -2,13 +2,13 @@
         class RustyRoad {
             constructor() {
                 this.name = "example-grapesjs";
-        function greet() {
-            console.log("Welcome to example-grapesjs powered by Rusty Road");
-        }
+                this.greet = () => {
+                    console.log("Welcome to example-grapesjs powered by Rusty Road");
+                }
             }
         }
 
-        const rusty-road = new RustyRoad();
+        const rustyroad = new RustyRoad();
 
-        rusty-road.greet();
+        rustyroad.greet();
         

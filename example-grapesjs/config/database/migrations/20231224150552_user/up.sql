@@ -23,4 +23,4 @@ CREATE TABLE Sessions (
     session_data TEXT,
     expiration_date TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES Users(id)
-);INSERT INTO Roles (name) VALUES ('admin');INSERT INTO Permissions (name, role_id) VALUES ('create_user', 1);INSERT INTO Permissions (name, role_id) VALUES ('read_user', 1);INSERT INTO Users (password, username, role_id) VALUES ('$2b$12$eCJrkQufIYUd0BswqVN5XOincEStnj/AB21bgseNTLWkai4TX8Zby', 'admin', 1);
+);INSERT INTO Roles (name) VALUES ('admin');INSERT INTO Permissions (name, role_id) VALUES ('create_user', 1);INSERT INTO Permissions (name, role_id) VALUES ('read_user', 1);INSERT INTO Users (password, username, role_id) VALUES ('$2b$12$Kq87Efx2THn8P8Lla.ZYG.oem3AgpWnygWwljb5Q9eEvYuguRBhFa', 'admin', 1);

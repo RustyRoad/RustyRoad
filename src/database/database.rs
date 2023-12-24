@@ -130,8 +130,9 @@ impl Database {
     ///
     /// # Example
     /// ```
+    /// use rustyroad::database::Database;
     /// let database = Database::get_database_from_rustyroad_toml().unwrap();
-    /// let db_pool = database.get_db_pool(database).await;
+    /// let db_pool = database.get_db_pool(database).unwrap();
     /// ```
     pub async fn get_db_pool(database: Database) -> Result<PoolConnection, Box<dyn Error + Send>> {
         match database.database_type {
