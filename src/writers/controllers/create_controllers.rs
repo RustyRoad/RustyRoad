@@ -2,11 +2,26 @@
 use eyre::Error;
 use crate::{CRUDType};
 use crate::writers::{create_create_controller_in_existing_folder, create_create_controller_in_new_folder, create_read_controller_in_existing_folder, create_read_controller_in_new_folder, create_update_controller_in_existing_folder, create_update_model};
-
-pub async fn create_new_controller(
-    model_name: String,
-    controller_type: CRUDType,
-) -> Result<(), Error> {
+/// # Name: create_new_controller
+/// ### Description:
+/// - Creates a new controller
+/// ### Parameters:
+/// - model_name: String
+/// - controller_type: CRUDType
+/// ### Returns:
+/// - Result<(), Error>
+/// ### Example:
+/// ```
+/// use sqlparser::ast::Statement::Assert;
+/// use rustyroad::writers::create_new_controller;
+/// use rustyroad::CRUDType;
+///
+/// let model_name = "page".to_string();
+/// let controller_type = CRUDType::Read;
+///
+/// let result = create_new_controller(model_name, controller_type);
+/// ```
+pub async fn create_new_controller(model_name: String, controller_type: CRUDType) -> Result<(), Error> {
     // the controller will need to check the current directory to see if it is a rustyroad project
     // if it is not, it will return an error and ask the user to run the command in a rustyroad project
     // if it is a rustyroad project, it will create a new directory with the controllerName

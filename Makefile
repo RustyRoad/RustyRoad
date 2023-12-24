@@ -25,3 +25,7 @@ run_grapes:
 	echo "Running GrapesJS..."; \
 	(cd $(GRAPESJS_DIR) && npm install && npm run start)
 	@echo "Done"
+git-tag:
+	@echo "Tagging git..."
+	git tag -a v$(shell cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version') -m "v$(shell cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
+	@echo "Done"

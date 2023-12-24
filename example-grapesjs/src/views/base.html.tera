@@ -7,15 +7,15 @@
         {% endblock head %}
     </head>
 
-    {% include 'components/navbar.html.tera'%}
     <body id='app' class='h-full flex flex-col'>
-       {% block content %}{% endblock content %}
+        {% include 'components/navbar.html.tera'%}
+        <div class="h-full" id='content'>{% block content %}{% endblock content %}</div>
         <div id='footer'>
             {% block footer %}
             {% include 'sections/footer' ignore missing %}
             {% endblock footer %}
         </div>
     </body>
-    <script src='/js/index.js'></script>
+    <script src='/static/js/index.js'></script>
 
 </html>

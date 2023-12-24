@@ -126,14 +126,14 @@ pub fn create_update_controller_in_new_folder(controller_name: String) -> Result
         println!("Failed to create directory: {:?}", why.to_string());
     });
     // Create a new controller using the controllerName
-    // Update the controllers/authenticated_page file
-    let full_file_name = format!("./src/controllers/authenticated_page");
+    // Update the controllers/page file
+    let full_file_name = format!("./src/controllers/page");
     write_to_controllers_mod(&full_file_name, controller_name.clone()).unwrap_or_else(|why| {
         println!("Failed to write to controllers/mod: {:?}", why.to_string());
     });
 
-    // create the controllers/authenticated_page file
-    create_file(&format!("./src/controllers/{}/authenticated_page", controller_name)).unwrap_or_else(|why| {
+    // create the controllers/page file
+    create_file(&format!("./src/controllers/{}/page", controller_name)).unwrap_or_else(|why| {
         println!("Failed to create file: {:?}", why.to_string());
     });
 
@@ -141,13 +141,13 @@ pub fn create_update_controller_in_new_folder(controller_name: String) -> Result
     // Create a vector and push the controllerName to the vector
     components.push(controller_name.clone().to_string());
 
-    // Write to authenticated_page file
+    // Write to page file
     writers::write_to_module(
-        &format!("./src/controllers/{}/authenticated_page", &controller_name),
+        &format!("./src/controllers/{}/page", &controller_name),
         components,
     )
     .unwrap_or_else(|why| {
-        println!("Failed to write to authenticated_page: {:?}", why.to_string());
+        println!("Failed to write to page: {:?}", why.to_string());
     });
 
     // Create a new file with the controllerName.rs
@@ -167,21 +167,12 @@ pub fn create_update_controller_in_new_folder(controller_name: String) -> Result
     });
 
     // Create a new file with the controllerName.html.tera
-    create_file(&format!("./views/pages/{}.html.tera", controller_name)).unwrap_or_else(|why| {
-        println!("Failed to create file: {:?}", why.to_string());
-    });
+    create_file(&format!("./views/pages/{}.html.tera", controller_name)).expect("Failed to create file");
     // Write to controllerName.html.tera file
-    write_to_controller_name_html(controller_name.clone().as_str()).unwrap_or_else(|why| {
-        println!(
-            "Failed to write to controllerName.html.tera: {:?}",
-            why.kind()
-        );
-    });
+    write_to_controller_name_html(controller_name.clone().as_str()).expect("Failed to write to controllerName.html.tera");
 
     // update main.rs file
-    add_new_controller_to_main_rs(None, controller_name.clone().as_str()).unwrap_or_else(|why| {
-        println!("Failed to add to controller in main.rs: {:?}", why.kind());
-    });
+    add_new_controller_to_main_rs(None,None, controller_name.clone().as_str()).expect("Failed to add to controller in main.rs");
 
     // end the function
     return Ok(());

@@ -1,21 +1,21 @@
-{% extends 'base.html.tera' %}
-{% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
-{% block content %}
 
-<!--
-    This example requires updating your template:
-
-    ```
-    <html class="h-full bg-white">
-    <body class="h-full">
-    ```
-  -->
-
-<main class="lg:pl-72">
-  <div id='content' class="h-full w-full">
-    {% block main_content %}
-    <!-- Main content here -->
-    {% endblock main_content %}
-  </div>
-</main>
-{% endblock content %}
+    {% extends 'base.html.tera' %}
+    {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
+    {% block head %}
+    {{ super() }}
+    {% endblock head %}
+    {% block content %}
+    
+    {% block sidebar %}
+    <!-- Sidebar content here -->
+    {% endblock sidebar %}
+    
+    
+    <main class="lg:pl-72">
+      <div id='content' class='relative'>
+        {% block main_content %}
+        <!-- Main content here -->
+        {% endblock main_content %}
+      </div>
+    </main>
+    {% endblock content %}
