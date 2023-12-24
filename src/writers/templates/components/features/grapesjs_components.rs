@@ -17,10 +17,13 @@ use crate::writers::write_to_file;
 pub fn create_grapesjs_component() -> Result<(), Error> {
     // define the html template
     let html = r#"
-    <div id="gjs" style="height: 100%; width: 100%;">
+   <div id="gjs" style="height: 100%; overflow: hidden; width: 100%;">
     <div style="margin:100px 100px 25px; padding:25px; font:caption">
-        This is a demo content from _index.html. You can use this template file for development purpose. It
-        won't be stored in your git repository
+        {% if html_content %}
+        {{html_content|safe}}
+        {% else %}
+        Welcome to the editor grab a block from the right and drag it here
+        {% endif %}
     </div>
 </div>
 
@@ -29,24 +32,24 @@ pub fn create_grapesjs_component() -> Result<(), Error> {
     html {
         height: 80%;
         margin: 0;
-        }
+    }
 
     .gjs-block {
         padding: 0 !important;
         width: 100% !important;
         min-height: auto !important;
-        }
+    }
 
     .gjs-block svg {
         width: 100%;
-        }
+    }
 
     .change-theme-button {
         width: 40px;
         height: 40px;
         border-radius: 50%;
         margin: 5px;
-        }
+    }
 
     .change-theme-button:focus {
         /* background-color: yellow; */
@@ -58,7 +61,7 @@ pub fn create_grapesjs_component() -> Result<(), Error> {
     .gjs-pn-views-container {
         height: auto !important;
     }
-    </style>
+</style>
     "#;
 
     //declare the file path.

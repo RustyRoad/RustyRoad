@@ -26,8 +26,10 @@ pub fn render_index_page() -> Result<String, tera::Error> {
     let context = tera::Context::new();
     let rendered = tera.render("pages/index.html.tera", &context)?;
 
+
     Ok(rendered)
 }
+
 
 // store the index page in a page struct and save it to the database
 pub async fn save_index_page() {

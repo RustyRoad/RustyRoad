@@ -35,6 +35,10 @@ pub async fn get_page_details(tmpl: Data<Tera>, user: Option<Identity>, id: Path
             Err(e) => {
                 let mut context = Context::new();
                 context.insert("error", &e.to_string());
+                let page = Page::new();
+                context.insert("page", &page);
+                context.insert("html_content", &page.html_content);
+                context.insert("title", "Create Page");
                 tmpl.render(
                     "layouts/authenticated_page/page/page_details.html.tera",
                     &context,
@@ -49,7 +53,7 @@ pub async fn get_page_details(tmpl: Data<Tera>, user: Option<Identity>, id: Path
         context.insert("route_name", "login");
         context.insert("error", "You must be logged in to create a new page.");
         tmpl.render(
-            "layouts/authenticated_page/page/page_details.html.tera",
+            "pages/login.html.tera",
             &context,
         )
         .unwrap()
@@ -430,7 +434,6 @@ pub mod tests {
     use std::fs::{self, create_dir};
     use std::path::PathBuf;
     use std::io::{self};
-
 
     fn setup_test_environment() -> io::Result<(tempfile::TempDir, PathBuf)> {
         let temp_dir = tempfile::tempdir()?;
