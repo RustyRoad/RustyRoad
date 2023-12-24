@@ -1,6 +1,6 @@
 [package]
 name = "rustyroad"
-version = "0.1.8-beta-2.0.7"
+version = "1.0.0"
 edition = "2021"
 license = "MIT"
 description = "Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust."
@@ -9,10 +9,11 @@ include = ["src/**/*", "Cargo.toml", "grapesjs-tailwind/dist/grapesjs-tailwind.m
 repository = "https://github.com/RileySeaburg/RustyRoad"
 readme = "README.md"
 keywords = ["web", "framework", "rust", "rails", "ruby"]
-categories = ["web-programming::frameworks"]
+categories = ["web-programming", "development-tools", "network-programming", "web-programming::http-client", "web-programming::http-server"]
 documentation = "https://docs.rs/rustyroad"
 
 [dependencies]
+tera = "1.19.1"
 clap = { version = "4.0.32", features = ["derive"] }
 serde = {version = "1.0.152", features = ["derive"] }
 toml = "0.8.1"
@@ -26,7 +27,7 @@ tempfile = "3.5.0"
 postgres = "0.19.5"
 r2d2 = "0.8.10"
 mysql = "24.0.0"
-sqlx = { version = "0.7.2", features = ["sqlite", "postgres", "time", "uuid", "mysql", "runtime-tokio"] }
+sqlx = { version = "0.7.2", features = ["sqlite", "postgres", "time", "uuid", "mysql", "runtime-tokio", "macros", "chrono", "json"] }
 tokio = { version = "1.27.0", features = ["full"] }
 tokio-postgres = "0.7.8"
 futures-util = "0.3.28"
@@ -35,7 +36,7 @@ syn = { version = "2.0.15", features = ["full"] }
 quote = "1.0.26"
 proc-macro2 = "1.0.56"
 bcrypt = "0.15.0"
-chrono = "0.4.24"
+chrono = { version = "0.4.24", features = ["serde"] }
 strum_macros = "0.25.2"
 mysql_async = "0.32.2"
 dialoguer = "0.11.0"
@@ -44,6 +45,9 @@ maplit = "1.0.2"
 eyre = "0.6.8"
 color-eyre = "0.6.2"
 rand = "0.8.5"
+serde_derive = { version = "1.0.193", features = [] }
+serde_json = "1.0.108"
+tempdir = "0.3.7"
 [features]
 with-file-history = []
 

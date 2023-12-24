@@ -3,7 +3,6 @@ use std::fs::create_dir;
 use crate::generators::create_file;
 use crate::writers::{add_new_controller_to_existing_module_in_main_rs, add_new_controller_to_main_rs, write_to_controller_name_html, write_to_controllers_mod, write_to_new_get_controller, write_to_new_post_controller, write_to_previous_create_controller};
 use eyre::Error;
-use crate::writers;
 
 /// # Name: create_create_controller_in_existing_folder
 /// This function creates a new create controller in an existing folder.
@@ -86,12 +85,7 @@ pub fn create_create_controller_in_existing_folder(controller_name: String) -> R
                 },
             );
             // Write to controllerName.html.tera file
-            write_to_controller_name_html(controller_name.clone().as_str()).unwrap_or_else(|why| {
-                println!(
-                    "Failed to write to controllerName.html.tera: {:?}",
-                    why.kind()
-                );
-            });
+            write_to_controller_name_html(controller_name.clone().as_str()).expect("Failed to write to controllerName.html.tera");
 
             // update main.rs file
             add_new_controller_to_existing_module_in_main_rs(
@@ -163,15 +157,15 @@ pub fn create_create_controller_in_new_folder(controller_name: String) -> Result
         },
     );
     // Create a new controller using the controllerName
-    // Update the controllers/authenticated_page file
-    let full_file_name = format!("./src/controllers/authenticated_page");
+    // Update the controllers/page file
+    let full_file_name = format!("./src/controllers/{}/mod.rs", controller_name);
     write_to_controllers_mod(&full_file_name, controller_name.clone())
         .unwrap_or_else(|why| {
             println!("Failed to write to controllers/mod: {:?}", why.to_string());
         });
 
-    // create the controllers/authenticated_page file
-    create_file(&format!("./src/controllers/{}/authenticated_page", controller_name))
+    // create the controllers/page file
+    create_file(&format!("./src/controllers/{}/page", controller_name))
         .unwrap_or_else(|why| {
             println!("Failed to create file: {:?}", why.to_string());
         });
@@ -180,19 +174,10 @@ pub fn create_create_controller_in_new_folder(controller_name: String) -> Result
     // Create a vector and push the controllerName to the vector
     components.push(controller_name.clone().to_string());
 
-    // Write to authenticated_page file
-    writers::write_to_module(
-        &format!("./src/controllers/{}/authenticated_page", &controller_name),
-        components,
-    )
-        .unwrap_or_else(|why| {
-            println!("Failed to write to authenticated_page: {:?}", why.to_string());
-        });
-
     // Create a new file with the controllerName.rs
     create_file(&format!(
-        "./src/controllers/{}/{}.rs",
-        controller_name, controller_name
+        "./src/controllers/{}.rs",
+        controller_name
     ))
         .unwrap_or_else(|why| {
             println!("Failed to create file: {:?}", why.to_string());
@@ -211,20 +196,11 @@ pub fn create_create_controller_in_new_folder(controller_name: String) -> Result
             println!("Failed to create file: {:?}", why.to_string());
         });
     // Write to controllerName.html.tera file
-    write_to_controller_name_html(controller_name.clone().as_str()).unwrap_or_else(
-        |why| {
-            println!(
-                "Failed to write to controllerName.html.tera: {:?}",
-                why.kind()
-            );
-        },
-    );
+    write_to_controller_name_html(controller_name.clone().as_str()).expect("Failed to write to controllerName.html.tera");
 
     // update main.rs file
-    add_new_controller_to_main_rs(None, controller_name.clone().as_str())
-        .unwrap_or_else(|why| {
-            println!("Failed to add to controller in main.rs: {:?}", why.kind());
-        });
+    add_new_controller_to_main_rs(None,None, controller_name.clone().as_str())
+        .expect("Failed to add to controller in main.rs");
 
     // end the function
     return Ok(());

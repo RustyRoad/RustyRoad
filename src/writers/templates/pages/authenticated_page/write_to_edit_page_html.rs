@@ -12,9 +12,12 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
 {% block authenticated_content %}
 {{ super() }}
 
+
+
 <div style="height: 92vh; width: 100%;">
     {% include 'components/grapesjs.html.tera' ignore missing %}
 </div>
+
 
 <style>
     body,
@@ -301,6 +304,8 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
             console.log(error);
         }
     }
+
+
 </script>
 {% endblock authenticated_content %}
     "#

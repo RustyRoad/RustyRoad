@@ -1,7 +1,7 @@
 use crate::writers::general;
 
 /// Name: write_to_controllers_mod
-/// Description: Writes to the controllers/authenticated_page file
+/// Description: Writes to the controllers/page file
 /// Calls the write_to_module function from the general module writer
 pub fn write_to_controllers_mod(
     file_name: &String,
@@ -17,7 +17,7 @@ pub fn write_to_controllers_mod(
 }
 
 /// Name: write_to_models_mod
-/// Description: Writes to the models/authenticated_page file
+/// Description: Writes to the models/page file
 /// Calls the write_to_module function from the general module writer
 pub fn write_to_models_mod(file_name: &String, model_name: String) -> Result<(), std::io::Error> {
     let mut components = Vec::new();

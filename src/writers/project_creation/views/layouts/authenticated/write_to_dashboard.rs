@@ -1,4 +1,4 @@
-use crate::writers::{controller_writer, write_to_controllers_mod, write_to_file};
+use crate::writers::{ write_to_controllers_mod, write_to_dashboard_controller, write_to_file};
 use crate::Project;
 use std::io::Error;
 
@@ -23,15 +23,31 @@ pub fn write_to_dashboard(project: Project) -> Result<(), Error> {
         )
     });
 
-    controller_writer::write_to_initial_get_controller(project.dashboard_controller.clone())
-        .unwrap_or_else(|why| {
-            panic!(
-                "Couldn't write to the: {}: {}",
-                &project.dashboard_controller, why
-            )
-        });
+    // write to dashboard controller
+    write_to_dashboard_controller(&project).unwrap_or_else(|why| {
+        panic!(
+            "Couldn't write to the: {}: {}",
+            &project.dashboard_controller, why
+        )
+    });
 
-    write_to_controllers_mod(&project.controllers_module, "dashboard".to_string()).unwrap_or_else(
+    // print the current directory
+    println!("Current directory: {:?}", std::env::current_dir().unwrap());
+
+    // ensure the current directory is the project directory
+    // if it is not, change the current directory to the project directory
+    if std::env::current_dir().unwrap().to_str().unwrap() != project.name {
+        let path_to_set = std::env::current_dir().unwrap().join(&project.name);
+        std::env::set_current_dir(path_to_set).unwrap();
+    }
+
+    // print the current directory
+    println!("Current directory: {:?}", std::env::current_dir().unwrap());
+
+    // define the new controllers mod with the current directory
+    let controllers_mod = format!("{}/src/controllers/mod.rs", std::env::current_dir().unwrap().to_str().unwrap());
+
+    write_to_controllers_mod(&controllers_mod, "dashboard".to_string()).unwrap_or_else(
         |why| {
             panic!(
                 "Couldn't write to the: {}: {}",

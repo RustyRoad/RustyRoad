@@ -32,10 +32,10 @@ pub fn new(name: String) -> Project {
     let config_prod_db = format!("{}/prod.db", db);
     let config_test_db = format!("{}/test.db", db);
     let controllers = format!("{}/controllers", src_dir);
-    let controllers_module = format!("{}/authenticated_page", controllers);
+    let controllers_module = format!("{}/mod.rs", controllers);
     let controllers = format!("{}/controllers", src_dir);
     let models = format!("{}/models", src_dir);
-    let models_module = format!("{}/authenticated_page", models);
+    let models_module = format!("{}/mod.rs", models);
     let migrations = format!("{}/migrations", db);
     let seeders = format!("{}/seeders", name);
     let tests = format!("{}/tests", name);

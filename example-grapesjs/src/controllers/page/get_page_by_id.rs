@@ -34,7 +34,7 @@ async fn get_page_by_id(
             }
         }
     } else {
-        let result = models::Page::get_page_by_id(id.into_inner()).await;
+        let result = models::Page::get_page_by_id(id.into_inner()).await;m
         match result {
             Ok(page) => {
                 let mut context = tera::Context::new();
