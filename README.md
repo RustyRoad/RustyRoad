@@ -1,6 +1,6 @@
 <p align="center">
   <a href="" rel="noopener">
- <img src="https://i.imgur.com/S2ZwTrA.png" alt="Project logo"></a>
+ <img src="https://avatars.githubusercontent.com/u/138265565?s=400&u=eb116ae7b42e521b884d1288213df00032130f6a&v=4" alt="Project logo"></a>
 </p>
 <h3 align="center">Rusty Road</h3>
 
