@@ -659,7 +659,7 @@ pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
 
     // Define the contents to be written to the file
     let new_controller_content = format!(
-        r#"#[put("/{}/{{id}}")]
+        r#"#[patch("/{}/{{id}}")]
         pub async fn update_{}(id: Path<i32>, {}: Json<{}>, user: Option<Identity>) -> HttpResponse {{
             if let Some(_user) = user {{
                 let result = {}::update_{}(id.into_inner(), {}.into_inner()).await;
@@ -693,7 +693,7 @@ pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
     let mut file_contents = fs::read_to_string(&path)?;
 
     // Update imports
-    file_contents = add_or_update_import(&file_contents, "actix_web", "put");
+    file_contents = add_or_update_import(&file_contents, "actix_web", "patch");
     file_contents = add_or_update_import(&file_contents, "actix_web", "HttpResponse");
     file_contents = add_or_update_import(&file_contents, "tera", "Context");
     file_contents = add_or_update_import(&file_contents, "tera", "Tera");

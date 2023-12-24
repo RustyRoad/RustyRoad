@@ -1,0 +1,15 @@
+
+    {% extends 'layouts/layout.html.tera' %}
+    {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
+    
+    
+    {% block main_content %}
+    
+    <nav id="side-bar" class="z-">
+        {% include 'components/sidebar.html.tera'%}
+    </nav>
+    {% block authenticated_content %}
+    {% endblock authenticated_content %}
+    <!-- Custom main content for this page -->
+    {% endblock main_content %}
+    

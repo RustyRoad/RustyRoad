@@ -307,6 +307,13 @@ Generate a new route
 rustyroad generate route users
 ```
 
+Note: If you want to run an example project, be sure to run the migrations first.
+
+```shell
+cd example
+
+rustyroad migration run
+```
 
 ## ⛏️ Built With <a name = "tech_stack"></a>
 

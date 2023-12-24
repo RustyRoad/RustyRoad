@@ -514,7 +514,7 @@ async fn main() -> std::io::Result<()> {
             .service(controllers::page::create_page)
             .service(controllers::page::update_page)
             .service(controllers::page::get_page_by_id)
-            .service(Files::new("/static", "./static")) // Add this line
+            .service(Files::new("/", "./static")) // Add this line
     })
     .bind(("127.0.0.1", 80))
     .unwrap()

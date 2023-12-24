@@ -1,4 +1,4 @@
-{% extends 'layouts/authenticated/authenticated.html.tera' %}
+{% extends 'layouts/authenticated_page/authenticated_page.html.tera' %}
 {% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
 
 {% block authenticated_content %}

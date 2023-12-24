@@ -4,7 +4,10 @@ version = "0.1.0"
 authors = ["RustyRoad"]
 edition = "2021"
 
-[dependencies]
+
+
+
+    [dependencies]
 actix-cors = "0.6.4"
 actix-web = "4.0.0-beta.8"
 actix-files = "0.6.2"
@@ -27,6 +30,13 @@ dotenv = "0.15.0"
 bcrypt = "0.14.0"
 color-eyre = "0.6.2"
 serde_derive = "1.0.189"
+tz = "0.2.1"
+actix-multipart = "0.6.1"
+mime = "0.3.17"
+image = "0.24.7"
+sanitize-filename = "0.5"
+
 [dependencies.sqlx]
-features = ["postgres", "macros", "chrono", "json", "uuid", "runtime-tokio"]
+features = ["postgres", "macros", "chrono", "json", "uuid", "runtime-tokio", "time"]
 version = "0.7.2"
+    

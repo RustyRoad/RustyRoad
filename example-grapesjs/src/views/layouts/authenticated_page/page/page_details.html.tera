@@ -1,0 +1,624 @@
+
+{% extends 'layouts/authenticated_page/authenticated_page.html.tera' %}
+{% block title %}{{title | default(value="Dashboard", boolean=true)}}{% endblock title %}
+
+{% block authenticated_content %}
+{{ super() }}
+<a href="/page_dashboard"
+   class="absolute top-0 left-0 text-center dark:text-gray-800 text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md p-2 text-sm leading-6 font-semibold dark:hover:text-gray-100 dark:hover:bg-slate-900">
+   <span class="text-medium">&#8592;</span> Back
+</a>
+<div class="p-8 max-w-5xl mx-auto">
+    <div class="shadow-md p-6 rounded-lg dark:shadow-lg bg-white dark:bg-gray-800">
+    <!-- error message alert pill -->
+    <div class="hidden" id="error-message">
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold" id="error-message-title">Holy smokes!</strong>
+            <span class="block sm:inline" id="error-message-body">Something seriously bad happened.</span>
+            <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                <svg class="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20">
+                    <title>Close</title>
+                    <path d="M14.348 14.849c-.781.781-2.047.781-2.828 0L10 12.828l-1.52 1.52c-.781.781-2.047.781-2.828 0-.781-.781-.781-2.047
+                        0-2.828L7.172 10 5.652 8.48c-.781-.781-.781-2.047
+                        0-2.828.781-.781 2.047-.781 2.828 0L10 7.172l1.52-1.52c.781-.781
+                        2.047-.781 2.828 0 .781.781.781 2.047
+                        0 2.828L12.828 10l1.52 1.52c.781.781.781 2.047
+                        0 2.828z" />
+                </svg>
+            </span>
+        </div>
+    </div>
+    <div class="flex justify-between mb-6">
+        <button id="snippet-button" class="bg-blue-500 hover:bg-blue-700 h-3/4 px-1 py-1 text-white rounded font-semibold shadow-sm hover:shadow-l">
+            Edit snippet
+        </button>
+        <h1 class="text-4xl mb-6 text-green-400 font-bold text-center">Page Editor</h1>
+        <a href="/page/{% if page.id %}{{page.id}}{% else %}0{% endif %}/edit"
+        class="bg-green-500  h-3/4 px-1 py-1 hover:bg-green-700 text-white rounded font-semibold shadow-sm hover:shadow-l">
+           {% if page.id %} Update {% else %} Create {% endif %} Template
+        </a>
+    </div>
+
+        <!-- Page Metadata -->
+        <form id="page-metadata-form" class="mb-6 block">
+            <div class="grid grid-cols-2 gap-6">
+                <div class="flex flex-col gap-4">
+                    <div class="relative">
+                        <label for="title"
+                            class="absolute -top-2 left-2 inline-block bg-gray-50 px-1 text-xs font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-50">
+                            Page Title
+                        </label>
+                        <input name="title" type="text"
+                            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset bg-gray-50 ring-gray-300
+                            placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-offset-rose-300 sm:text-sm sm:leading-6
+                            dark:bg-gray-800 dark:text-gray-50"
+                            placeholder="Page Title" id="title"
+                            value="{% if page.title !="" %}{{page.title}}{% else %}{% endif %}">
+                    </div>
+                    <div class="relative">
+                        <label for="author"
+                            class="absolute -top-2 left-2 inline-block bg-gray-50 px-1 text-xs font-medium text-gray-900
+                            dark:bg-gray-800 dark:text-gray-50">
+                            Page Author
+                        </label>
+                        <input name="author" type="text"
+                            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset bg-gray-50 ring-gray-300
+                            placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-offset-rose-300 sm:text-sm sm:leading-6
+                            dark:bg-gray-800 dark:text-gray-50"
+                            placeholder="Page Author" id="author"
+                            value="{% if page.author !="" %}{{page.author}}{% else %}{% endif %}">
+                    </div>
+                    <div class="relative">
+                        <label for="summary"
+                            class="absolute -top-2 left-2 inline-block bg-gray-50 px-1 text-xs font-medium text-gray-900
+                            dark:bg-gray-800 dark:text-gray-50">
+                            Page Summary
+                        </label>
+                        <input name="summary" type="text"
+                            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset bg-gray-50 ring-gray-300
+                             placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-offset-rose-300 sm:text-sm sm:leading-6
+                                dark:bg-gray-800 dark:text-gray-50"
+                            placeholder="Page Summary" id="summary"
+                            value="{% if page.summary !="" %}{{page.summary}}{% else %}{% endif %}">
+                    </div>
+                </div>
+                <div class="relative">
+                    <label for="excerpt"
+                        class="absolute -top-2 left-2 inline-block bg-gray-50 px-1 text-xs font-medium text-gray-900
+                        dark:bg-gray-800 dark:text-gray-50">
+                        Page Excerpt
+                    </label>
+                    <textarea
+                        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset bg-gray-50 ring-gray-300
+                        placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-offset-rose-300 sm:text-sm sm:leading-6
+                        dark:bg-gray-800 dark:text-gray-50"
+                        placeholder="Excerpt" id="excerpt" rows="3">
+                        {% if page.excerpt !="" %}{{page.excerpt}}{% else %}{% endif %}
+                    </textarea>
+                </div>
+                <div class="relative">
+                    <label for="status"
+                        class="absolute -top-2 left-2 inline-block bg-gray-50 px-1 text-xs font-medium text-gray-900
+                        dark:bg-gray-800 dark:text-gray-50">
+                        Page Status
+                    </label>
+                    <select id="status" class="p-2 bg-gray-50 text-black rounded w-1/4
+                    dark:bg-gray-800 dark:text-gray-50">
+                        <option value="draft" class="bg-gray-50 text-black rounded">
+                            Draft
+                        </option>
+                        <option value="published" class="bg-gray-50 text-black rounded">
+                            Published
+                        </option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex flex-row items-center justify-center gap-20">
+                <label for="author-image" class="cursor-pointer flex flex-col items-center gap-4">
+                    <span class="text-gray-400 text-center">Author Image</span>
+                    <img class="rounded-full bg-gray-600 w-24 h-24 flex items-center justify-center mb-6"
+                        id="author-image-thumbnail"
+                        src="{% if page.author_thumbnail %}{{page.author_thumbnail}}{% else %}https://via.placeholder.com/150{% endif %}"
+                        alt="Author Image">
+                    <input type="file" id="author-image" accept="image/*" class="hidden">
+                </label>
+                <label for="featured-image" class="cursor-pointer flex flex-col items-center gap-4">
+                    <span class="text-gray-400 text-center">Featured Image</span>
+                    <img class="rounded bg-gray-600 w-24 h-24 flex items-center justify-center mb-6"
+                        id="featured-image-thumbnail"
+                        src="{% if page.featured_image_thumbnail %}{{page.featured_image_thumbnail}}{% else %}https://via.placeholder.com/150{% endif %}"
+                        alt="Featured Image">
+                    <input type="file" id="featured-image" accept="image/*" class="hidden">
+                </label>
+            </div>
+        </form>
+
+
+        <!-- Snippet Editor -->
+        <div class="hidden" id="snippet-editor">
+            <div class="mb-4">
+                <h2 class="text-xl font-bold mb-2 text-gray-700 dark:text-white">
+                    Snippet Editor
+                </h2>
+            </div>
+            <div class="mb-4">
+                <div class="p-4 border-l-4 border-green-400">
+                    <p class="text-lg font-semibold  text-gray-700 dark:text-white">
+                    {% if page.seo_title %}{{page.seo_title}}{% else %}{{title}} | {{site_name | default(value="Rusty Road", boolean=true)}}{% endif %}
+                    </p>
+                    <a href="{{site_url | default(value="https://www.github.com/rustyroad/", boolean=true)}}" target="_blank"
+                     class="text-blue-500">www.github.com.com/rustyroad/</a>
+                    <p class="text-gray-700 dark:text-white">
+                        {% if page.meta_description %}{{page.meta_description}}{% else %}There is a lot that goes into SEO, but these SEO steps are something every website owner should build into his or her routine when adding new posts or pages.
+                        Ensure that you are adding the proper SEO title, meta description, and focus keyword to every page in order to rank better in search engines.{% endif %}
+                    </p>
+                </div>
+
+            </div>
+            <div class="mb-6">
+                <label for="seo-title" class="block text-gray-700 text-sm font-bold mb-2 dark:text-white">
+                    SEO Title
+                </label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="seo-title" type="text" placeholder="%title% | %sep% | %sitename%"
+                    value="{% if page.seo_title %}{{page.seo_title}}{% else %}{{title}} | {{site_name | default(value="Rusty Road", boolean=true)}}{% endif %}">
+                    </div>
+                <div class="mb-6">
+                    <label for="slug" class="block text-gray-700 text-sm font-bold mb-2 dark:text-white">
+                        Slug
+                    </label>
+                    <input
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline
+                        dark:bg-gray-800 dark:text-gray-50"
+                        id="slug" type="text"
+                        placeholder="{% if page.slug %}{{page.slug}}{% else %}Rusty Road  {% endif %}"
+                        value="{% if page.slug %}{{page.slug}}{% else %}{% endif %}">
+                </div>
+                <div class="mb-6">
+                    <label for="meta-description" class="block text-gray-700 text-sm font-bold mb-2
+
+                        Meta Description
+                    </label>
+                    <textarea
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        id="meta-description" rows="3"
+                        placeholder="There is a lot that goes into SEO, but these SEO steps are something every website owner should build into his or her routine when adding new posts or pages."></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="focus-keyword">
+                        Focus Keyword
+                    </label>
+                    <input
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        id="focus-keyword" type="text" placeholder="SEO steps">
+                </div>
+            </div>
+            <div class="flex justify-between mt-6 w-50">
+                <button class="bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded" id="delete-button">
+                    Delete
+                </button>
+                <button type="submit" class="bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded"
+                    id="save-button">
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="hidden" id="html-content">
+        {{ html_content | safe }}
+    </div>
+
+
+    <script src="https://unpkg.com/idb@7.1.1/build/umd.js"></script>
+
+
+
+    <script>
+        // if page.id = false then set it to 0
+        var page_id = {% if page.id %} {{ page.id }} {% else %}0{% endif %};
+        var pageStatus = '{{ page.page_status }}';
+        var title_value = '{{ page.title }}';
+        var created_at_value_only_for_updates = '{{ page.created_at }}';
+        var count = 0;
+            // Function to convert a string into a slug
+            function createSlug(text) {
+                return text.toString().toLowerCase()
+                    .replace(/\s+/g, '-')           // Replace spaces with -
+                    .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+                    .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+                    .replace(/^-+/, '')             // Trim - from start of text
+                    .replace(/-+$/, '');            // Trim - from end of text
+            }
+
+        var title = title_value ? title_value : '';
+        var slug = '';
+        document.getElementById('slug').addEventListener('change', async (e) => {
+            slug = e.target.value;
+            const page = BuildPageContent();
+            await savePageToIndexedDB(page);
+        });
+        document.getElementById('title').addEventListener('change', async (e) => {
+            let slugInput = document.querySelector('#slug');
+            title = e.target.value;
+            slug = slugInput.value = createSlug(title);
+            const page = BuildPageContent();
+            await savePageToIndexedDB(page);
+        });
+        var author = '';
+        document.getElementById('author').addEventListener('change', async (e) => {
+            author = e.target.value;
+            const page = BuildPageContent();
+            await savePageToIndexedDB(page);
+        });
+        var summary = '';
+        document.getElementById('summary').addEventListener('change', async (e) => {
+            summary = e.target.value;
+            const page = BuildPageContent();
+            await savePageToIndexedDB(page);
+        });
+        var excerpt = '';
+        document.getElementById('excerpt').addEventListener('change', async (e) => {
+            excerpt = e.target.value;
+            const page = BuildPageContent();
+            await savePageToIndexedDB(page);
+        });
+        var status = pageStatus ? pageStatus : 'draft';
+        document.getElementById('status').addEventListener('change', async (e) => {
+            status = e.target.options[e.target.selectedIndex].text;
+            const page = BuildPageContent();
+            await savePageToIndexedDB(page);
+        });
+        var seoTitle = '';
+        document.getElementById('seo-title').addEventListener('change', async (e) => {
+            seoTitle = e.target.value;
+            const page = BuildPageContent();
+            await savePageToIndexedDB(page);
+        });
+        var focusKeyword = '';
+        document.getElementById('focus-keyword').addEventListener('change', async (e) => {
+            focusKeyword = e.target.value;
+            const page = BuildPageContent();
+            await savePageToIndexedDB(page);
+        });
+
+        var error_message = document.getElementById('error-message');
+        var error_message_title = document.getElementById('error-message-title');
+        var error_message_body = document.getElementById('error-message-body');
+        var html_content = document.getElementById('html-content').innerHTML;
+        var snippetEditor = document.getElementById('snippet-editor');
+        var snippetButton = document.getElementById('snippet-button');
+        var pageMetadataForm = document.getElementById('page-metadata-form');
+        var metaDescription = document.getElementById('meta-description');
+        var snippetsVisible = false;
+        var imageAdded = false;
+
+
+
+        // declare form vars
+        var delete_button = document.getElementById('delete-button');
+        var save_button = document.getElementById('save-button');
+
+        // declare vars for author image and featured image
+        var author_image = document.getElementById('author-image');
+        var featured_image = document.getElementById('featured-image');
+
+
+        // image response
+        var imageResponse = "";
+
+        snippetButton.addEventListener('click', function () {
+            // toggle the visibility of the snippet editor
+
+            // // if snippetsVisible = false then set it to true and set the snippets to visible
+            if (snippetsVisible === false) {
+                snippetEditor.classList.remove('hidden');
+                snippetEditor.classList.add('block');
+                snippetButton.innerHTML = 'Close snippet editor';
+                // hide the page metadata form
+                pageMetadataForm.classList.remove('block');
+                pageMetadataForm.classList.add('hidden');
+                snippetsVisible = true;
+            } else {
+                // if snippetsVisible = true then set it to false and set the snippets to hidden
+                snippetEditor.classList.remove('block');
+                snippetEditor.classList.add('hidden');
+                snippetButton.innerHTML = 'Edit snippet';
+                // show the page metadata form
+                pageMetadataForm.classList.remove('hidden');
+                pageMetadataForm.classList.add('block');
+                snippetsVisible = false;
+            }
+        });
+        // declare vars for author image thumbnail and featured image thumbnail
+
+        var authorImageThumbnail = document.getElementById('author-image-thumbnail');
+        var featuredImageThumbnail = document.getElementById('featured-image-thumbnail');
+
+        // define a space filler for the image urls
+        var author_image_url = 'https://via.placeholder.com/150';
+        var featured_image_url = 'https://via.placeholder.com/150';
+
+        function BuildPageContent() {
+            const now = Date.now();
+            // get the values from the form
+            if (page_id != false || page_id != 0) {
+                page_id
+            }
+            var status_value = pageStatus;
+            var author_image_value = author_image.value;
+            var author_thumbnail_value = authorImageThumbnail.value;
+            var featured_image_value = featured_image.value;
+
+            created_at_value_only_for_updates = created_at_value_only_for_updates ? created_at_value_only_for_updates : Math.floor(now / 1000);
+
+            // get the values from the snippet editor
+            var seo_title_value = seoTitle.value;
+            var meta_description_value = metaDescription.value;
+
+            const page_content = {
+                id: page_id,
+                html_content: html_content,
+                associated_user_id: 1,
+                title,
+                author,
+                summary,
+                excerpt,
+                status: status,
+                author_image: author_image_value,
+                author_thumbnail: author_thumbnail_value,
+                featured_image: featured_image_value,
+                seoTitle,
+                slug,
+                meta_description: meta_description_value,
+                focusKeyword
+            };
+
+            return page_content;
+        }
+
+        // need to define and decipher between the thunmbnail and the actual image
+
+        // response to save button click
+        save_button.addEventListener('click', async function () {
+
+            var formData = new FormData();
+            if (author_image.files.length != 0) {
+                formData.append('author_image', author_image.files[0]);
+            }
+            if (featured_image.files.length != 0) {
+                formData.append('featured_image', featured_image.files[0]);
+            }
+
+            // Perform the fetch request to upload the image
+            try {
+                const HtmlGrapesJs = BuildPageContent();
+                if (imageAdded) {
+                    const response = await fetch('/image', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server returned non-OK status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('Success:', data.files);
+
+                    // Check if author image or featured image was uploaded and update thumbnail
+                    if (data.files) {
+                        imageResponse = data.files;
+                        if (author_image.files.length != 0) {
+                            // Update author image thumbnail
+                            const authorImageThumbnail = document.querySelector('#author-image-thumbnail');
+                            HtmlGrapesJs.author_image = imageResponse[0].filepath;
+                            if (authorImageThumbnail) {
+                                HtmlGrapesJs.author_thumbnail = imageResponse[0].filepath;
+                                authorImageThumbnail.src = HtmlGrapesJs.author_thumbnail;
+                            }
+                        }
+
+                        if (featured_image.files.length != 0) {
+                            // Update featured image thumbnail
+                            HtmlGrapesJs.featured_image = imageResponse[1] ? imageResponse[1].filepath : imageResponse[0].filepath;
+                            const featuredImageThumbnail = document.querySelector('#featured-image-thumbnail');
+                            if (featuredImageThumbnail) {
+                                HtmlGrapesJs.featured_image_thumbnail = imageResponse[1] ? imageResponse[1].filepath : imageResponse[0].filepath;
+                                featuredImageThumbnail.src =  HtmlGrapesJs.featured_image_thumbnail;
+                            }
+                        }
+                    }
+                    console.log('imageResponse: ', imageResponse);
+                }
+
+                let url = '/page';
+                let method = 'POST';
+
+                // if page.id = false then set it to 0
+                if (!page_id) {
+                    page_id = 0;
+                }
+
+                // If page_id exists and is not 0, it's an update operation
+                if (page_id && page_id !== 0) {
+                    url = `/page/${page_id}`;
+                    method = 'PATCH';
+                    console.log('url: ', url);
+                    console.log("page_id: ", page_id);
+                    HtmlGrapesJs.id = page_id;
+                    HtmlGrapesJs.created_at = created_at_value_only_for_updates
+                } else {
+                    // If page_id is 0, it's a create operation
+                    delete HtmlGrapesJs.id;
+                }
+                console.log('HtmlGrapesJs That We Are Sending To The Server: ', HtmlGrapesJs);
+                // send the object to the server
+                fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(HtmlGrapesJs),
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error('Server returned non-OK status: ' + response.status);
+                        }
+                    })
+                    .then(data => {
+                        console.log('Success:', data);
+                        // parse the data back into a JSON object
+                        const page = data.data;
+                        // update the page_id variable with the new page ID
+                        page_id = page.id;
+                        created_at_value_only_for_updates = page.created_at;
+                        console.log('page_id: ', page_id);
+                    });
+            } catch (error) {
+                console.error('Error:', error);
+                error_message_title.innerHTML = 'Error';
+                error_message_body.innerHTML = 'Something went wrong. Please try again.';
+                error_message.classList.remove('hidden');
+                error_message.classList.add('block');
+                setTimeout(function () {
+                    error_message.classList.remove('block');
+                    error_message.classList.add('hidden');
+                }, 5000);
+            }
+        });
+        // response to delete button click
+        delete_button.addEventListener('click', () => {
+
+            // if page_id is not 0 then delete the page
+            if (page_id !== 0) {
+                // send the object to the server
+                fetch('/page' + page_id, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error.message);
+                        error_message_title.innerHTML = 'Error';
+                        error_message_body.innerHTML = 'Something went wrong. Please try again.';
+                        error_message.classList.remove('hidden');
+                        error_message.classList.add('block');
+                        setTimeout(function () {
+                            error_message.classList.remove('block');
+                            error_message.classList.add('hidden');
+                        }, 5000);
+                    });
+            } else {
+                // if page_id is 0 then show an error message
+                error_message_title.innerHTML = 'Error';
+                error_message_body.innerHTML = 'You cannot delete a page that has not been saved yet.';
+                error_message.classList.remove('hidden');
+                error_message.classList.add('block');
+                setTimeout(function () {
+                    error_message.classList.remove('block');
+                    error_message.classList.add('hidden');
+                }, 5000);
+            }
+        });
+
+
+        // store to indexedDB
+        const dbPromise = idb.openDB('page', 1, {
+            upgrade(db) {
+                db.createObjectStore('page', { keyPath: 'id' });
+            },
+        });
+
+        // Function to save page to indexedDB
+        const savePageToIndexedDB = async (page) => {
+
+            // check if the page id matches the page id in indexedDB
+            if (page.id !== page_id) {
+                // if it is different then delete the old page from indexedDB
+                deletePageFromIndexedDB(page_id);
+                console.log('Deleted old page from indexedDB');
+            }
+
+            const db = await dbPromise;
+            const tx = db.transaction('page', 'readwrite');
+            const store = tx.objectStore('page');
+            // Remove the key, as the key is in-line and will be automatically generated from the object
+            await store.put(page);
+            return tx.complete;
+        };
+
+        // Function to get page from indexedDB
+        const getPageFromIndexedDB = async (key) => {
+            const db = await dbPromise;
+            const tx = db.transaction('page', 'readonly');
+            const store = tx.objectStore('page');
+            return store.get(key);
+        };
+
+        // Function to delete page from indexedDB
+        const deletePageFromIndexedDB = async (key) => {
+            const db = await dbPromise;
+            const tx = db.transaction('page', 'readwrite');
+            const store = tx.objectStore('page');
+            await store.delete(key);
+            return tx.complete;
+        };
+
+        // event listener for the author image thumbnail to save to indexedDB when it changes and update the image preview
+        author_image.addEventListener('change', async () => {
+            imageAdded = true;
+            const page = BuildPageContent();
+            console.log('Author image url: ', page.author_image_url);
+            await savePageToIndexedDB(page);
+            // update the image preview
+            if (authorImageThumbnail) {
+                updateImageThumbnail(author_image, 'author-image-thumbnail');
+            }
+        });
+
+
+        // event listener for the featured image thumbnail to save to indexedDB when it changes and update the image preview
+        featured_image.addEventListener('change', async () => {
+            imageAdded = true;
+            const page = BuildPageContent();
+            await savePageToIndexedDB(page);
+            // update the image preview
+            if (featuredImageThumbnail) {
+                updateImageThumbnail(featured_image, 'featured-image-thumbnail');
+            }
+        });
+
+
+        // Function to update image thumbnail
+        function updateImageThumbnail(fileInput, thumbnailId) {
+            if (fileInput.files && fileInput.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    var thumbnail = document.getElementById(thumbnailId);
+                    if (thumbnail) {
+                        thumbnail.src = e.target.result;
+                    }
+                };
+
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+
+        // function to update the fea
+
+
+    </script>
+    {% endblock authenticated_content %}
+
