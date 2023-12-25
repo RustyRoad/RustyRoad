@@ -31,8 +31,9 @@ use eyre::Error;
 use serde::Deserialize;
 use sqlx::postgres::PgConnectOptions;
 use sqlx::ConnectOptions;
-use std::env;
+use std::{env, fs};
 use std::{fs::OpenOptions, io::Write};
+use std::path::Path;
 use sqlx::mysql::MySqlConnectOptions;
 use sqlx::sqlite::SqliteConnectOptions;
 use tokio::io;
@@ -47,6 +48,7 @@ use database::*;
 pub mod helpers;
 pub mod writers;
 use crate::generators::create_directories_for_new_project;
+use crate::helpers::helpers::get_project_name_from_rustyroad_toml;
 use crate::writers::*;
 /**
  * # Struct RustyRoad
@@ -853,7 +855,7 @@ static/styles.css
                             .arg(arg!(<name> "The name of the migration")),
                     )
                     .subcommand(
-                        Command::new("run all")
+                        Command::new("all")
                             .about("Runs all the migrations in the migration directory"),
                     )
                     .subcommand(
@@ -1162,8 +1164,31 @@ static/styles.css
                         .await
                         .expect("Error creating migration");
                 }
-                Some(("run all", _)) => {
-                    todo!("Implement this");
+                Some(("all", _)) => {
+                    // run all the migrations
+                    // get each migration from the migrations directory
+                    // then run the command for each
+                    // check if it's a rustyroad project
+
+                    get_project_name_from_rustyroad_toml().unwrap_or_else(|why| {
+                        panic!("This is not a Rusty Road project: {why}")
+                    });
+
+                    let migrations_path = Path::new("./config/database/migrations");
+                    let mut migrations = Vec::new();
+
+                    for entry in fs::read_dir(migrations_path).unwrap() {
+                        let entry = entry.unwrap();
+                        let path = entry.path();
+                        let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
+                        migrations.push(file_name);
+                    }
+
+                    for migration in migrations {
+                        run_migration(migration, MigrationDirection::Up)
+                            .await
+                            .expect("Error running migration");
+                    }
                 }
                 Some(("run", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
