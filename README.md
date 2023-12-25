@@ -288,10 +288,11 @@ CLI for Rusty Road
 Usage: rustyroad.exe <COMMAND>
 
 Commands:
-  new       Creates a new project
-  generate  Generates a new route, model, or controller
-  migrate   Runs migrations
-  help      Print this message or the help of the given subcommand(s)
+  new         Creates a new project
+  generate    Generates a new route, model, or controller
+  migration   Runs migrations
+  feature     Adds a new feature to your project
+  help        Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help  Print help
