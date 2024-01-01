@@ -906,6 +906,49 @@ static/styles.css
                     .arg_required_else_help(true)
                     .allow_external_subcommands(true),
             )
+            .subcommand(
+                Command::new("kubernetes_project")
+                    .about("Creates a new rustyroad project for use in kubernetes")
+                    .arg(Arg::new("name")
+                        .short('n')
+                        .long("name")
+                        .value_name("NAME")
+                        .help("The name of the project")
+                        .required(true))
+                    .arg(Arg::new("database")
+                        .short('d')
+                        .long("database")
+                        .value_name("DATABASE")
+                        .help("The type of database to use")
+                        .required(true))
+                    .arg(Arg::new("username")
+                        .short('u')
+                        .long("username")
+                        .value_name("USERNAME")
+                        .help("The username for the database")
+                        .required(true))
+                    .arg(Arg::new("password")
+                        .short('p')
+                        .long("password")
+                        .value_name("PASSWORD")
+                        .help("The password for the database")
+                        .required(true))
+                    .arg(Arg::new("host")
+                        .short('h')
+                        .long("host")
+                        .value_name("HOST")
+                        .help("The host for the database")
+                        .required(true))
+                    .arg(Arg::new("port")
+                        .short('o')
+                        .long("port")
+                        .value_name("PORT")
+                        .help("The port for the database")
+                        .required(true))
+                    .subcommand_required(true)
+                    .arg_required_else_help(true)
+                    .allow_external_subcommands(true),
+            )
     }
 
     pub fn push_args() -> Vec<Arg> {
@@ -1266,9 +1309,33 @@ static/styles.css
                     println!("Invalid add choice");
                 }
             },
-
+            // Kubernetes Project Case
+            Some(("kubernetes_project", matches)) => {
+                let name = matches.get_one::<String>("name").unwrap().to_string();
+                let database = matches.get_one::<String>("database").unwrap().to_string();
+                let username = matches.get_one::<String>("username").unwrap().to_string();
+                let password = matches.get_one::<String>("password").unwrap().to_string();
+                let host = matches.get_one::<String>("host").unwrap().to_string();
+                let port = matches.get_one::<String>("port").unwrap().to_string();
+                let database_type = match database.as_str() {
+                    "postgres" => DatabaseType::Postgres,
+                    "mysql" => DatabaseType::Mysql,
+                    "sqlite" => DatabaseType::Sqlite,
+                    "mongodb" => DatabaseType::Mongo,
+                    _ => DatabaseType::Sqlite,
+                };
+                let database: Database = Database::new(
+                    name.clone(),
+                    username.clone(),
+                    password.clone(),
+                    host.clone(),
+                    port.clone().parse::<u16>().unwrap(),
+                    database_type.to_string().as_str(),
+                );
+                Self::create_new_project(name, database).await.err();
+            }
             _ => {
-                println!("Invalid add choice");
+                println!("Invalid choice");
             }
         }
     }
