@@ -1332,14 +1332,43 @@ static/styles.css
                     "mongodb" => DatabaseType::Mongo,
                     _ => DatabaseType::Sqlite,
                 };
-                let database: Database = Database::new(
-                    name.clone(),
-                    username.clone(),
-                    password.clone(),
-                    host.clone(),
-                    port.clone().parse::<u16>().unwrap(),
-                    database_type.to_string().as_str(),
-                );
+                let database: Database = match database_type {
+                    DatabaseType::Postgres => {
+                        Database::new(
+                            name.clone(),
+                            username.clone(),
+                            password.clone(),
+                            host.clone(),
+                            port.clone().parse::<u16>().unwrap(),
+                            database_type.to_string().as_str(),
+                        )
+
+                    }
+                    DatabaseType::Mysql => {
+                        Database::new(
+                            name.clone(),
+                            username.clone(),
+                            password.clone(),
+                            host.clone(),
+                            port.clone().parse::<u16>().unwrap(),
+                            database_type.to_string().as_str(),
+                        )
+                    }
+                    DatabaseType::Sqlite => {
+                        Database::new(
+                            database_type.to_string(),
+                            "Sqlite Local DB".to_string(),
+                            "Not Needed".to_string(),
+                            "localhost".to_string(),
+                            0,
+                            "sqlite".trim_end(),
+                        )
+                    }
+                    DatabaseType::Mongo => {
+                        todo!("Implement this");
+                    }
+                };
+                
                 Self::create_new_project(name, database).await.err();
             }
             _ => {
