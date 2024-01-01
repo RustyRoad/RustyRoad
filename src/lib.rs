@@ -896,7 +896,11 @@ static/styles.css
                         Command::new("add")
                             .about("Adds a feature to the project")
                             .subcommand(
-                                Command::new("grapesjs").about("Adds grapesjs to the project"),
+                                Command::new("grapesjs").about("Adds grapesjs to the project")
+                            )
+                            .subcommand(
+                                Command::new("non_interactive_grapesjs")
+                                    .about("Adds grapesjs to the project without asking questions")
                             )
                             .subcommand_required(true)
                             .arg_required_else_help(true)
@@ -945,7 +949,6 @@ static/styles.css
                         .value_name("PORT")
                         .help("The port for the database")
                         .required(true))
-                    .subcommand_required(true)
                     .arg_required_else_help(true)
                     .allow_external_subcommands(true),
             )
@@ -1302,6 +1305,11 @@ static/styles.css
                                 .await
                                 .expect("Error adding grapesjs to the project");
                         }
+                    }
+                    Some(("non_interactive_grapesjs", _matches)) => {
+                        add_feature("grapesjs".to_string())
+                            .await
+                            .expect("Error adding grapesjs to the project");
                     }
                     _ => {}
                 },
