@@ -39,7 +39,6 @@ default-features = false
 features = ["sync", "bson", "tls"]"#
         }
     };
-F
     let config = format!(
         r#"[package]
 name = "{}"
