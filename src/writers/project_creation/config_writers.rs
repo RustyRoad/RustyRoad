@@ -28,7 +28,9 @@ version = "0.7.2""#
         DatabaseType::Sqlite => {
             r#"[dependencies.rusqlite]
 version = "0.28.0"
-features = ["bundled"]"#
+features = ["bundled"]
+libsqlite3-sys = { version = "0.25.0", features = ["bundled"] }
+"#
         }
         DatabaseType::Mongo => {
             r#"[dependencies.mongodb]
@@ -37,7 +39,7 @@ default-features = false
 features = ["sync", "bson", "tls"]"#
         }
     };
-
+F
     let config = format!(
         r#"[package]
 name = "{}"
@@ -60,7 +62,7 @@ local-ip-address = "0.5.0"
 futures = "0.3.23"
 tera = "1.17.1"
 reqwest = "0.11"
-rustyroad = "0.1.8-beta-2.0.5"
+rustyroad = "1.0.5"
 rand = "0.8.5"
 chrono = {{ version = "0.4.24", features = ["serde"] }}
 base64 = "0.21.0"
