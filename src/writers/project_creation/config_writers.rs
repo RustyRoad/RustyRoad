@@ -61,7 +61,7 @@ local-ip-address = "0.5.0"
 futures = "0.3.23"
 tera = "1.17.1"
 reqwest = "0.11"
-rustyroad = "1.0.7"
+rustyroad = "1.0.8"
 rand = "0.8.5"
 chrono = {{ version = "0.4.24", features = ["serde"] }}
 base64 = "0.21.0"
