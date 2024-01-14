@@ -72,7 +72,7 @@ pub async fn create_database_if_not_exists(
             if row.is_none() {
                 // If the database does not exist, create it
                 client
-                    .batch_execute(&format!("CREATE DATABASE {}", &database.name))
+                    .batch_execute(&format!("CREATE DATABASE \"{}\"", &database.name))
                     .await
                     .unwrap();
             }
