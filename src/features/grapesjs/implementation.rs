@@ -486,7 +486,7 @@ use sqlx::FromRow;
         pub async fn create_page(
             page: Page,
         ) -> Result<serde_json::Value, sqlx::Error> {{
-            let sql = {create_page_sql}
+            let sql = {create_page_sql};
 
             let database = Database::get_database_from_rustyroad_toml().unwrap();
 
