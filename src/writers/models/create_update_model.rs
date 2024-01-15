@@ -123,7 +123,7 @@ pub async fn create_update_model(model_name: &str) -> Result<(), Error> {
     // create the migration
 
     // create the controller
-    create_file(&format!("./src/models/{}.rs", model_name));
+    create_file(&format!("./src/models/{}.rs", model_name)).unwrap();
 
     // write the contents to the file
     fs::write(&format!("./src/models/{}.rs", model_name), contents)?;
