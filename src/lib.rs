@@ -952,6 +952,13 @@ static/styles.css
                     .arg_required_else_help(true)
                     .allow_external_subcommands(true),
             )
+            .subcommand(
+                Command::new("version")
+                    .about("Prints the version of Rusty Road")
+                    .subcommand_required(true)
+                    .arg_required_else_help(true)
+                    .allow_external_subcommands(true),
+            )
     }
 
     pub fn push_args() -> Vec<Arg> {
@@ -1378,6 +1385,9 @@ static/styles.css
                 };
                 
                 Self::create_new_project(name, database).await.err();
+            }
+            Some(("version", _matches)) => {
+                println!("Rusty Road Version: {}", env!("CARGO_PKG_VERSION"));
             }
             _ => {
                 println!("Invalid choice");
