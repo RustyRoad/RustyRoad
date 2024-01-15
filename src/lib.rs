@@ -1190,7 +1190,15 @@ static/styles.css
                         .expect("Error creating controller");
                 }
                 Some(("model", _matches)) => {
-                    todo!("Implement this");
+                    // ask the user the name of the model
+                    println!("What is the name of the model you want to create?: ");
+                    let mut input = String::new();
+                    std::io::stdin().read_line(&mut input).unwrap();
+                    let model_name = input.trim();
+
+                    create_base_model(model_name)
+                        .await
+                        .expect("Error creating model");
                 }
                 Some(("migration", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
