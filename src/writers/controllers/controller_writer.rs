@@ -1402,6 +1402,7 @@ pub async fn edit_page(tmpl: Data<Tera>, id: Path<i32>, user: Option<Identity>) 
                 context.insert("html_content", &page.html_content);
                 context.insert("page", &page);
                 context.insert("page_id", &page.id);
+                context.insert("username", &_user.id().unwrap());
                 let s = tmpl.render("layouts/authenticated_page/page/edit_page.html.tera", &context).unwrap();
                 HttpResponse::Ok().body(s)
             }
