@@ -1,10 +1,10 @@
 use std::fs;
-use crate::database::{create_migration};
+use crate::database::{create_migration, find_migration_dir};
 use crate::generators::create_file;
+use color_eyre::{eyre::Error, Result};
+use crate::helpers::helpers::get_project_name_from_rustyroad_toml;
 
-
-// so we are actually going to use this to create an update d
-pub async fn create_update_model(model_name: &str) -> color_eyre::Result<(), color_eyre::eyre::Error> {
+pub async fn create_update_model(model_name: &str) -> Result<(), Error> {
     // check if the current directory is a rustyroad project
     // create the controller
     // check if the current directory is a rustyroad project
@@ -30,59 +30,253 @@ pub async fn create_update_model(model_name: &str) -> color_eyre::Result<(), col
         return Ok(());
     }
 
-    // look for an existing model with the same name
-    let model_dir = fs::read_dir("./src/models").unwrap();
+    // ask the user what types they want to add to the model
+    let mut types = String::new();
 
-    let mut has_model = false;
+    println!("What types would you like to add to the model? (separate with commas)");
 
-    for entry in model_dir {
-        let entry = entry.unwrap();
-        let file_name = entry.file_name();
-        let file_name = file_name.to_str().unwrap();
-        if file_name == format!("{}.rs", model_name) {
-            has_model = true;
-        }
+    std::io::stdin().read_line(&mut types).unwrap();
+
+
+
+    let types = types.trim().to_string();
+
+    let types = types.split(",").collect::<Vec<&str>>();
+
+    let mut fields = String::new();
+
+    println!("What fields would you like to add to the model? (separate with commas)");
+
+    std::io::stdin().read_line(&mut fields).unwrap();
+
+    let fields = fields.trim().to_string();
+
+    let fields = fields.split(",").collect::<Vec<&str>>();
+
+    let mut contents = String::new();
+
+    contents.push_str("use serde::{Serialize, Deserialize};\n");
+
+    contents.push_str("#[derive(Serialize, Deserialize)]\n");
+
+    contents.push_str("#[derive(Debug)]\n");
+
+    contents.push_str("#[derive(Clone)]\n");
+
+    contents.push_str("#[derive(Queryable)]\n");
+
+    contents.push_str("#[derive(Insertable)]\n");
+
+    contents.push_str("#[table_name = \"");
+
+    contents.push_str(&model_name);
+
+    contents.push_str("\"]\n");
+
+    contents.push_str("pub struct ");
+
+    contents.push_str(&model_name);
+
+    contents.push_str(" {\n");
+
+    for (i, field) in fields.iter().enumerate() {
+        contents.push_str("    pub ");
+        contents.push_str(field);
+        contents.push_str(": ");
+        contents.push_str(types[i]);
+        contents.push_str(",\n");
     }
 
+    contents.push_str("}\n");
 
+    contents.push_str("impl ");
 
-    // if !has_model create a file with the model name
-   let mut contents = if !has_model {
-            create_file(&format!("./src/models/{}.rs", model_name)).unwrap_or_else(|why| {
-                println!("Failed to create file: {:?}", why.to_string());
-            });
-            create_migration(model_name).await.expect("Failed to create migration")
-        } else  {
-       fs::read_to_string(&format!("./src/models/{}.rs", model_name))?
-    };
+    contents.push_str(&model_name);
 
-println!("You're model is: {}", &model_name);
-    println!("The contents of the model are: {}", contents);
+    contents.push_str(" {\n");
 
-    let raw_update_model = format!("
+    contents.push_str("    pub fn new(");
 
-    pub async fn update_{}(id: i32, {}_update: {}) -> Result<{}, Error> {{
-        let conn = establish_connection();
-        let result = diesel::update({}::table.find(id))
-            .set({}_update)
-            .get_result(&conn);
-        match result {{
-            Ok({}_update) => Ok({}_update),
-            Err(e) => Err(e),
-        }}
-    }}
+    for (i, field) in fields.iter().enumerate() {
+        contents.push_str(field);
+        contents.push_str(": ");
+        contents.push_str(types[i]);
+        contents.push_str(", ");
+    }
 
-    ", model_name, model_name, model_name, model_name, model_name, model_name, model_name, model_name);
+    contents.push_str(") -> Self {\n");
 
-    let update_model = raw_update_model.replace("{}", &model_name);
-    println!("Update model is: {}", update_model);
+    contents.push_str("        Self {\n");
 
-    // add the update model to the contents
-    contents.push_str(&update_model);
+    for (_i, field) in fields.iter().enumerate() {
+        contents.push_str("            ");
+        contents.push_str(field);
+        contents.push_str(",\n");
+    }
+
+    contents.push_str("        }\n");
+
+    contents.push_str("    }\n");
+
+    contents.push_str("}\n");
+
+    // create the migration
+
+    // create the controller
+    create_file(&format!("./src/models/{}.rs", model_name));
 
     // write the contents to the file
     fs::write(&format!("./src/models/{}.rs", model_name), contents)?;
 
+    Ok(())
+}
+
+/// # Name: create_base_model
+///
+/// # Arguments
+///
+/// * `model_name` - The name of the model to create
+///
+/// # Description
+///
+/// This function will create a base model when a user runs the model command in the CLI.
+///
+/// # Example
+///
+/// ```
+/// rustyroad::writers::models::create_base_model("User");
+///
+/// ```
+///
+/// # Returns
+///
+/// This function returns a Result of type (), or an error.
+///
+/// # Errors
+///
+/// This function will return an error if the current directory is not a rustyroad project.
+pub async fn create_base_model(model_name: &str) -> Result<(), Error> {
+
+    // check to see if this is a rustyroad project
+    get_project_name_from_rustyroad_toml().expect("This is not a rustyroad project.");
+
+    create_migration(model_name).await.expect("Could not create migration");
+
+    // based on the newly created migration, create the model
+    // search the migrations folder for the migration that was just created
+    let mut migration_dir = "./config/database/migrations".to_string();
+    migration_dir = find_migration_dir(migration_dir, model_name.to_string()).expect("Could not find migration dir");
+
+    // read the contents of the migration
+    let contents = fs::read_to_string(&migration_dir).expect("Could not read migration file");
+
+    // get the fields from the migration
+
+    let mut fields = String::new();
+
+    let mut types = String::new();
+
+    let mut is_field = false;
+
+    let mut is_type = false;
+
+    for c in contents.chars() {
+        if c == '(' {
+            is_field = true;
+        }
+        if c == ')' {
+            is_field = false;
+        }
+        if is_field {
+            if c != '(' && c != ')' && c != ',' {
+                fields.push(c);
+            }
+        }
+        if c == '[' {
+            is_type = true;
+        }
+        if c == ']' {
+            is_type = false;
+        }
+        if is_type {
+            if c != '[' && c != ']' && c != ',' {
+                types.push(c);
+            }
+        }
+    }
+
+    let fields = fields.split(",").collect::<Vec<&str>>();
+
+    let types = types.split(",").collect::<Vec<&str>>();
+
+    let mut contents = String::new();
+
+    contents.push_str("use serde::{Serialize, Deserialize};\n");
+
+    contents.push_str("#[derive(Serialize, Deserialize)]\n");
+
+    contents.push_str("#[derive(Debug)]\n");
+
+    contents.push_str("#[derive(Clone)]\n");
+
+    contents.push_str("#[derive(Queryable)]\n");
+
+    contents.push_str("#[derive(Insertable)]\n");
+
+    contents.push_str("#[table_name = \"");
+
+    contents.push_str(&model_name);
+
+    contents.push_str("\"]\n");
+
+    contents.push_str("pub struct ");
+
+    contents.push_str(&model_name);
+
+    contents.push_str(" {\n");
+
+    for (i, field) in fields.iter().enumerate() {
+        contents.push_str("    pub ");
+        contents.push_str(field);
+        contents.push_str(": ");
+        contents.push_str(types[i]);
+        contents.push_str(",\n");
+    }
+
+    contents.push_str("}\n");
+
+    contents.push_str("impl ");
+
+    contents.push_str(&model_name);
+
+    contents.push_str(" {\n");
+
+    contents.push_str("    pub fn new(");
+
+    for (i, field) in fields.iter().enumerate() {
+        contents.push_str(field);
+        contents.push_str(": ");
+        contents.push_str(types[i]);
+        contents.push_str(", ");
+    }
+
+    contents.push_str(") -> Self {\n");
+
+
+    contents.push_str("        Self {\n");
+
+    for (_i, field) in fields.iter().enumerate() {
+        contents.push_str("            ");
+        contents.push_str(field);
+        contents.push_str(",\n");
+    }
+
+    contents.push_str("        }\n");
+
+    contents.push_str("    }\n");
+
+    contents.push_str("}\n");
 
     Ok(())
 }
+
