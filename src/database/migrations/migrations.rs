@@ -349,7 +349,9 @@ pub async fn run_migration(
 
     execute_migration_with_connection(connection, migration_files, direction.clone())
         .await
-        .unwrap_or_else(|why| panic!("Couldn't execute migration: {:?}", why));
+        .unwrap_or_else(|why|
+            println!("Couldn't execute migration: {}", why.to_string())
+        );
 
     match direction {
         MigrationDirection::Up => println!("Migration applied successfully"),
@@ -459,11 +461,12 @@ pub fn find_migration_dir(
     migrations_dir_path: String,
     migration_name: String,
 ) -> Result<String, Box<dyn Error>> {
+    println!("Searching for migration directory: {}", migration_name);
     // Initialize the rustyline Editor with the default helper and in-memory history
     let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
         panic!("Failed to create rustyline editor: {}", why.to_string());
     });
-
+    println!("Migrations directory path: {:?}", migrations_dir_path.clone());
     // get all the migration directories
     let mut migration_dirs = Vec::new();
     for entry in fs::read_dir(migrations_dir_path)? {
@@ -473,6 +476,7 @@ pub fn find_migration_dir(
             migration_dirs.push(path);
         }
     }
+    println!("Migration directories: {:?}", migration_dirs.clone());
 
     // filter the migration directories by the migration name
     let mut filtered_migration_dirs = Vec::new();
@@ -482,21 +486,27 @@ pub fn find_migration_dir(
             .expect("Failed to get file name")
             .to_str()
             .ok_or("Failed to convert OsStr to str")?;
+        println!("Migration directory name: {}", migration_dir_name);
         if migration_dir_name.contains(&migration_name) {
             filtered_migration_dirs.push(migration_dir);
+            println!("Filtered migration directories: {:?}", filtered_migration_dirs.clone());
         }
     }
 
     // if there is only one migration directory with the given name, return it
     if filtered_migration_dirs.len() == 1 {
+        println!("Filtered migration directories: {:?}", filtered_migration_dirs.clone());
         return Ok(filtered_migration_dirs[0].to_str().unwrap().to_string());
     }
 
     // if there are multiple migration directories with the given name, prompt the user to choose one
     if filtered_migration_dirs.len() > 1 {
         let mut migration_dir_names = Vec::new();
+        println!("Filtered migration directories: {:?}", filtered_migration_dirs.clone());
         for migration_dir in &filtered_migration_dirs {
+            println!("Migration directory: {:?}", migration_dir.clone());
             let migration_dir_name = migration_dir.file_name().unwrap().to_str().unwrap();
+            println!("Migration directory name: {}", migration_dir_name);
             migration_dir_names.push(migration_dir_name);
         }
         let migration_dir_name = rl
@@ -509,12 +519,14 @@ pub fn find_migration_dir(
         print!("You chose: {}", migration_dir_name);
 
         for migration_dir in filtered_migration_dirs {
+            println!("Migration directory: {:?}", migration_dir.clone());
             let migration_dir_name_from_list = migration_dir
                 .file_name()
                 .expect("Failed to get file name")
                 .to_str()
                 .ok_or("Failed to convert OsStr to str")?;
             if migration_dir_name == migration_dir_name_from_list {
+                println!("Migration directory name: {}", migration_dir_name);
                 return Ok(migration_dir
                     .to_str()
                     .ok_or("Failed to convert PathBuf to str")?

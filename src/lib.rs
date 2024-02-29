@@ -819,11 +819,9 @@ static/styles.css
                         Command::new("model")
                             .about("Generates a new model")
                             .arg(arg!(<name> "The name of the model"))
-                            .subcommand_help_heading("SUBCOMMANDS:")
-                            // if no subcommand is provided, print help
-                            .subcommand_required(true)
+                            .subcommand_required(false)
                             .arg_required_else_help(true)
-                            .allow_external_subcommands(true),
+                            .allow_external_subcommands(false),
                     )
                     .subcommand(Command::new("controller").about("Generates a new controller"))
                     .subcommand(
@@ -955,9 +953,9 @@ static/styles.css
             .subcommand(
                 Command::new("version")
                     .about("Prints the version of Rusty Road")
-                    .subcommand_required(true)
-                    .arg_required_else_help(true)
-                    .allow_external_subcommands(true),
+                    .subcommand_required(false)
+                    .arg_required_else_help(false)
+                    .allow_external_subcommands(false),
             )
     }
 
@@ -1196,12 +1194,9 @@ static/styles.css
                         .await
                         .expect("Error creating controller");
                 }
-                Some(("model", _matches)) => {
-                    // ask the user the name of the model
-                    println!("What is the name of the model you want to create?: ");
-                    let mut input = String::new();
-                    std::io::stdin().read_line(&mut input).unwrap();
-                    let model_name = input.trim();
+                Some(("model", matches)) => {
+                    // derive the name of the model from the arguments
+                    let model_name = matches.get_one::<String>("name").unwrap().as_str();
 
                     create_base_model(model_name)
                         .await
@@ -1254,24 +1249,12 @@ static/styles.css
                 Some(("run", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
 
-                    let confirmation = Confirm::new()
-                        .with_prompt(&format!(
-                            "Are you sure you want to execute the '{}' migration?",
-                            name.clone()
-                        ))
-                        .interact()
-                        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
-                        .expect("Error executing migration: ");
 
-                    if confirmation {
-                        println!("Executing the '{}' migration...", name.clone());
                         run_migration(name.clone(), MigrationDirection::Up)
                             .await
                             .expect("Error running migration");
                         println!("'{}' migration completed successfully!", name.clone());
-                    } else {
-                        println!("'{}' migration canceled by user.", name);
-                    }
+
                 }
                 Some(("rollback", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();

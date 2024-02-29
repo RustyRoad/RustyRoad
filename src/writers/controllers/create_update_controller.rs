@@ -54,7 +54,7 @@ pub fn create_update_controller_in_existing_folder(model_name: &str) -> Result<(
         if input == "y" {
             // create the controller
             // add the controller to the file for that controller
-            write_to_new_update_controller(model_name.clone().to_string()).unwrap_or_else(|why| {
+            write_to_new_update_controller(model_name.to_string()).unwrap_or_else(|why| {
                 println!("Failed to write to controller: {:?}", why.to_string());
             });
             // end the function

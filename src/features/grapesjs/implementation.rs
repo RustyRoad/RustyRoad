@@ -56,10 +56,10 @@ impl GrapesJs {
             let controller_module = Path::new("./src/controllers/mod.rs");
 
             // create the file
-            create_file(page_controller_file_location.clone()).unwrap_or_else(|_| {
+            create_file(page_controller_file_location).unwrap_or_else(|_| {
                 panic!(
                     "Error: Could not create {}",
-                    page_controller_file_location.clone()
+                    page_controller_file_location
                 )
             });
 
@@ -143,18 +143,18 @@ pub async fn write_to_page_model() -> Result<(), Error> {
     let page_model_file_location = "src/models/page.rs";
 
     // create the file
-    create_file(page_model_file_location.clone()).unwrap_or_else(|_| {
+    create_file(page_model_file_location).unwrap_or_else(|_| {
         panic!(
             "Error: Could not create {}",
-            page_model_file_location.clone()
+            page_model_file_location
         )
     });
 
     let mut page_model_file = OpenOptions::new()
         .write(true)
         .append(true)
-        .open(page_model_file_location.clone())
-        .unwrap_or_else(|_| panic!("Error: Could not open {}", page_model_file_location.clone()));
+        .open(page_model_file_location)
+        .unwrap_or_else(|_| panic!("Error: Could not open {}", page_model_file_location));
 
     // Original SQL queries with format! macro
     let create_page_sql = format!(
@@ -734,7 +734,7 @@ where
         .unwrap_or_else(|_| {
             panic!(
                 "Error: Could not write to {}",
-                page_model_file_location.clone()
+                page_model_file_location
             )
         });
 
@@ -966,12 +966,12 @@ pub fn append_graped_js_to_header() -> Result<(), Error> {
     let mut header_file = OpenOptions::new()
         .write(true)
         .append(true)
-        .open(header_file_location.clone())
-        .unwrap_or_else(|_| panic!("Error: Could not open {}", header_file_location.clone()));
+        .open(header_file_location)
+        .unwrap_or_else(|_| panic!("Error: Could not open {}", header_file_location));
 
     header_file
         .write_all(contents.as_bytes())
-        .unwrap_or_else(|_| panic!("Error: Could not write to {}", header_file_location.clone()));
+        .unwrap_or_else(|_| panic!("Error: Could not write to {}", header_file_location));
 
     Ok(())
 }

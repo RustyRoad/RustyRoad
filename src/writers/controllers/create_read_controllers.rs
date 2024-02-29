@@ -44,7 +44,7 @@ pub fn create_read_controller_in_existing_folder(controller_name: String) -> Res
             if input == "y" {
                 // create the controller
                 // add the controller to the file for that controller
-                write_to_new_get_controller(model_name.clone().to_string()).unwrap_or_else(|why| {
+                write_to_new_get_controller(model_name.to_string()).unwrap_or_else(|why| {
                     println!("Failed to write to controller: {:?}", why.to_string());
                 });
 
@@ -71,7 +71,7 @@ pub fn create_read_controller_in_existing_folder(controller_name: String) -> Res
             }
         } else {
             // if the folder does exist, add the controller to the file for that controller
-            write_to_new_get_controller( model_name.clone().to_string())
+            write_to_new_get_controller( model_name.to_string())
                 .unwrap_or_else(|why| {
                     println!("Failed to write to controller: {:?}", why.to_string());
                 });
@@ -82,7 +82,7 @@ pub fn create_read_controller_in_existing_folder(controller_name: String) -> Res
                 },
             );
             // Write to controllerName.html.tera file
-            write_to_controller_name_html(model_name.clone()).expect("Failed to write to controllerName.html.tera");
+            write_to_controller_name_html(model_name).expect("Failed to write to controllerName.html.tera");
 
             // update main.rs file
             add_new_controller_to_existing_module_in_main_rs(

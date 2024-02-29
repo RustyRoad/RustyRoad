@@ -6,6 +6,7 @@ use std::error::Error;
 use std::fs;
 use std::sync::Arc;
 use toml::Value;
+use crate::writers::create_database_if_not_exists;
 
 use super::databasetype::DatabaseType;
 
@@ -73,6 +74,19 @@ impl Database {
                 Ok(DatabaseConnection::Sqlite(Arc::new(pool)))
             }
             DatabaseType::Postgres => {
+
+                let database: Database = Database::get_database_from_rustyroad_toml().unwrap();
+                let admin_database_url = format!(
+                    "postgres://{}:{}@{}:{}/postgres",
+                    database.username,
+                    database.password,
+                    database.host,
+                    database.port,
+                );
+                create_database_if_not_exists(
+                    admin_database_url.as_str(), database).await.unwrap_or_else(|_| panic!("Failed to create database"));
+
+
                 let options = PgConnectOptions::new()
                     .username(&self.username)
                     .password(&self.password)
@@ -81,7 +95,8 @@ impl Database {
                     .port(self.port);
                 let pool = PgPool::connect_with(options)
                     .await
-                    .unwrap_or_else(|_| panic!("Failed to connect to Postgres database."));
+                    .unwrap_or_else(|_| panic!("Failed to create connection pool."));
+
                 Ok(DatabaseConnection::Pg(Arc::new(pool)))
             }
             DatabaseType::Mongo => todo!(),
