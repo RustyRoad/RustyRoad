@@ -149,17 +149,11 @@ pub async fn update_index_controller() -> Result<String, tera::Error> {
         }}
     "#);
 
-
-    let mut import_contents = add_or_update_import("", "crate", "models");
-    import_contents = add_or_update_import(&import_contents, "models", "Page");
-
     index_controller = index_controller.replace(
         "let rendered = tmpl.render(\"pages/index.html.tera\", &context).unwrap();
     HttpResponse::Ok().body(rendered)",
         &new_index_code,
     );
-    import_contents.push_str("\n\n");
-    import_contents.push_str(&index_controller);
 
     let mut file = OpenOptions::new()
         .write(true)
@@ -167,7 +161,7 @@ pub async fn update_index_controller() -> Result<String, tera::Error> {
         .open("./src/controllers/index.rs")
         .unwrap();
     // Write the updated contents to the file
-    writeln!(file, "{}", import_contents).unwrap();
+    writeln!(file, "{}", index_controller).unwrap();
 
     file.flush()?;
 
