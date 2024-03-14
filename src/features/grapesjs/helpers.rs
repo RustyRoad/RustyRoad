@@ -1,7 +1,7 @@
 use std::fs::OpenOptions;
 use std::io::Write;
 use crate::features::Page;
-use crate::helpers::helpers::{add_or_update_import, get_project_name_from_rustyroad_toml};
+use crate::helpers::helpers::{get_project_name_from_rustyroad_toml};
 use futures_util::TryFutureExt;
 use tera::Tera;
 pub fn render_index_page() -> Result<String, tera::Error> {
