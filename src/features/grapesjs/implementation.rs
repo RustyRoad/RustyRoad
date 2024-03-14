@@ -794,7 +794,9 @@ CREATE TABLE IF NOT EXISTS page (
     schema_name TEXT,
     schema_headline TEXT,
     schema_date_published TIMESTAMP,
-    schema_date_modified TIMESTAMP
+    schema_date_modified TIMESTAMP,
+    is_secure BOOLEAN,
+    is_published BOOLEAN
 );
     "#
             )
@@ -849,7 +851,9 @@ CREATE TABLE IF NOT EXISTS page (
     schema_name TEXT,
     schema_headline TEXT,
     schema_date_published TIMESTAMP,
-    schema_date_modified TIMESTAMP
+    schema_date_modified TIMESTAMP,
+    is_secure BOOLEAN,
+    is_published BOOLEAN
 );
     "#
             )
@@ -904,7 +908,9 @@ CREATE TABLE IF NOT EXISTS page (
                         schema_name TEXT,
                         schema_headline TEXT,
                         schema_date_published DATETIME,
-                        schema_date_modified DATETIME
+                        schema_date_modified DATETIME,
+                        is_secure BOOLEAN,
+                        is_published BOOLEAN
                     );
                 "#
             )
@@ -956,7 +962,7 @@ pub fn append_graped_js_to_header() -> Result<(), Error> {
     let contents: String = r#"
 <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
 <script src="https://unpkg.com/grapesjs"></script>
-<script src="https://unpkg.com/@rustyroad/editor@0.0.1/dist/grapesjs-tailwind.min.js"></script>
+<script src="https://unpkg.com/@rustyroad/editor@0.0.2/dist/grapesjs-tailwind.min.js"></script>
 
     "#
     .to_string();
