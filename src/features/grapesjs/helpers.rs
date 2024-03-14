@@ -90,6 +90,8 @@ pub async fn save_index_page() {
     page.author_url = Some("".to_string());
     page.excerpt = Some("".to_string());
     page.summary = Some("".to_string());
+    page.is_secure = Some(false);
+    page.is_published = Some(true);
 
     Page::create_page(page)
         .unwrap_or_else(|err| {
