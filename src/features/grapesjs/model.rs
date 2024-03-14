@@ -91,7 +91,8 @@ pub struct Page {
     pub schema_name: Option<String>,
     pub schema_headline: Option<String>,
     pub schema_date_published: Option<NaiveDateTime>,
-    pub schema_date_modified: Option<NaiveDateTime>,
+    pub schema_date_modified: Option<NaiveDateTime>,+
+    pub is_secure: Option<bool>,
 }
 
 impl Page {
@@ -144,6 +145,7 @@ impl Page {
             schema_headline: None,
             schema_date_published: None,
             schema_date_modified: None,
+            is_secure: None,
         }
     }
 
@@ -203,14 +205,15 @@ impl Page {
             schema_name,
             schema_headline,
             schema_date_published,
-            schema_date_modified
+            schema_date_modified,
+            is_secure
         )
         VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
             $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
             $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
             $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
-            $41, $42, $43, $44
+            $41, $42, $43, $44, $45
         ) RETURNING *;
         "#;
 
@@ -269,6 +272,7 @@ impl Page {
             .bind(new_html.schema_headline)
             .bind(new_html.schema_date_published)
             .bind(new_html.schema_date_modified)
+            .bind(new_html.is_secure)
             .fetch_one(&pool_connection)
             .await?;
 
@@ -398,7 +402,8 @@ impl Page {
             schema_name = $42,
             schema_headline = $43,
             schema_date_published = $44,
-            schema_date_modified = $45
+            schema_date_modified = $45,
+            is_secure = $46
         WHERE id = $46
         RETURNING *;
               "#;
@@ -459,6 +464,7 @@ impl Page {
             .bind(new_html.schema_headline)
             .bind(new_html.schema_date_published)
             .bind(new_html.schema_date_modified)
+            .bind(new_html.is_secure)
             .bind(id)
             .fetch_one(&pool_connection)
             .await?;
