@@ -909,8 +909,7 @@ CREATE TABLE IF NOT EXISTS page (
                         schema_headline TEXT,
                         schema_date_published DATETIME,
                         schema_date_modified DATETIME,
-                        is_secure BOOLEAN,
-                        is_published BOOLEAN
+                        is_secure BOOLEAN
                     );
                 "#
             )

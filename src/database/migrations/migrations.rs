@@ -3,7 +3,7 @@ use sqlx::Executor;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, DirEntry};
-use std::io::Read;
+use std::io::{Read, stdin};
 use std::path::Path;
 use std::{
     fmt, fs,
@@ -11,8 +11,9 @@ use std::{
 };
 
 use crate::database::{Database, DatabaseConnection, DatabaseType};
-use rustyline::DefaultEditor;
+use rustyline::{DefaultEditor};
 use serde::de::StdError;
+use serde_derive::Deserialize;
 use strum_macros::Display;
 
 use crate::generators::create_file;
@@ -22,6 +23,59 @@ use crate::Project;
 use super::column_loop::column_loop;
 
 const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
+
+
+
+
+/// ## Name: MigrationInput
+/// ### Description: A struct that represents the input for a migration
+/// #### Fields:
+/// - name: [`String`] - the name of the migration
+/// - columns: [`Vec<ColumnInput>`] - a vector of columns
+/// ### Example:
+/// ```rust
+/// use rustyroad::database::migrations::MigrationInput;
+/// use rustyroad::database::migrations::ColumnInput;
+/// 
+/// let migration_input = MigrationInput {
+///     name: "create_users_table".to_string(),
+///     columns: vec![
+///     ColumnInput {
+///         name: "id".to_string(),
+///         data_type: "SERIAL".to_string(),
+///     },
+///     ColumnInput {
+///             name: "name".to_string(),
+///             data_type: "VARCHAR(255)".to_string(),
+///         },
+///     ],
+/// };
+/// ```
+#[derive(Deserialize)]
+pub struct MigrationInput {
+    pub name: String,
+    pub columns: Vec<ColumnInput>,
+}
+
+/// ## Name: ColumnInput
+/// ### Description: A struct that represents the input for a column
+/// #### Fields:
+/// - name: [`String`] - the name of the column
+/// - data_type: [`String`] - the data type of the column
+/// ### Example:
+/// ```rust
+/// use rustyroad::database::migrations::ColumnInput;
+/// 
+/// let column_input = ColumnInput {
+///     name: "id".to_string(),
+///     data_type: "SERIAL".to_string(),
+/// };
+/// ```
+#[derive(Deserialize)]
+pub struct ColumnInput {
+    pub name: String,
+    pub data_type: String,
+}
 
 /// ## Name: create_migration
 /// ### Description: Creates a migration file
@@ -40,8 +94,6 @@ const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 pub async fn create_migration(name: &str) -> Result<String, io::Error> {
     let name = name.to_owned();
 
-
-
     let path = std::env::current_dir().unwrap();
 
     if fs::read_to_string(path.join("rustyroad.toml")).is_err() {
@@ -56,20 +108,71 @@ pub async fn create_migration(name: &str) -> Result<String, io::Error> {
         Err(_) => {}
     }
 
-    // Check for migrations folder
-    // If it doesn't exist, create it
     match fs::create_dir("config/database/migrations") {
         Ok(_) => {}
         Err(_) => {}
     }
+ 
+    let table_name = name.to_string();
+    
+    println!("Enter the number of columns");
+    let mut num_input = String::new();
+    
+    stdin().read_line(&mut num_input).unwrap();
+    
+    let num_columns: i32 = num_input.trim().parse().expect("Invalid input, please enter a number.");
+    let (up_sql_contents, rust_struct_contents) = get_column_details(num_columns, &table_name)?;
 
-    // Create directory with timestamp and name of migration
-    // Then create up and down files
+    let mut contents = String::new();
+
+    let database = Database::get_database_from_rustyroad_toml().unwrap();
+    let row_with_database_type = match database.database_type {
+        DatabaseType::Postgres => "postgres::PgRow",
+        DatabaseType::Sqlite => "sqlite::SqliteRow",
+        DatabaseType::Mysql => "mysql::MySqlRow",
+        _ => "error",
+    };
+
+    let imports = format!("use actix_web::web::to;
+use chrono::{{DateTime, NaiveDateTime, TimeZone, Utc}};
+use rustyroad::database::{{Database, DatabaseType, PoolConnection}};
+use serde::{{Deserialize, Serialize, Deserializer}};
+use sqlx::{{{}, FromRow, Row}};", row_with_database_type);
+
+    let import_lines: Vec<&str> = imports.lines().collect();
+
+    for import_line in import_lines.iter() {
+        let trimmed_import_line = import_line.trim();
+        if !contents.contains(trimmed_import_line) {
+            contents.push_str(trimmed_import_line);
+            contents.push_str("\n");
+        }
+    }
+
+    let struct_name = format!("{} {{", table_name);
+    if !contents.contains(&struct_name) {
+        contents.push_str(&struct_name);
+        contents.push_str("\n");
+    }
+
+    contents.push_str(&rust_struct_contents);
+
+    let down_sql_contents = format!("DROP TABLE {};", table_name);
+
     let folder_name = format!(
         "config/database/migrations/{}-{}",
         Local::now().format("%Y%m%d%H%M%S"),
         name
     );
+
+    create_migration_files(&folder_name, &up_sql_contents, &down_sql_contents)?;
+
+    Ok(contents)
+}
+
+pub fn create_migration_files(folder_name: &str, up_sql_contents: &str, down_sql_contents: &str) -> Result<(), io::Error> {
+    let up_file = format!("{}/up.sql", folder_name);
+    let down_file = format!("{}/down.sql", folder_name);
 
     match std::fs::create_dir(&folder_name) {
         Ok(_) => {}
@@ -82,116 +185,40 @@ pub async fn create_migration(name: &str) -> Result<String, io::Error> {
         }
     }
 
-    let mut down_sql_contents = String::new();
+    create_file(&up_file)?;
+    create_file(&down_file)?;
 
-    let up_file = format!("{}/up.sql", folder_name).to_string();
+    write_to_file(&up_file, up_sql_contents.as_bytes())?;
+    write_to_file(&down_file, down_sql_contents.as_bytes())?;
 
-    let down_file = format!("{}/down.sql", folder_name).to_string();
-
-    create_file(&format!("{}/up.sql", folder_name).to_string())
-        .unwrap_or_else(|why| panic!("Couldn't create {}: {}", &name, why.to_string()));
-
-    // Create the down.sql file
-    create_file(&format!("{}/down.sql", folder_name).to_string())
-        .unwrap_or_else(|why| panic!("Couldn't create {}: {}", &name, why.to_string()));
-
-    // Initialize the rustyline Editor with the default helper and in-memory history
-    let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
-        panic!("Failed to create rustyline editor: {}", why.to_string());
-    });
-
-    let table_name = name.to_string();
-
-    // ask the user how many columns they want to add
-    let mut num_columns_str = rl
-        .readline("Enter the number of columns: ")
-        .unwrap_or_else(|why| {
-            panic!("Failed to read number of columns: {}", why.to_string());
-        });
-
-    let num_columns: i32 = loop {
-        match num_columns_str.trim().parse() {
-            Ok(num) => break num,
-            Err(_) => {
-                num_columns_str = rl
-                    .readline("Invalid input. Please enter a number: ")
-                    .unwrap_or_else(|why| {
-                        panic!("Failed to read number of columns: {}", why.to_string());
-                    });
-                continue;
-            }
-        };
-    };
-
-    // loop through the number of columns and ask the user for the column name and type
-    // we need to modify column_loop to return the model and the up.sql contents
-    let migration_and_struct  = column_loop(num_columns, table_name.clone())
-        .expect("Failed to loop through columns and add them to the up.sql file. Please see documentation for more information.");
-
-    let up_sql_contents = migration_and_struct.up_sql_contents;
-
-    let mut contents = String::new();
-
-
-    // Check the database type
-    let database = Database::get_database_from_rustyroad_toml().unwrap();
-    let row_with_database_type = match database.database_type {
-        DatabaseType::Postgres => "postgres::PgRow",
-        DatabaseType::Sqlite => "sqlite::SqliteRow",
-        DatabaseType::Mysql => "mysql::MySqlRow",
-
-        _ => {
-            "error"
-        }
-    };
-
-    let imports = format!("use actix_web::web::to;
-use chrono::{{DateTime, NaiveDateTime, TimeZone, Utc}};
-use rustyroad::database::{{Database, DatabaseType, PoolConnection}};
-use serde::{{Deserialize, Serialize, Deserializer}};
-use sqlx::{{{}, FromRow, Row}};", row_with_database_type);
-
-    // Split the imports into lines
-    let import_lines: Vec<&str> = imports.lines().collect();
-
-    // Check each import line individually
-    for import_line in import_lines.iter() {
-        let trimmed_import_line = import_line.trim();
-        if !contents.contains(trimmed_import_line) {
-            // Add the trimmed import line to the file followed by a newline
-            contents.push_str(trimmed_import_line);
-            contents.push_str("\n");
-        }
-    }
-
-
-    // Check the struct
-    let struct_name = format!("{} {{", table_name);
-    if !contents.contains(&struct_name) {
-        // Add the struct name to the file followed by a newline
-        contents.push_str(&struct_name);
-        contents.push_str("\n");
-    }
-
-
-
-
-    contents.push_str(&migration_and_struct.rust_struct_contents);
-
-
-
-    down_sql_contents.push_str(&format!("DROP TABLE {};", table_name));
-
-    write_to_file(&up_file, &up_sql_contents.as_bytes()).unwrap_or_else(|why| {
-        panic!("Failed to write to {}: {}", &up_file, why.to_string());
-    });
-
-    write_to_file(&down_file, &down_sql_contents.as_bytes()).unwrap_or_else(|why| {
-        panic!("Failed to write to {}: {}", &down_file, why.to_string());
-    });
-
-    Ok(contents)
+    Ok(())
 }
+
+ 
+/// # Name: get_column_details
+/// ### Description: gets the details for each column
+/// ### Arguments: 
+/// * [`num_columns`] - The number of columns in the table
+/// * [`table_name`] - The name of the table
+/// 
+/// ### Returns:
+/// * [`Result<(String, String), io::Error>`] - Returns a tuple with the up.sql contents and the rust struct contents or an io::Error
+/// ### Example:
+/// ```rust
+/// use rustyroad::database::migrations::get_column_details;
+/// 
+/// let num_columns = 2;
+/// let table_name = "users";
+/// let result = get_column_details(num_columns, table_name);
+/// 
+/// assert!(result.is_ok());
+/// ```
+pub fn get_column_details(num_columns: i32, table_name: &str) -> Result<(String, String), io::Error> {
+   let result  =  column_loop(num_columns, table_name.to_string()).expect("wrong");
+    
+    Ok((result.up_sql_contents, result.rust_struct_contents))
+}
+
 
 /// ## Name: initialize_migration
 /// ### Description: Creates the initial migration directory and the up.sql and down.sql files for the initial migration

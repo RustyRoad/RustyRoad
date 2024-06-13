@@ -644,7 +644,7 @@ static/styles.css
 
                 // Generate the SQL content for the new project
                 let sql_content =
-                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone())
+                    load_sql_for_new_project(&project, database_data.clone())
                         .await?;
 
                 // Establish a connection to the new database
@@ -719,7 +719,7 @@ static/styles.css
 
                 // Generate the SQL content for the new project
                 let sql_content =
-                    initial_sql_loader::load_sql_for_new_project(&project, database_data.clone())
+                    load_sql_for_new_project(&project, database_data.clone())
                         .await?;
 
                 // Establish a connection to the new database
@@ -862,7 +862,7 @@ static/styles.css
                             .arg(arg!(<name> "The name of the migration to run.")),
                     )
                     .subcommand(
-                        Command::new("down")
+                        Command::new("rollback")
                             .about("Rolls back the last migration")
                             .arg(arg!(<name> "The name of the migration")),
                     )

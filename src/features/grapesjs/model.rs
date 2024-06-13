@@ -91,9 +91,9 @@ pub struct Page {
     pub schema_name: Option<String>,
     pub schema_headline: Option<String>,
     pub schema_date_published: Option<NaiveDateTime>,
-    pub schema_date_modified: Option<NaiveDateTime>,+
-    pub is_secure: Option<bool>,
-    pub is_published: Option<bool>,
+    pub schema_date_modified: Option<NaiveDateTime>,
+    pub is_secure: bool,
+    pub is_published: bool
 }
 
 impl Page {
@@ -146,8 +146,8 @@ impl Page {
             schema_headline: None,
             schema_date_published: None,
             schema_date_modified: None,
-            is_secure: None,
-            is_published: None,
+            is_secure: false,
+            is_published: false
         }
     }
 
@@ -325,7 +325,7 @@ impl Page {
     /// ```
     /// use rustyroad::features::Page;
     /// let slug = "index";
-    /// let result = Page::get_page_by_slug(slug);
+    /// let result = Page::get_page_by_slug(slug.to_string());
     /// ```
     pub async fn get_page_by_slug(slug: String) -> Result<Page, sqlx::Error> {
         let sql = r#"SELECT * FROM page WHERE slug = $1"#;
@@ -516,7 +516,7 @@ fn deserialize_unix_timestamp<'de, D>(deserializer: D) -> Result<NaiveDateTime, 
         D: serde::Deserializer<'de>,
 {
     let timestamp = i64::deserialize(deserializer)?;
-    Ok(chrono::Utc
+    Ok(Utc
         .timestamp_opt(timestamp, 0)
         .single()
         .unwrap()
