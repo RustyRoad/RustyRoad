@@ -30,7 +30,7 @@ mysql = "24.0.0"
 sqlx = { version = "0.7.2", features = ["sqlite", "postgres", "time", "uuid", "mysql", "runtime-tokio", "macros", "chrono", "json"] }
 tokio = { version = "1.27.0", features = ["full"] }
 tokio-postgres = "0.7.8"
-futures-util = "0.3.28"
+futures-util = "0.3.29"
 lazy_static = "1.4.0"
 syn = { version = "2.0.15", features = ["full"] }
 quote = "1.0.26"
