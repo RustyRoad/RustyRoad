@@ -2724,7 +2724,7 @@ dependencies = [
 
 [[package]]
 name = "rustyroad"
-version = "1.0.16"
+version = "1.0.17-alpha"
 dependencies = [
  "bcrypt",
  "chrono",
