@@ -11,7 +11,7 @@ use std::{
 };
 
 use crate::database::{Database, DatabaseConnection, DatabaseType};
-use rustyline::{DefaultEditor};
+use rustyline::DefaultEditor;
 use serde::de::StdError;
 use serde_derive::Deserialize;
 use strum_macros::Display;
@@ -386,7 +386,7 @@ pub async fn run_migration(
         Err(why) => {
             // Print the detailed error and return it
             eprintln!("Failed to execute migration: {}", why);
-            return Err(Box::new(why));
+            return Err(CustomMigrationError::RunError(Box::new(why)));
         }
     }
     Ok(())
@@ -576,7 +576,7 @@ pub fn find_migration_dir(
     )))
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug)]
 pub enum MigrationError {
     Io(io::Error),
     Sql(sqlx::Error),
