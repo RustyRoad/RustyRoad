@@ -374,15 +374,20 @@ pub async fn run_migration(
         .await
         .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why.to_string()));
 
-    execute_migration_with_connection(connection, migration_files, direction.clone())
-        .await
-        .unwrap_or_else(|why|
-            println!("Couldn't execute migration: {}", why.to_string())
-        );
-
-    match direction {
-        MigrationDirection::Up => println!("Migration applied successfully"),
-        MigrationDirection::Down => println!("Migration rolled back successfully"),
+    // Execute the migration and handle potential errors
+    match execute_migration_with_connection(connection, migration_files, direction.clone()).await {
+        Ok(_) => {
+            // Only print success message if execution was successful
+            match direction {
+                MigrationDirection::Up => println!("Migration applied successfully"),
+                MigrationDirection::Down => println!("Migration rolled back successfully"),
+            }
+        }
+        Err(why) => {
+            // Print the detailed error and return it
+            eprintln!("Failed to execute migration: {}", why);
+            return Err(Box::new(why));
+        }
     }
     Ok(())
 }
@@ -514,9 +519,12 @@ pub fn find_migration_dir(
             .to_str()
             .ok_or("Failed to convert OsStr to str")?;
         println!("Migration directory name: {}", migration_dir_name);
-        if migration_dir_name.contains(&migration_name) {
-            filtered_migration_dirs.push(migration_dir);
-            println!("Filtered migration directories: {:?}", filtered_migration_dirs.clone());
+        // Extract the name part after the timestamp and hyphen
+        if let Some(name_part) = migration_dir_name.split_once('-').map(|(_, name)| name) {
+            if name_part == migration_name { // Exact match comparison
+                filtered_migration_dirs.push(migration_dir);
+                println!("Filtered migration directories (exact match): {:?}", filtered_migration_dirs.clone());
+            }
         }
     }
 
@@ -585,6 +593,26 @@ impl From<sqlx::Error> for MigrationError {
         MigrationError::Sql(err)
     }
 }
+
+impl std::fmt::Display for MigrationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MigrationError::Io(err) => write!(f, "IO error: {}", err),
+            MigrationError::Sql(err) => write!(f, "SQL error: {}", err),
+        }
+    }
+}
+
+
+impl std::error::Error for MigrationError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            MigrationError::Io(err) => Some(err),
+            MigrationError::Sql(err) => Some(err),
+        }
+    }
+}
+
 
 #[derive(PartialEq, Clone, Copy, Debug, Display)]
 pub enum MigrationDirection {
