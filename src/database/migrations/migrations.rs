@@ -322,6 +322,7 @@ pub fn initialize_migration(project: &Project) -> Result<(), ErrorKind> {
 pub enum CustomMigrationError {
     MigrationError(MigrationError),
     IoError(std::io::Error),
+    SqlxError(sqlx::Error),
     RunError(Box<dyn StdError + Send + Sync>),
 }
 
@@ -331,6 +332,7 @@ impl Display for CustomMigrationError {
             Self::MigrationError(err) => Display::fmt(err, f),
             Self::RunError(err) => Display::fmt(err, f),
             Self::IoError(err) => Display::fmt(err, f),
+            Self::SqlxError(err) => Display::fmt(err, f),
         }
     }
 }
@@ -340,6 +342,18 @@ impl StdError for CustomMigrationError {}
 impl From<MigrationError> for CustomMigrationError {
     fn from(err: MigrationError) -> Self {
         Self::MigrationError(err)
+    }
+}
+
+impl From<std::io::Error> for CustomMigrationError {
+    fn from(err: std::io::Error) -> Self {
+        Self::IoError(err)
+    }
+}
+
+impl From<sqlx::Error> for CustomMigrationError {
+    fn from(err: sqlx::Error) -> Self {
+        Self::SqlxError(err)
     }
 }
 
@@ -409,9 +423,81 @@ pub async fn run_migration(
         .await
         .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why.to_string()));
 
+    // Create migrations table if it doesn't exist
+    match connection.clone() {
+        DatabaseConnection::Pg(conn) => {
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    direction VARCHAR(10) NOT NULL
+                )"
+            ).await.map_err(CustomMigrationError::from)?;
+        }
+        DatabaseConnection::MySql(conn) => {
+            match conn.execute(
+                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    direction VARCHAR(10) NOT NULL
+                )"
+            ).await {
+                Ok(_) => (),
+                Err(e) => return Err(CustomMigrationError::SqlxError(e)),
+            }
+        }
+        DatabaseConnection::Sqlite(conn) => {
+            match conn.execute(
+                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    direction TEXT NOT NULL
+                )"
+            ).await {
+                Ok(_) => (),
+                Err(e) => return Err(CustomMigrationError::SqlxError(e)),
+            }
+        }
+    }
+
     // Execute the migration and handle potential errors
-    match execute_migration_with_connection(connection, migration_files, direction.clone()).await {
+    match execute_migration_with_connection(connection.clone(), migration_files, direction.clone()).await {
         Ok(_) => {
+            // Record the migration in the tracking table
+            let direction_str = match direction {
+                MigrationDirection::Up => "up",
+                MigrationDirection::Down => "down",
+            };
+            match connection {
+                DatabaseConnection::Pg(conn) => {
+                    conn.execute(
+                        format!(
+                            "INSERT INTO _rustyroad_migrations (name, direction) VALUES ('{}', '{}')",
+                            migration_name, direction_str
+                        ).as_str()
+                    ).await.map_err(CustomMigrationError::from)?;
+                }
+                DatabaseConnection::MySql(conn) => {
+                    conn.execute(
+                        format!(
+                            "INSERT INTO _rustyroad_migrations (name, direction) VALUES ('{}', '{}')",
+                            migration_name, direction_str
+                        ).as_str()
+                    ).await.map_err(CustomMigrationError::from)?;
+                }
+                DatabaseConnection::Sqlite(conn) => {
+                    conn.execute(
+                        format!(
+                            "INSERT INTO _rustyroad_migrations (name, direction) VALUES ('{}', '{}')",
+                            migration_name, direction_str
+                        ).as_str()
+                    ).await.map_err(CustomMigrationError::from)?;
+                }
+            }
+
             // Only print success message if execution was successful
             match direction {
                 MigrationDirection::Up => println!("Migration applied successfully"),
@@ -697,5 +783,107 @@ async fn execute_migration_with_connection(
             }
         };
     }
+    Ok(())
+}
+
+/// ## Name: list_migrations
+/// ### Description: Lists all migrations and their status (applied or not)
+/// ### Returns:
+/// * `Result<(), CustomMigrationError>` - Returns Ok if successful, or an error
+/// ### Example:
+/// ```rust
+/// use rustyroad::database::migrations::list_migrations;
+///
+/// list_migrations().await?;
+/// ```
+pub async fn list_migrations() -> Result<(), CustomMigrationError> {
+    // get the database
+    let database: Database = Database::get_database_from_rustyroad_toml().expect("Couldn't parse the rustyroad.toml file. Please check the documentation for a proper implementation.");
+    
+    // create the connection pool
+    let connection = Database::create_database_connection(&database)
+        .await
+        .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why.to_string()));
+
+    // Get all migration files from the migrations directory
+    let migrations_dir = Path::new("./config/database/migrations");
+    let mut migration_files = Vec::new();
+    
+    if migrations_dir.exists() {
+        let entries = match fs::read_dir(migrations_dir) {
+            Ok(entries) => entries,
+            Err(e) => return Err(CustomMigrationError::IoError(e)),
+        };
+        for entry in entries {
+            let entry = match entry {
+                Ok(entry) => entry,
+                Err(e) => return Err(CustomMigrationError::IoError(e)),
+            };
+            let path = entry.path();
+            if path.is_dir() {
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    if let Some((_, migration_name)) = name.split_once('-') {
+                        migration_files.push(migration_name.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    // Get applied migrations from the database
+    let applied_migrations = match connection {
+        DatabaseConnection::Pg(conn) => {
+            match sqlx::query_as::<_, (String, String, String)>(
+                "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at"
+            )
+            .fetch_all(&*conn)
+            .await {
+                Ok(rows) => rows,
+                Err(e) => return Err(CustomMigrationError::SqlxError(e)),
+            }
+        }
+        DatabaseConnection::MySql(conn) => {
+            match sqlx::query_as::<_, (String, String, String)>(
+                "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at"
+            )
+            .fetch_all(&*conn)
+            .await {
+                Ok(rows) => rows,
+                Err(e) => return Err(CustomMigrationError::SqlxError(e)),
+            }
+        }
+        DatabaseConnection::Sqlite(conn) => {
+            match sqlx::query_as::<_, (String, String, String)>(
+                "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at"
+            )
+            .fetch_all(&*conn)
+            .await {
+                Ok(rows) => rows,
+                Err(e) => return Err(CustomMigrationError::SqlxError(e)),
+            }
+        }
+    };
+
+    println!("Migrations:");
+    println!("{:<30} {:<20} {:<10}", "Name", "Applied At", "Status");
+    println!("{:-<30} {:-<20} {:-<10}", "", "", "");
+
+    // Print all migration files with their status
+    for migration in &migration_files {
+        let applied = applied_migrations.iter()
+            .find(|(name, _, dir)| name == migration && dir == "up");
+        let rolled_back = applied_migrations.iter()
+            .find(|(name, _, dir)| name == migration && dir == "down");
+
+        let status = match (applied, rolled_back) {
+            (Some((_, applied_at, _)), None) => format!("Applied at {}", applied_at),
+            (None, Some(_)) => "Rolled back".to_string(),
+            (None, None) => "Pending".to_string(),
+            _ => "Unknown".to_string(),
+        };
+
+        println!("{:<30} {:<20} {:<10}", migration, "", status);
+    }
+
     Ok(())
 }
