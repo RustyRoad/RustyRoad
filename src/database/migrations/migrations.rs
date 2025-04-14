@@ -3,7 +3,7 @@ use sqlx::Executor;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, DirEntry};
-use std::io::{Read, stdin};
+use std::io::Read;
 use std::path::Path;
 use std::{
     fmt, fs,
@@ -91,8 +91,8 @@ pub struct ColumnInput {
 ///
 /// create_migration("create_users_table").unwrap();
 /// ```
-pub async fn create_migration(name: &str) -> Result<String, io::Error> {
-    let name = name.to_owned();
+pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io::Error> {
+    let table_name = name.to_owned(); // Use the provided name directly as table name
 
     let path = std::env::current_dir().unwrap();
 
@@ -113,61 +113,96 @@ pub async fn create_migration(name: &str) -> Result<String, io::Error> {
         Err(_) => {}
     }
  
-    let table_name = name.to_string();
-    
-    println!("Enter the number of columns");
-    let mut num_input = String::new();
-    
-    stdin().read_line(&mut num_input).unwrap();
-    
-    let num_columns: i32 = num_input.trim().parse().expect("Invalid input, please enter a number.");
-    let (up_sql_contents, rust_struct_contents) = get_column_details(num_columns, &table_name)?;
+    // --- Start: Parse column definitions and generate SQL ---
+    let mut column_definitions_sql = Vec::new();
 
-    let mut contents = String::new();
+    if columns.is_empty() {
+        // Add a default ID column if no columns are specified
+        // This behavior can be adjusted based on desired default schema
+        println!("No columns specified. Adding default 'id SERIAL PRIMARY KEY' column.");
+        column_definitions_sql.push("id SERIAL PRIMARY KEY".to_string());
+    } else {
+        for col_def in columns {
+            let parts: Vec<&str> = col_def.split(':').collect();
+            if parts.len() < 2 {
+                eprintln!("Skipping invalid column definition: '{}'. Format is name:type[:constraints]", col_def);
+                continue;
+            }
+            let col_name = parts[0];
+            let col_type = parts[1];
+            // TODO: Map common type names (string, integer, boolean, etc.) to actual SQL types based on DB dialect
+            let sql_type = map_common_type_to_sql(col_type); // Placeholder for type mapping
 
-    let database = Database::get_database_from_rustyroad_toml().unwrap();
-    let row_with_database_type = match database.database_type {
-        DatabaseType::Postgres => "postgres::PgRow",
-        DatabaseType::Sqlite => "sqlite::SqliteRow",
-        DatabaseType::Mysql => "mysql::MySqlRow",
-        _ => "error",
-    };
+            let mut constraints_sql = Vec::new();
+            if parts.len() > 2 {
+                let constraints_str = parts[2];
+                for constraint in constraints_str.split(',') {
+                    // TODO: Add more robust constraint parsing (primary_key, not_null, unique, default=value, foreign_key=table(column))
+                    match constraint.to_lowercase().as_str() {
+                        "primary_key" => constraints_sql.push("PRIMARY KEY".to_string()),
+                        "not_null" => constraints_sql.push("NOT NULL".to_string()),
+                        "unique" => constraints_sql.push("UNIQUE".to_string()),
+                        // Add more constraint handling here
+                        _ if constraint.starts_with("default=") => {
+                            let default_value = constraint.splitn(2, '=').nth(1).unwrap_or("");
+                            // Basic quoting for string defaults, needs improvement for other types
+                            let quoted_value = if default_value.chars().all(char::is_numeric) {
+                                default_value.to_string()
+                            } else {
+                                format!("'{}'", default_value) // Simple quoting, might need refinement
+                            };
+                            constraints_sql.push(format!("DEFAULT {}", quoted_value));
+                        }
+                        _ => eprintln!("Warning: Unsupported constraint '{}' for column '{}'", constraint, col_name),
+                    }
+                }
+            }
 
-    let imports = format!("use actix_web::web::to;
-use chrono::{{DateTime, NaiveDateTime, TimeZone, Utc}};
-use rustyroad::database::{{Database, DatabaseType, PoolConnection}};
-use serde::{{Deserialize, Serialize, Deserializer}};
-use sqlx::{{{}, FromRow, Row}};", row_with_database_type);
-
-    let import_lines: Vec<&str> = imports.lines().collect();
-
-    for import_line in import_lines.iter() {
-        let trimmed_import_line = import_line.trim();
-        if !contents.contains(trimmed_import_line) {
-            contents.push_str(trimmed_import_line);
-            contents.push_str("\n");
+            column_definitions_sql.push(format!("{} {} {}", col_name, sql_type, constraints_sql.join(" ")).trim().to_string());
         }
     }
 
-    let struct_name = format!("{} {{", table_name);
-    if !contents.contains(&struct_name) {
-        contents.push_str(&struct_name);
-        contents.push_str("\n");
-    }
+    let up_sql_contents = format!(
+        "CREATE TABLE IF NOT EXISTS {} (\n    {}\n);",
+        table_name,
+        column_definitions_sql.join(",\n    ")
+    );
 
-    contents.push_str(&rust_struct_contents);
-
-    let down_sql_contents = format!("DROP TABLE {};", table_name);
+    let down_sql_contents = format!("DROP TABLE IF EXISTS {};", table_name);
+    // --- End: Parse column definitions and generate SQL ---
 
     let folder_name = format!(
         "config/database/migrations/{}-{}",
         Local::now().format("%Y%m%d%H%M%S"),
-        name
+        table_name // Use table_name instead of the original migration name for the folder
     );
 
     create_migration_files(&folder_name, &up_sql_contents, &down_sql_contents)?;
 
-    Ok(contents)
+    Ok(()) // Return Ok(()) as we are not returning the Rust struct string anymore
+}
+
+// Helper function placeholder for mapping common types to SQL types
+// TODO: Implement proper mapping based on selected database dialect
+fn map_common_type_to_sql(common_type: &str) -> String {
+    match common_type.to_lowercase().as_str() {
+        "string" | "text" => "VARCHAR(255)".to_string(), // Default, adjust as needed
+        "integer" | "int" => "INTEGER".to_string(),
+        "biginteger" | "bigint" => "BIGINT".to_string(),
+        "boolean" | "bool" => "BOOLEAN".to_string(),
+        "float" => "FLOAT".to_string(),
+        "double" | "decimal" => "DECIMAL".to_string(), // Precision/scale might be needed
+        "datetime" | "timestamp" => "TIMESTAMP".to_string(),
+        "date" => "DATE".to_string(),
+        "time" => "TIME".to_string(),
+        "binary" | "blob" => "BYTEA".to_string(), // Example for PostgreSQL
+        "json" => "JSONB".to_string(), // Example for PostgreSQL
+        "uuid" => "UUID".to_string(), // Example for PostgreSQL
+        "serial" => "SERIAL".to_string(), // Example for PostgreSQL (auto-incrementing integer)
+        "bigserial" => "BIGSERIAL".to_string(), // Example for PostgreSQL (auto-incrementing bigint)
+        // Add more mappings as needed
+        _ => common_type.to_uppercase(), // Assume it's already a valid SQL type if not recognized
+    }
 }
 
 pub fn create_migration_files(folder_name: &str, up_sql_contents: &str, down_sql_contents: &str) -> Result<(), io::Error> {

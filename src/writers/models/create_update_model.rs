@@ -174,7 +174,8 @@ pub async fn create_base_model(model_name: &str) -> Result<(), Error> {
 
     if migration_dir_result.is_err() {
         println!("Creating migration: {}", model_name);
-        create_migration(model_name).await.unwrap();
+        // Pass an empty Vec for columns, as this path doesn't get them from CLI
+        create_migration(model_name, Vec::new()).await.unwrap();
         println!("Searching for migration: {}", model_name);
         migration_dir = find_migration_dir(migration_dir, model_name.to_string()).unwrap();
         println!("Migration dir: {}", migration_dir);

@@ -824,13 +824,6 @@ static/styles.css
                             .allow_external_subcommands(false),
                     )
                     .subcommand(Command::new("controller").about("Generates a new controller"))
-                    .subcommand(
-                        Command::new("migration")
-                            .about("Generates a new migration")
-                            .arg(arg!(<name> "The name of the migration"
-                            ))
-                            .arg_required_else_help(true),
-                    )
                     .after_help(
                         "EXAMPLES:
                 To generate a new controller:
@@ -849,8 +842,26 @@ static/styles.css
                     .about("Runs migrations")
                     .subcommand(
                         Command::new("generate")
-                            .about("Generates a migration")
-                            .arg(arg!(<name> "The name of the migration")),
+                            .about("Generates a new migration file with the specified table name and columns.")
+                            .long_about(
+"Generates UP and DOWN SQL migration files for creating a new table.
+Specify the table name and the columns with their types and optional constraints.
+
+Column Format: name:type[:constraints]
+Constraints are comma-separated (e.g., primary_key, not_null, unique, default=value).
+
+Example:
+rustyroad migration generate create_users id:serial:primary_key email:string:not_null,unique created_at:timestamp:default=now"
+                            )
+                            .arg(arg!(<name> "The name of the migration (e.g., create_users_table)"))
+                            .arg(
+                                Arg::new("columns")
+                                    .help("Column definitions in name:type[:constraints] format")
+                                    .value_name("COLUMNS")
+                                    .required(false) // Make columns optional for now, can add interactive mode later if needed
+                                    .num_args(1..) // Allow one or more column definitions
+                            )
+                            .arg_required_else_help(true), // Require at least the name
                     )
                     .subcommand(
                         Command::new("all")
@@ -1202,12 +1213,6 @@ static/styles.css
                         .await
                         .expect("Error creating model");
                 }
-                Some(("migration", matches)) => {
-                    let name = matches.get_one::<String>("name").unwrap().to_string();
-                    create_migration(&name)
-                        .await
-                        .expect("Error creating migration");
-                }
                 _ => {
                     println!("Invalid generate choice");
                 }
@@ -1216,7 +1221,18 @@ static/styles.css
             Some(("migration", matches)) => match matches.subcommand() {
                 Some(("generate", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
-                    create_migration(&name)
+                    // Get the column definitions provided via CLI
+                    let columns: Vec<String> = matches
+                        .get_many::<String>("columns")
+                        .map(|vals| vals.map(|s| s.to_string()).collect())
+                        .unwrap_or_else(Vec::new);
+
+                    // TODO: Modify create_migration to accept `columns` Vec<String>
+                    // For now, it still calls the old interactive version
+                    println!("Migration Name: {}", name);
+                    println!("Columns specified: {:?}", columns);
+                    // Pass the captured columns vector to the updated create_migration function
+                    create_migration(&name, columns)
                         .await
                         .expect("Error creating migration");
                 }
