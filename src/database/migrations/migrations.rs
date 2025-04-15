@@ -324,6 +324,7 @@ pub enum CustomMigrationError {
     IoError(std::io::Error),
     SqlxError(sqlx::Error),
     RunError(Box<dyn StdError + Send + Sync>),
+    SendError(Box<dyn StdError + Send>),
 }
 
 impl Display for CustomMigrationError {
@@ -333,6 +334,7 @@ impl Display for CustomMigrationError {
             Self::RunError(err) => Display::fmt(err, f),
             Self::IoError(err) => Display::fmt(err, f),
             Self::SqlxError(err) => Display::fmt(err, f),
+            Self::SendError(err) => Display::fmt(err, f),
         }
     }
 }

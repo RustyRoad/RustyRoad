@@ -892,6 +892,10 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                             .about("Prints the status of all migrations")
                             .arg(arg!(<name> "The name of the migration")),
                     )
+                    .subcommand(
+                        Command::new("list")
+                            .about("Lists all migrations and their status (applied or not)"),
+                    )
                     .subcommand_help_heading("SUBCOMMANDS:")
                     // if no subcommand is provided, print help
                     .subcommand_required(true)
@@ -967,6 +971,16 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     .subcommand_required(false)
                     .arg_required_else_help(false)
                     .allow_external_subcommands(false),
+            )
+            .subcommand(
+                Command::new("db")
+                    .about("Database operations")
+                    .subcommand(
+                        Command::new("schema")
+                            .about("Inspect database schema")
+                    )
+                    .subcommand_required(true)
+                    .arg_required_else_help(true)
             )
     }
 
@@ -1297,6 +1311,11 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                         println!("'{}' migration rollback canceled by user.", name);
                     }
                 }
+                Some(("list", _)) => {
+                    list_migrations()
+                        .await
+                        .expect("Error listing migrations");
+                }
                 _ => {
                     println!("Invalid migration choice");
                 }
@@ -1388,6 +1407,16 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
             Some(("version", _matches)) => {
                 println!("Rusty Road Version: {}", env!("CARGO_PKG_VERSION"));
             }
+            Some(("db", matches)) => match matches.subcommand() {
+                Some(("schema", _)) => {
+                    inspect_schema()
+                        .await
+                        .unwrap_or_else(|e| println!("Error inspecting schema: {}", e));
+                }
+                _ => {
+                    println!("Invalid db command");
+                }
+            },
             _ => {
                 println!("Invalid choice");
             }
