@@ -1,4 +1,5 @@
 use chrono::Local;
+use regex::Regex;
 use sqlx::Executor;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -24,6 +25,56 @@ use super::column_loop::column_loop;
 
 const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 
+/// Represents the type of migration operation
+#[derive(Debug, PartialEq)]
+enum MigrationType {
+    CreateTable(String),
+    AddColumn { table_name: String, columns: Vec<String> },
+}
+
+/// Parse migration name to determine the type of operation
+fn parse_migration_name(name: &str, columns: &[String]) -> MigrationType {
+    // Check for "add_*_to_*" pattern
+    let add_pattern = Regex::new(r"^add_(.+)_to_(.+)$").unwrap();
+    
+    if let Some(captures) = add_pattern.captures(name) {
+        let column_part = captures.get(1).unwrap().as_str();
+        let table_name = captures.get(2).unwrap().as_str().to_string();
+        
+        // If columns are provided via CLI, use those; otherwise derive from name
+        let columns_to_add = if columns.is_empty() {
+            // Extract column names from the migration name
+            // For "add_page_id_to_funnel_steps", extract "page_id"
+            vec![column_part.to_string()]
+        } else {
+            columns.to_vec()
+        };
+        
+        return MigrationType::AddColumn {
+            table_name,
+            columns: columns_to_add,
+        };
+    }
+    
+    // Default to CREATE TABLE operation
+    MigrationType::CreateTable(name.to_string())
+}
+
+/// Generate foreign key constraint name and reference table
+fn generate_foreign_key_info(column_name: &str) -> Option<(String, String)> {
+    if column_name.ends_with("_id") {
+        let table_name = column_name.strip_suffix("_id").unwrap();
+        let table_name_plural = if table_name.ends_with('s') {
+            table_name.to_string()
+        } else {
+            format!("{}s", table_name) // Simple pluralization
+        };
+        let constraint_name = format!("fk_{}", table_name);
+        Some((constraint_name, table_name_plural))
+    } else {
+        None
+    }
+}
 
 
 
@@ -92,8 +143,6 @@ pub struct ColumnInput {
 /// create_migration("create_users_table").unwrap();
 /// ```
 pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io::Error> {
-    let table_name = name.to_owned(); // Use the provided name directly as table name
-
     let path = std::env::current_dir().unwrap();
 
     if fs::read_to_string(path.join("rustyroad.toml")).is_err() {
@@ -112,74 +161,203 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
         Ok(_) => {}
         Err(_) => {}
     }
- 
-    // --- Start: Parse column definitions and generate SQL ---
-    let mut column_definitions_sql = Vec::new();
 
-    if columns.is_empty() {
-        // Add a default ID column if no columns are specified
-        // This behavior can be adjusted based on desired default schema
-        println!("No columns specified. Adding default 'id SERIAL PRIMARY KEY' column.");
-        column_definitions_sql.push("id SERIAL PRIMARY KEY".to_string());
-    } else {
-        for col_def in columns {
-            let parts: Vec<&str> = col_def.split(':').collect();
-            if parts.len() < 2 {
-                eprintln!("Skipping invalid column definition: '{}'. Format is name:type[:constraints]", col_def);
-                continue;
-            }
-            let col_name = parts[0];
-            let col_type = parts[1];
-            // TODO: Map common type names (string, integer, boolean, etc.) to actual SQL types based on DB dialect
-            let sql_type = map_common_type_to_sql(col_type); // Placeholder for type mapping
+    // Parse the migration name to determine the operation type
+    let migration_type = parse_migration_name(name, &columns);
+    
+    let (up_sql_contents, down_sql_contents, folder_name) = match migration_type {
+        MigrationType::CreateTable(table_name) => {
+            // Existing CREATE TABLE logic
+            let mut column_definitions_sql = Vec::new();
+            
+            if columns.is_empty() {
+                println!("No columns specified. Adding default 'id SERIAL PRIMARY KEY' column.");
+                column_definitions_sql.push("id SERIAL PRIMARY KEY".to_string());
+            } else {
+                for col_def in columns {
+                    let parts: Vec<&str> = col_def.split(':').collect();
+                    if parts.len() < 2 {
+                        eprintln!("Skipping invalid column definition: '{}'. Format is name:type[:constraints]", col_def);
+                        continue;
+                    }
+                    let col_name = parts[0];
+                    let col_type = parts[1];
+                    let sql_type = map_common_type_to_sql(col_type);
 
-            let mut constraints_sql = Vec::new();
-            if parts.len() > 2 {
-                let constraints_str = parts[2];
-                for constraint in constraints_str.split(',') {
-                    // TODO: Add more robust constraint parsing (primary_key, not_null, unique, default=value, foreign_key=table(column))
-                    match constraint.to_lowercase().as_str() {
-                        "primary_key" => constraints_sql.push("PRIMARY KEY".to_string()),
-                        "not_null" => constraints_sql.push("NOT NULL".to_string()),
-                        "unique" => constraints_sql.push("UNIQUE".to_string()),
-                        // Add more constraint handling here
-                        _ if constraint.starts_with("default=") => {
-                            let default_value = constraint.splitn(2, '=').nth(1).unwrap_or("");
-                            // Basic quoting for string defaults, needs improvement for other types
-                            let quoted_value = if default_value.chars().all(char::is_numeric) {
-                                default_value.to_string()
-                            } else {
-                                format!("'{}'", default_value) // Simple quoting, might need refinement
-                            };
-                            constraints_sql.push(format!("DEFAULT {}", quoted_value));
+                    let mut constraints_sql = Vec::new();
+                    if parts.len() > 2 {
+                        let constraints_str = parts[2];
+                        for constraint in constraints_str.split(',') {
+                            match constraint.to_lowercase().as_str() {
+                                "primary_key" => constraints_sql.push("PRIMARY KEY".to_string()),
+                                "not_null" => constraints_sql.push("NOT NULL".to_string()),
+                                "unique" => constraints_sql.push("UNIQUE".to_string()),
+                                _ if constraint.starts_with("default=") => {
+                                    let default_value = constraint.splitn(2, '=').nth(1).unwrap_or("");
+                                    let quoted_value = if default_value.chars().all(char::is_numeric) {
+                                        default_value.to_string()
+                                    } else {
+                                        format!("'{}'", default_value)
+                                    };
+                                    constraints_sql.push(format!("DEFAULT {}", quoted_value));
+                                }
+                                _ => eprintln!("Warning: Unsupported constraint '{}' for column '{}'", constraint, col_name),
+                            }
                         }
-                        _ => eprintln!("Warning: Unsupported constraint '{}' for column '{}'", constraint, col_name),
+                    }
+
+                    column_definitions_sql.push(format!("{} {} {}", col_name, sql_type, constraints_sql.join(" ")).trim().to_string());
+                }
+            }
+
+            let up_sql = format!(
+                "CREATE TABLE IF NOT EXISTS {} (\n    {}\n);",
+                table_name,
+                column_definitions_sql.join(",\n    ")
+            );
+            let down_sql = format!("DROP TABLE IF EXISTS {};", table_name);
+            let folder_name = format!(
+                "config/database/migrations/{}-{}",
+                Local::now().format("%Y%m%d%H%M%S"),
+                table_name
+            );
+            
+            (up_sql, down_sql, folder_name)
+        },
+        
+        MigrationType::AddColumn { table_name, columns: cols_to_add } => {
+            // New ALTER TABLE logic
+            let mut alter_statements = Vec::new();
+            let mut foreign_key_statements = Vec::new();
+            let mut column_names_for_down = Vec::new();
+            
+            if !columns.is_empty() {
+                // Use columns from CLI
+                for col_def in columns {
+                    let parts: Vec<&str> = col_def.split(':').collect();
+                    if parts.len() < 2 {
+                        eprintln!("Skipping invalid column definition: '{}'. Format is name:type[:constraints]", col_def);
+                        continue;
+                    }
+                    let col_name = parts[0];
+                    let col_type = parts[1];
+                    let sql_type = map_common_type_to_sql(col_type);
+
+                    alter_statements.push(format!("ADD COLUMN {} {}", col_name, sql_type));
+                    column_names_for_down.push(col_name.to_string());
+                    
+                    // Check if this is a foreign key column
+                    if let Some((constraint_name, ref_table)) = generate_foreign_key_info(col_name) {
+                        foreign_key_statements.push(format!(
+                            "ADD CONSTRAINT {} FOREIGN KEY ({}) REFERENCES {}(id)",
+                            constraint_name, col_name, ref_table
+                        ));
+                    }
+                }
+            } else {
+                // Use column names derived from migration name with default type
+                for col_name in &cols_to_add {
+                    // Default to INTEGER type, but this should ideally be specified in the command
+                    alter_statements.push(format!("ADD COLUMN {} INTEGER", col_name));
+                    column_names_for_down.push(col_name.clone());
+                    
+                    // Check if this is a foreign key column
+                    if let Some((constraint_name, ref_table)) = generate_foreign_key_info(col_name) {
+                        foreign_key_statements.push(format!(
+                            "ADD CONSTRAINT {} FOREIGN KEY ({}) REFERENCES {}(id)",
+                            constraint_name, col_name, ref_table
+                        ));
                     }
                 }
             }
 
-            column_definitions_sql.push(format!("{} {} {}", col_name, sql_type, constraints_sql.join(" ")).trim().to_string());
+            // Combine ALTER statements
+            let mut all_statements = alter_statements;
+            all_statements.extend(foreign_key_statements);
+            
+            let up_sql = format!(
+                "ALTER TABLE {}\n{};",
+                table_name,
+                all_statements.join(",\n")
+            );
+            
+            let down_sql = format!(
+                "ALTER TABLE {}\n{};",
+                table_name,
+                column_names_for_down.iter()
+                    .map(|col| format!("DROP COLUMN {}", col))
+                    .collect::<Vec<_>>()
+                    .join(",\n")
+            );
+            
+            let folder_name = format!(
+                "config/database/migrations/{}-{}",
+                Local::now().format("%Y%m%d%H%M%S"),
+                name // Use original migration name for folder
+            );
+            
+            (up_sql, down_sql, folder_name)
         }
-    }
-
-    let up_sql_contents = format!(
-        "CREATE TABLE IF NOT EXISTS {} (\n    {}\n);",
-        table_name,
-        column_definitions_sql.join(",\n    ")
-    );
-
-    let down_sql_contents = format!("DROP TABLE IF EXISTS {};", table_name);
-    // --- End: Parse column definitions and generate SQL ---
-
-    let folder_name = format!(
-        "config/database/migrations/{}-{}",
-        Local::now().format("%Y%m%d%H%M%S"),
-        table_name // Use table_name instead of the original migration name for the folder
-    );
+    };
 
     create_migration_files(&folder_name, &up_sql_contents, &down_sql_contents)?;
 
-    Ok(()) // Return Ok(()) as we are not returning the Rust struct string anymore
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_migration_name_add_column() {
+        let name = "add_page_id_to_funnel_steps";
+        let columns = vec!["page_id:integer".to_string()];
+        
+        let result = parse_migration_name(name, &columns);
+        
+        match result {
+            MigrationType::AddColumn { table_name, columns: _cols } => {
+                assert_eq!(table_name, "funnel_steps");
+            },
+            _ => panic!("Expected AddColumn migration type"),
+        }
+    }
+
+    #[test] 
+    fn test_parse_migration_name_create_table() {
+        let name = "create_users_table";
+        let columns = vec!["name:string".to_string()];
+        
+        let result = parse_migration_name(name, &columns);
+        
+        match result {
+            MigrationType::CreateTable(table_name) => {
+                assert_eq!(table_name, "create_users_table");
+            },
+            _ => panic!("Expected CreateTable migration type"),
+        }
+    }
+
+    #[test]
+    fn test_generate_foreign_key_info() {
+        let result = generate_foreign_key_info("page_id");
+        assert_eq!(result, Some(("fk_page".to_string(), "pages".to_string())));
+        
+        let result = generate_foreign_key_info("user_id");
+        assert_eq!(result, Some(("fk_user".to_string(), "users".to_string())));
+        
+        let result = generate_foreign_key_info("name");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_map_common_type_to_sql() {
+        assert_eq!(map_common_type_to_sql("integer"), "INTEGER");
+        assert_eq!(map_common_type_to_sql("string"), "VARCHAR(255)");
+        assert_eq!(map_common_type_to_sql("text"), "VARCHAR(255)");
+        assert_eq!(map_common_type_to_sql("boolean"), "BOOLEAN");
+    }
 }
 
 // Helper function placeholder for mapping common types to SQL types

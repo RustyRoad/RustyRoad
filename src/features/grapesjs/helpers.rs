@@ -212,7 +212,7 @@ mod tests {
         // print the working directory
         println!("Current directory: {:?}", std::env::current_dir());
 
-        update_index_controller().await.expect("TODO: panic message");
+        crate::features::update_index_controller().await.expect("TODO: panic message");
 
         println!("Updated index controller")
     }

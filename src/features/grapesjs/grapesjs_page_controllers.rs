@@ -542,12 +542,13 @@ async fn main() -> std::io::Result<()> {
         std::env::set_current_dir(&temp_dir.path())
             .expect("Failed to change current working directory");
 
-        write_to_all_page_controllers()
+        crate::features::grapesjs::grapesjs_page_controllers::write_to_all_page_controllers()
             .expect("Error writing to all page controllers");
 
         let  page_controller_contents = fs::read_to_string(&page_controller_path)
             .expect("Error reading page controller contents");
 
+        use color_eyre::owo_colors::OwoColorize;
         println!("page_controller_contents: {}", page_controller_contents.purple());
 
         assert!(page_controller_contents.contains("use actix_web::HttpResponse;"),
