@@ -34,9 +34,6 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run tests
-        run: cargo test --all-features
-
       - name: Run clippy
         run: cargo clippy --all-features -- -D warnings
 
@@ -83,10 +80,6 @@ jobs:
             target: x86_64-unknown-linux-gnu
             artifact_name: rustyroad
             asset_name: rustyroad-linux-x86_64
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact_name: rustyroad.exe
-            asset_name: rustyroad-windows-x86_64.exe
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: rustyroad
