@@ -285,14 +285,17 @@ The cli will prompt you to create a new project. Enter the name of your project 
 $ rustyroad
 CLI for Rusty Road
 
-Usage: rustyroad.exe <COMMAND>
+Usage: rustyroad <COMMAND>
 
 Commands:
-  new         Creates a new project
-  generate    Generates a new route, model, or controller
-  migration   Runs migrations
-  feature     Adds a new feature to your project
-  help        Print this message or the help of the given subcommand(s)
+  new                 Creates a new project
+  generate            Generates a new controller, model, or controller
+  migration           Runs migrations
+  feature             Adds a feature to the project
+  kubernetes_project  Creates a new rustyroad project for use in kubernetes
+  version             Prints the version of Rusty Road
+  db                  Database operations
+  help                Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help  Print help
@@ -315,6 +318,41 @@ cd example
 
 rustyroad migration run
 ```
+
+### Database Operations
+
+Rusty Road provides powerful database operations through the `db` command:
+
+#### Inspect Database Schema
+```shell
+rustyroad db schema
+```
+
+#### Execute SQL Queries
+Run any SQL query directly from the command line:
+
+```shell
+rustyroad query "SELECT * FROM users LIMIT 10;"
+```
+
+```shell
+rustyroad query "SELECT COUNT(*) as total_users FROM users;"
+```
+
+```shell
+rustyroad query "SELECT name, email FROM users WHERE active = true;"
+```
+
+The query command supports all three database types (PostgreSQL, MySQL, SQLite) and provides:
+- Formatted output with column headers
+- Proper handling of different data types
+- Error messages for invalid queries
+- Support for empty result sets
+
+This feature is particularly useful for:
+- Debugging and data inspection
+- Quick database queries during development
+- Administrative tasks and data analysis
 
 ## ⛏️ Built With <a name = "tech_stack"></a>
 

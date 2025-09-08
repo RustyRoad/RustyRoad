@@ -982,6 +982,12 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     .subcommand_required(true)
                     .arg_required_else_help(true)
             )
+            .subcommand(
+                Command::new("query")
+                    .about("Execute SQL query")
+                    .arg(arg!(<QUERY> "SQL query to execute"))
+                    .arg_required_else_help(true)
+            )
     }
 
     pub fn push_args() -> Vec<Arg> {
@@ -1417,6 +1423,12 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     println!("Invalid db command");
                 }
             },
+            Some(("query", matches)) => {
+                let query = matches.get_one::<String>("QUERY").unwrap();
+                execute_query(query)
+                    .await
+                    .unwrap_or_else(|e| println!("Error executing query: {}", e));
+            }
             _ => {
                 println!("Invalid choice");
             }
