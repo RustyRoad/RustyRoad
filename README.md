@@ -332,15 +332,15 @@ rustyroad db schema
 Run any SQL query directly from the command line:
 
 ```shell
-rustyroad db query "SELECT * FROM users LIMIT 10;"
+rustyroad query "SELECT * FROM users LIMIT 10;"
 ```
 
 ```shell
-rustyroad db query "SELECT COUNT(*) as total_users FROM users;"
+rustyroad query "SELECT COUNT(*) as total_users FROM users;"
 ```
 
 ```shell
-rustyroad db query "SELECT name, email FROM users WHERE active = true;"
+rustyroad query "SELECT name, email FROM users WHERE active = true;"
 ```
 
 The query command supports all three database types (PostgreSQL, MySQL, SQLite) and provides:
