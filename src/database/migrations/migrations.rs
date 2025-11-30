@@ -39,17 +39,20 @@ struct ParsedColumn {
 fn parse_column_definition(col_def: &str) -> Option<ParsedColumn> {
     let parts: Vec<&str> = col_def.split(':').collect();
     if parts.len() < 2 {
-        eprintln!("Skipping invalid column definition: '{}'. Format is name:type[:constraints]", col_def);
+        eprintln!(
+            "Skipping invalid column definition: '{}'. Format is name:type[:constraints]",
+            col_def
+        );
         return None;
     }
-    
+
     let col_name = parts[0].to_string();
     let col_type = parts[1];
     let sql_type = map_common_type_to_sql(col_type);
-    
+
     let mut constraints = Vec::new();
     let mut foreign_key = None;
-    
+
     if parts.len() > 2 {
         let constraints_str = parts[2];
         for constraint in constraints_str.split(',') {
@@ -63,12 +66,13 @@ fn parse_column_definition(col_def: &str) -> Option<ParsedColumn> {
                 }
                 "unique" => constraints.push("UNIQUE".to_string()),
                 _ if constraint.to_lowercase().starts_with("default=") => {
-                    let default_value = constraint.splitn(2, '=').nth(1).unwrap_or("");
-                    let quoted_value = if default_value.chars().all(char::is_numeric) 
-                        || default_value.to_lowercase() == "true" 
+                    let default_value = constraint.split_once('=').map(|x| x.1).unwrap_or("");
+                    let quoted_value = if default_value.chars().all(char::is_numeric)
+                        || default_value.to_lowercase() == "true"
                         || default_value.to_lowercase() == "false"
                         || default_value.to_lowercase() == "null"
-                        || default_value.starts_with("'") {
+                        || default_value.starts_with('\'')
+                    {
                         default_value.to_string()
                     } else {
                         format!("'{}'", default_value)
@@ -77,7 +81,7 @@ fn parse_column_definition(col_def: &str) -> Option<ParsedColumn> {
                 }
                 _ if constraint.to_lowercase().starts_with("references=") => {
                     // Parse references=table(column) or references=table
-                    let ref_value = constraint.splitn(2, '=').nth(1).unwrap_or("");
+                    let ref_value = constraint.split_once('=').map(|x| x.1).unwrap_or("");
                     let ref_pattern = Regex::new(r"^(\w+)(?:\((\w+)\))?$").unwrap();
                     if let Some(captures) = ref_pattern.captures(ref_value) {
                         let ref_table = captures.get(1).unwrap().as_str().to_string();
@@ -92,7 +96,7 @@ fn parse_column_definition(col_def: &str) -> Option<ParsedColumn> {
             }
         }
     }
-    
+
     Some(ParsedColumn {
         name: col_name,
         sql_type,
@@ -105,18 +109,21 @@ fn parse_column_definition(col_def: &str) -> Option<ParsedColumn> {
 #[derive(Debug, PartialEq)]
 enum MigrationType {
     CreateTable(String),
-    AddColumn { table_name: String, columns: Vec<String> },
+    AddColumn {
+        table_name: String,
+        columns: Vec<String>,
+    },
 }
 
 /// Parse migration name to determine the type of operation
 fn parse_migration_name(name: &str, columns: &[String]) -> MigrationType {
     // Check for "add_*_to_*" pattern
     let add_pattern = Regex::new(r"^add_(.+)_to_(.+)$").unwrap();
-    
+
     if let Some(captures) = add_pattern.captures(name) {
         let column_part = captures.get(1).unwrap().as_str();
         let table_name = captures.get(2).unwrap().as_str().to_string();
-        
+
         // If columns are provided via CLI, use those; otherwise derive from name
         let columns_to_add = if columns.is_empty() {
             // Extract column names from the migration name
@@ -125,13 +132,13 @@ fn parse_migration_name(name: &str, columns: &[String]) -> MigrationType {
         } else {
             columns.to_vec()
         };
-        
+
         return MigrationType::AddColumn {
             table_name,
             columns: columns_to_add,
         };
     }
-    
+
     // Default to CREATE TABLE operation
     MigrationType::CreateTable(name.to_string())
 }
@@ -152,8 +159,6 @@ fn generate_foreign_key_info(column_name: &str) -> Option<(String, String)> {
     }
 }
 
-
-
 /// ## Name: MigrationInput
 /// ### Description: A struct that represents the input for a migration
 /// #### Fields:
@@ -163,7 +168,7 @@ fn generate_foreign_key_info(column_name: &str) -> Option<(String, String)> {
 /// ```rust
 /// use rustyroad::database::migrations::MigrationInput;
 /// use rustyroad::database::migrations::ColumnInput;
-/// 
+///
 /// let migration_input = MigrationInput {
 ///     name: "create_users_table".to_string(),
 ///     columns: vec![
@@ -192,7 +197,7 @@ pub struct MigrationInput {
 /// ### Example:
 /// ```rust
 /// use rustyroad::database::migrations::ColumnInput;
-/// 
+///
 /// let column_input = ColumnInput {
 ///     name: "id".to_string(),
 ///     data_type: "SERIAL".to_string(),
@@ -222,31 +227,24 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
     let path = std::env::current_dir().unwrap();
 
     if fs::read_to_string(path.join("rustyroad.toml")).is_err() {
-        return Err(io::Error::new(
-            ErrorKind::Other,
+        return Err(io::Error::other(
             "Error reading the rustyroad.toml, please see the documentation for more information.",
         ));
     }
 
-    match fs::create_dir("config/database") {
-        Ok(_) => {}
-        Err(_) => {}
-    }
+    if let Ok(_) = fs::create_dir("config/database") {}
 
-    match fs::create_dir("config/database/migrations") {
-        Ok(_) => {}
-        Err(_) => {}
-    }
+    if let Ok(_) = fs::create_dir("config/database/migrations") {}
 
     // Parse the migration name to determine the operation type
     let migration_type = parse_migration_name(name, &columns);
-    
+
     let (up_sql_contents, down_sql_contents, folder_name) = match migration_type {
         MigrationType::CreateTable(table_name) => {
             // CREATE TABLE logic using the centralized column parser
             let mut column_definitions_sql = Vec::new();
             let mut foreign_key_constraints = Vec::new();
-            
+
             if columns.is_empty() {
                 println!("No columns specified. Adding default 'id SERIAL PRIMARY KEY' column.");
                 column_definitions_sql.push("id SERIAL PRIMARY KEY".to_string());
@@ -254,9 +252,12 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
                 for col_def in &columns {
                     if let Some(parsed) = parse_column_definition(col_def) {
                         let constraints_str = parsed.constraints.join(" ");
-                        let column_sql = format!("{} {} {}", parsed.name, parsed.sql_type, constraints_str).trim().to_string();
+                        let column_sql =
+                            format!("{} {} {}", parsed.name, parsed.sql_type, constraints_str)
+                                .trim()
+                                .to_string();
                         column_definitions_sql.push(column_sql);
-                        
+
                         // Collect foreign key constraints
                         if let Some((constraint_name, ref_table, ref_column)) = parsed.foreign_key {
                             foreign_key_constraints.push(format!(
@@ -267,7 +268,7 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
                     }
                 }
             }
-            
+
             // Append foreign key constraints to column definitions
             column_definitions_sql.extend(foreign_key_constraints);
 
@@ -282,16 +283,19 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
                 Local::now().format("%Y%m%d%H%M%S"),
                 table_name
             );
-            
+
             (up_sql, down_sql, folder_name)
-        },
-        
-        MigrationType::AddColumn { table_name, columns: cols_to_add } => {
+        }
+
+        MigrationType::AddColumn {
+            table_name,
+            columns: cols_to_add,
+        } => {
             // ALTER TABLE logic using the centralized column parser
             let mut alter_statements = Vec::new();
             let mut foreign_key_statements = Vec::new();
             let mut column_names_for_down = Vec::new();
-            
+
             if !columns.is_empty() {
                 // Use columns from CLI with full constraint support
                 for col_def in &columns {
@@ -300,11 +304,14 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
                         let column_sql = if constraints_str.is_empty() {
                             format!("ADD COLUMN {} {}", parsed.name, parsed.sql_type)
                         } else {
-                            format!("ADD COLUMN {} {} {}", parsed.name, parsed.sql_type, constraints_str)
+                            format!(
+                                "ADD COLUMN {} {} {}",
+                                parsed.name, parsed.sql_type, constraints_str
+                            )
                         };
                         alter_statements.push(column_sql);
                         column_names_for_down.push(parsed.name.clone());
-                        
+
                         // Handle explicit foreign key constraints from references=
                         if let Some((constraint_name, ref_table, ref_column)) = parsed.foreign_key {
                             foreign_key_statements.push(format!(
@@ -313,7 +320,9 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
                             ));
                         }
                         // Also auto-detect foreign keys from column naming convention
-                        else if let Some((constraint_name, ref_table)) = generate_foreign_key_info(&parsed.name) {
+                        else if let Some((constraint_name, ref_table)) =
+                            generate_foreign_key_info(&parsed.name)
+                        {
                             foreign_key_statements.push(format!(
                                 "ADD CONSTRAINT {} FOREIGN KEY ({}) REFERENCES {}(id)",
                                 constraint_name, parsed.name, ref_table
@@ -327,9 +336,10 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
                     // Default to INTEGER type, but this should ideally be specified in the command
                     alter_statements.push(format!("ADD COLUMN {} INTEGER", col_name));
                     column_names_for_down.push(col_name.clone());
-                    
+
                     // Check if this is a foreign key column
-                    if let Some((constraint_name, ref_table)) = generate_foreign_key_info(col_name) {
+                    if let Some((constraint_name, ref_table)) = generate_foreign_key_info(col_name)
+                    {
                         foreign_key_statements.push(format!(
                             "ADD CONSTRAINT {} FOREIGN KEY ({}) REFERENCES {}(id)",
                             constraint_name, col_name, ref_table
@@ -341,28 +351,29 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
             // Combine ALTER statements
             let mut all_statements = alter_statements;
             all_statements.extend(foreign_key_statements);
-            
+
             let up_sql = format!(
                 "ALTER TABLE {}\n{};",
                 table_name,
                 all_statements.join(",\n")
             );
-            
+
             let down_sql = format!(
                 "ALTER TABLE {}\n{};",
                 table_name,
-                column_names_for_down.iter()
+                column_names_for_down
+                    .iter()
                     .map(|col| format!("DROP COLUMN {}", col))
                     .collect::<Vec<_>>()
                     .join(",\n")
             );
-            
+
             let folder_name = format!(
                 "config/database/migrations/{}-{}",
                 Local::now().format("%Y%m%d%H%M%S"),
                 name // Use original migration name for folder
             );
-            
+
             (up_sql, down_sql, folder_name)
         }
     };
@@ -380,28 +391,31 @@ mod tests {
     fn test_parse_migration_name_add_column() {
         let name = "add_page_id_to_funnel_steps";
         let columns = vec!["page_id:integer".to_string()];
-        
+
         let result = parse_migration_name(name, &columns);
-        
+
         match result {
-            MigrationType::AddColumn { table_name, columns: _cols } => {
+            MigrationType::AddColumn {
+                table_name,
+                columns: _cols,
+            } => {
                 assert_eq!(table_name, "funnel_steps");
-            },
+            }
             _ => panic!("Expected AddColumn migration type"),
         }
     }
 
-    #[test] 
+    #[test]
     fn test_parse_migration_name_create_table() {
         let name = "create_users_table";
         let columns = vec!["name:string".to_string()];
-        
+
         let result = parse_migration_name(name, &columns);
-        
+
         match result {
             MigrationType::CreateTable(table_name) => {
                 assert_eq!(table_name, "create_users_table");
-            },
+            }
             _ => panic!("Expected CreateTable migration type"),
         }
     }
@@ -410,10 +424,10 @@ mod tests {
     fn test_generate_foreign_key_info() {
         let result = generate_foreign_key_info("page_id");
         assert_eq!(result, Some(("fk_page".to_string(), "pages".to_string())));
-        
+
         let result = generate_foreign_key_info("user_id");
         assert_eq!(result, Some(("fk_user".to_string(), "users".to_string())));
-        
+
         let result = generate_foreign_key_info("name");
         assert_eq!(result, None);
     }
@@ -441,8 +455,8 @@ fn map_common_type_to_sql(common_type: &str) -> String {
         "date" => "DATE".to_string(),
         "time" => "TIME".to_string(),
         "binary" | "blob" => "BYTEA".to_string(), // Example for PostgreSQL
-        "json" => "JSONB".to_string(), // Example for PostgreSQL
-        "uuid" => "UUID".to_string(), // Example for PostgreSQL
+        "json" => "JSONB".to_string(),            // Example for PostgreSQL
+        "uuid" => "UUID".to_string(),             // Example for PostgreSQL
         "serial" => "SERIAL".to_string(), // Example for PostgreSQL (auto-incrementing integer)
         "bigserial" => "BIGSERIAL".to_string(), // Example for PostgreSQL (auto-incrementing bigint)
         // Add more mappings as needed
@@ -450,18 +464,19 @@ fn map_common_type_to_sql(common_type: &str) -> String {
     }
 }
 
-pub fn create_migration_files(folder_name: &str, up_sql_contents: &str, down_sql_contents: &str) -> Result<(), io::Error> {
+pub fn create_migration_files(
+    folder_name: &str,
+    up_sql_contents: &str,
+    down_sql_contents: &str,
+) -> Result<(), io::Error> {
     let up_file = format!("{}/up.sql", folder_name);
     let down_file = format!("{}/down.sql", folder_name);
 
-    match std::fs::create_dir(&folder_name) {
+    match std::fs::create_dir(folder_name) {
         Ok(_) => {}
         Err(_) => {
             println!("Migration already exists");
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Migration already exists",
-            ));
+            return Err(io::Error::other("Migration already exists"));
         }
     }
 
@@ -474,31 +489,32 @@ pub fn create_migration_files(folder_name: &str, up_sql_contents: &str, down_sql
     Ok(())
 }
 
- 
 /// # Name: get_column_details
 /// ### Description: gets the details for each column
-/// ### Arguments: 
+/// ### Arguments:
 /// * [`num_columns`] - The number of columns in the table
 /// * [`table_name`] - The name of the table
-/// 
+///
 /// ### Returns:
 /// * [`Result<(String, String), io::Error>`] - Returns a tuple with the up.sql contents and the rust struct contents or an io::Error
 /// ### Example:
 /// ```rust
 /// use rustyroad::database::migrations::get_column_details;
-/// 
+///
 /// let num_columns = 2;
 /// let table_name = "users";
 /// let result = get_column_details(num_columns, table_name);
-/// 
+///
 /// assert!(result.is_ok());
 /// ```
-pub fn get_column_details(num_columns: i32, table_name: &str) -> Result<(String, String), io::Error> {
-   let result  =  column_loop(num_columns, table_name.to_string()).expect("wrong");
-    
+pub fn get_column_details(
+    num_columns: i32,
+    table_name: &str,
+) -> Result<(String, String), io::Error> {
+    let result = column_loop(num_columns, table_name.to_string()).expect("wrong");
+
     Ok((result.up_sql_contents, result.rust_struct_contents))
 }
-
 
 /// ## Name: initialize_migration
 /// ### Description: Creates the initial migration directory and the up.sql and down.sql files for the initial migration
@@ -536,17 +552,16 @@ pub fn initialize_migration(project: &Project) -> Result<(), ErrorKind> {
     let migrations_dir = Path::new(&project.initial_migration_directory).join("migrations");
 
     if !migrations_dir.exists() {
-        create_dir_all(&migrations_dir).unwrap_or_else(|why| {
-            panic!("Couldn't create migrations directory: {}", why.to_string())
-        });
+        create_dir_all(&migrations_dir)
+            .unwrap_or_else(|why| panic!("Couldn't create migrations directory: {}", why));
     }
 
     // create the up.sql file
     let up_file = &project.initial_migration_up;
 
     // write the up.sql file
-    write_to_file(&up_file, sql.as_bytes())
-        .unwrap_or_else(|why| panic!("Couldn't write to up.sql: {}", why.to_string()));
+    write_to_file(up_file, sql.as_bytes())
+        .unwrap_or_else(|why| panic!("Couldn't write to up.sql: {}", why));
 
     let sql_to_down = "
     DROP TABLE IF EXISTS users;
@@ -556,8 +571,8 @@ pub fn initialize_migration(project: &Project) -> Result<(), ErrorKind> {
     let down_file = &project.initial_migration_down;
 
     // write the down.sql file
-    write_to_file(&down_file, sql_to_down.as_bytes())
-        .unwrap_or_else(|why| panic!("Couldn't write to down.sql: {}", why.to_string()));
+    write_to_file(down_file, sql_to_down.as_bytes())
+        .unwrap_or_else(|why| panic!("Couldn't write to down.sql: {}", why));
 
     Ok(())
 }
@@ -645,17 +660,17 @@ pub async fn run_migration(
             println!("coming soon");
         }
     }
-    let migrations_dir_path = format!("./config/database/migrations");
+    let migrations_dir_path = "./config/database/migrations".to_string();
     // find the folder that has the name of the migration in the migrations directory with the latest timestamp
     let migration_dir_selected =
         find_migration_dir(migrations_dir_path.clone(), migration_name.clone())
-            .unwrap_or_else(|why| panic!("Couldn't find migration directory: {}", why.to_string()));
+            .unwrap_or_else(|why| panic!("Couldn't find migration directory: {}", why));
     // Generate the path to the migrations directory at runtime
     let migration_dir = &migration_dir_selected;
     println!("Migration directory: {:?}", migration_dir);
     // Get migration files from the specified directory
     let mut migration_files: Vec<_> = fs::read_dir(migration_dir.clone())
-        .unwrap_or_else(|why| panic!("Couldn't read migrations directory: {}", why.to_string()))
+        .unwrap_or_else(|why| panic!("Couldn't read migrations directory: {}", why))
         .filter_map(Result::ok)
         .collect();
     // Sort the migration files based on their name (to apply them in order)
@@ -668,7 +683,7 @@ pub async fn run_migration(
     // create the connection pool
     let connection = Database::create_database_connection(&database)
         .await
-        .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why.to_string()));
+        .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why));
 
     // Create migrations table if it doesn't exist
     match connection.clone() {
@@ -679,31 +694,39 @@ pub async fn run_migration(
                     name VARCHAR(255) NOT NULL,
                     applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     direction VARCHAR(10) NOT NULL
-                )"
-            ).await.map_err(CustomMigrationError::from)?;
+                )",
+            )
+            .await
+            .map_err(CustomMigrationError::from)?;
         }
         DatabaseConnection::MySql(conn) => {
-            match conn.execute(
-                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
+            match conn
+                .execute(
+                    "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     name VARCHAR(255) NOT NULL,
                     applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     direction VARCHAR(10) NOT NULL
-                )"
-            ).await {
+                )",
+                )
+                .await
+            {
                 Ok(_) => (),
                 Err(e) => return Err(CustomMigrationError::SqlxError(e)),
             }
         }
         DatabaseConnection::Sqlite(conn) => {
-            match conn.execute(
-                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
+            match conn
+                .execute(
+                    "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     direction TEXT NOT NULL
-                )"
-            ).await {
+                )",
+                )
+                .await
+            {
                 Ok(_) => (),
                 Err(e) => return Err(CustomMigrationError::SqlxError(e)),
             }
@@ -711,7 +734,7 @@ pub async fn run_migration(
     }
 
     // Execute the migration and handle potential errors
-    match execute_migration_with_connection(connection.clone(), migration_files, direction.clone()).await {
+    match execute_migration_with_connection(connection.clone(), migration_files, direction).await {
         Ok(_) => {
             // Record the migration in the tracking table
             let direction_str = match direction {
@@ -788,13 +811,13 @@ pub fn create_array(up_sql_contents: String, nullable: bool) -> Result<String, B
     let dimensions = String::new();
     // Initialize the rustyline Editor with the default helper and in-memory history
     let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
-        panic!("Failed to create rustyline editor: {}", why.to_string());
+        panic!("Failed to create rustyline editor: {}", why);
     });
     rl.readline_with_initial(
         "How many dimensions should the array have? ",
         (dimensions.as_str(), ""),
     )
-    .unwrap_or_else(|why| panic!("Failed to read input: {}", why.to_string()));
+    .unwrap_or_else(|why| panic!("Failed to read input: {}", why));
 
     // ask the user for the type of the array
     let array_type = String::new();
@@ -802,7 +825,7 @@ pub fn create_array(up_sql_contents: String, nullable: bool) -> Result<String, B
         "What type should the array have? ",
         (array_type.as_str(), ""),
     )
-    .unwrap_or_else(|why| panic!("Failed to read input: {}", why.to_string()));
+    .unwrap_or_else(|why| panic!("Failed to read input: {}", why));
 
     // ask the user for the name of the array
     let array_name = String::new();
@@ -811,7 +834,7 @@ pub fn create_array(up_sql_contents: String, nullable: bool) -> Result<String, B
         "What should the name of the array be? ",
         (array_name.as_str(), ""),
     )
-    .unwrap_or_else(|why| panic!("Failed to read input: {}", why.to_string()));
+    .unwrap_or_else(|why| panic!("Failed to read input: {}", why));
 
     // ask the user for the size of the array
     let array_size = String::new();
@@ -819,7 +842,7 @@ pub fn create_array(up_sql_contents: String, nullable: bool) -> Result<String, B
         "What should the size of the array be? ",
         (array_size.as_str(), ""),
     )
-    .unwrap_or_else(|why| panic!("Failed to read input: {}", why.to_string()));
+    .unwrap_or_else(|why| panic!("Failed to read input: {}", why));
 
     // add the array to the up_sql_contents
     let mut up_sql_contents = up_sql_contents;
@@ -864,9 +887,12 @@ pub fn find_migration_dir(
     println!("Searching for migration directory: {}", migration_name);
     // Initialize the rustyline Editor with the default helper and in-memory history
     let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
-        panic!("Failed to create rustyline editor: {}", why.to_string());
+        panic!("Failed to create rustyline editor: {}", why);
     });
-    println!("Migrations directory path: {:?}", migrations_dir_path.clone());
+    println!(
+        "Migrations directory path: {:?}",
+        migrations_dir_path.clone()
+    );
     // get all the migration directories
     let mut migration_dirs = Vec::new();
     for entry in fs::read_dir(migrations_dir_path)? {
@@ -889,23 +915,33 @@ pub fn find_migration_dir(
         println!("Migration directory name: {}", migration_dir_name);
         // Extract the name part after the timestamp and hyphen
         if let Some(name_part) = migration_dir_name.split_once('-').map(|(_, name)| name) {
-            if name_part == migration_name { // Exact match comparison
+            if name_part == migration_name {
+                // Exact match comparison
                 filtered_migration_dirs.push(migration_dir);
-                println!("Filtered migration directories (exact match): {:?}", filtered_migration_dirs.clone());
+                println!(
+                    "Filtered migration directories (exact match): {:?}",
+                    filtered_migration_dirs.clone()
+                );
             }
         }
     }
 
     // if there is only one migration directory with the given name, return it
     if filtered_migration_dirs.len() == 1 {
-        println!("Filtered migration directories: {:?}", filtered_migration_dirs.clone());
+        println!(
+            "Filtered migration directories: {:?}",
+            filtered_migration_dirs.clone()
+        );
         return Ok(filtered_migration_dirs[0].to_str().unwrap().to_string());
     }
 
     // if there are multiple migration directories with the given name, prompt the user to choose one
     if filtered_migration_dirs.len() > 1 {
         let mut migration_dir_names = Vec::new();
-        println!("Filtered migration directories: {:?}", filtered_migration_dirs.clone());
+        println!(
+            "Filtered migration directories: {:?}",
+            filtered_migration_dirs.clone()
+        );
         for migration_dir in &filtered_migration_dirs {
             println!("Migration directory: {:?}", migration_dir.clone());
             let migration_dir_name = migration_dir.file_name().unwrap().to_str().unwrap();
@@ -917,7 +953,7 @@ pub fn find_migration_dir(
                 "Which migration do you want to execute? ",
                 (migration_dir_names[0], ""),
             )
-            .unwrap_or_else(|why| panic!("Failed to read input: {}", why.to_string()));
+            .unwrap_or_else(|why| panic!("Failed to read input: {}", why));
 
         print!("You chose: {}", migration_dir_name);
 
@@ -938,8 +974,7 @@ pub fn find_migration_dir(
         }
     }
 
-    Err(Box::new(std::io::Error::new(
-        ErrorKind::Other,
+    Err(Box::new(std::io::Error::other(
         "Failed to find migration directory",
     )))
 }
@@ -971,7 +1006,6 @@ impl std::fmt::Display for MigrationError {
     }
 }
 
-
 impl std::error::Error for MigrationError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
@@ -980,7 +1014,6 @@ impl std::error::Error for MigrationError {
         }
     }
 }
-
 
 #[derive(PartialEq, Clone, Copy, Debug, Display)]
 pub enum MigrationDirection {
@@ -1046,16 +1079,16 @@ async fn execute_migration_with_connection(
 pub async fn list_migrations() -> Result<(), CustomMigrationError> {
     // get the database
     let database: Database = Database::get_database_from_rustyroad_toml().expect("Couldn't parse the rustyroad.toml file. Please check the documentation for a proper implementation.");
-    
+
     // create the connection pool
     let connection = Database::create_database_connection(&database)
         .await
-        .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why.to_string()));
+        .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why));
 
     // Get all migration files from the migrations directory
     let migrations_dir = Path::new("./config/database/migrations");
     let mut migration_files = Vec::new();
-    
+
     if migrations_dir.exists() {
         let entries = match fs::read_dir(migrations_dir) {
             Ok(entries) => entries,
@@ -1081,34 +1114,33 @@ pub async fn list_migrations() -> Result<(), CustomMigrationError> {
     let applied_migrations = match connection {
         DatabaseConnection::Pg(conn) => {
             match sqlx::query_as::<_, (String, String, String)>(
-                "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at"
+                "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at",
             )
             .fetch_all(&*conn)
-            .await {
+            .await
+            {
                 Ok(rows) => rows,
                 Err(e) => return Err(CustomMigrationError::SqlxError(e)),
             }
         }
-        DatabaseConnection::MySql(conn) => {
-            match sqlx::query_as::<_, (String, String, String)>(
-                "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at"
-            )
-            .fetch_all(&*conn)
-            .await {
-                Ok(rows) => rows,
-                Err(e) => return Err(CustomMigrationError::SqlxError(e)),
-            }
-        }
-        DatabaseConnection::Sqlite(conn) => {
-            match sqlx::query_as::<_, (String, String, String)>(
-                "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at"
-            )
-            .fetch_all(&*conn)
-            .await {
-                Ok(rows) => rows,
-                Err(e) => return Err(CustomMigrationError::SqlxError(e)),
-            }
-        }
+        DatabaseConnection::MySql(conn) => match sqlx::query_as::<_, (String, String, String)>(
+            "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at",
+        )
+        .fetch_all(&*conn)
+        .await
+        {
+            Ok(rows) => rows,
+            Err(e) => return Err(CustomMigrationError::SqlxError(e)),
+        },
+        DatabaseConnection::Sqlite(conn) => match sqlx::query_as::<_, (String, String, String)>(
+            "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at",
+        )
+        .fetch_all(&*conn)
+        .await
+        {
+            Ok(rows) => rows,
+            Err(e) => return Err(CustomMigrationError::SqlxError(e)),
+        },
     };
 
     println!("Migrations:");
@@ -1117,9 +1149,11 @@ pub async fn list_migrations() -> Result<(), CustomMigrationError> {
 
     // Print all migration files with their status
     for migration in &migration_files {
-        let applied = applied_migrations.iter()
+        let applied = applied_migrations
+            .iter()
             .find(|(name, _, dir)| name == migration && dir == "up");
-        let rolled_back = applied_migrations.iter()
+        let rolled_back = applied_migrations
+            .iter()
             .find(|(name, _, dir)| name == migration && dir == "down");
 
         let status = match (applied, rolled_back) {

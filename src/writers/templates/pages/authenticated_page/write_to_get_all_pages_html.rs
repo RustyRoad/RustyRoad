@@ -1,7 +1,7 @@
-use eyre::Error;
-use color_eyre::Result;
 use crate::generators::create_file;
 use crate::writers::write_to_file;
+use color_eyre::Result;
+use eyre::Error;
 
 /// # Name: write_to_page_dashboard_html
 /// This function writes to the page_dashboard.html.tera file.
@@ -71,10 +71,12 @@ pub fn write_to_page_dashboard_html() -> Result<(), Error> {
 
     println!("Creating the page.html.tera file...");
     // add the new View/Template: PageDashboard.html.tera to the views/pages directory
-    let page_dashboard_path = format!("./src/views/layouts/authenticated_page/page/page_dashboard.html.tera");
+    let page_dashboard_path =
+        "./src/views/layouts/authenticated_page/page/page_dashboard.html.tera".to_string();
 
     create_file(&page_dashboard_path).expect("Error creating the page_dashboard.html.tera file");
     println!("Writing the page.html.tera file...");
-    write_to_file(&page_dashboard_path, contents.as_bytes()).expect("Error writing to the page_dashboard.html.tera file");
+    write_to_file(&page_dashboard_path, contents.as_bytes())
+        .expect("Error writing to the page_dashboard.html.tera file");
     Ok(())
 }

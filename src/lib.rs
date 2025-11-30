@@ -5,12 +5,10 @@
 //! Rusty Road is a CLI tool that is used to create and manage your rust web apps.
 //! You can use this package as a part of your project and this documentation will help you understand how to use it, however, it is not intended to be used as a standalone package.
 //! ## Example
-//! ```
+//! ```no_run
 //! use rustyroad::Project;
 //!
-//! fn main() {
-//!    Project::initial_prompt().expect("Failed to create project");
-//! }
+//! Project::initial_prompt().expect("Failed to create project");
 //! ```
 //!
 //! ### Code Explanation
@@ -19,6 +17,30 @@
 //! The initial prompt function will ask the user a series of questions and then create a new project based on the answers.
 //! From there, the user can use the project to create a new web app.
 //! Notice that other functions are called on the `Project` struct.  These functions are used to create a new web app.
+
+// Allow some clippy warnings that are prevalent in the codebase
+// These can be addressed incrementally in future refactoring
+#![allow(clippy::needless_borrow)]
+#![allow(clippy::redundant_closure)]
+#![allow(clippy::vec_init_then_push)]
+#![allow(clippy::unnecessary_unwrap)]
+#![allow(clippy::single_match)]
+#![allow(clippy::ptr_arg)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::to_string_in_format_args)]
+#![allow(clippy::needless_return)]
+#![allow(clippy::manual_unwrap_or_default)]
+#![allow(clippy::let_unit_value)]
+#![allow(clippy::ineffective_open_options)]
+#![allow(clippy::unused_enumerate_index)]
+#![allow(clippy::module_inception)]
+#![allow(clippy::empty_line_after_doc_comments)]
+#![allow(clippy::doc_lazy_continuation)]
+#![allow(clippy::redundant_pattern_matching)]
+#![allow(clippy::trivial_regex)]
+#![allow(clippy::regex_creation_in_loops)]
+#![allow(clippy::unnecessary_to_owned)]
+#![allow(clippy::needless_doctest_main)]
 //! These are the functions that ship with the cli tool and are not publicly available.
 
 #![deny(warnings)]
@@ -29,13 +51,13 @@ use color_eyre::eyre::Result;
 use dialoguer::Confirm;
 use eyre::Error;
 use serde::Deserialize;
+use sqlx::mysql::MySqlConnectOptions;
 use sqlx::postgres::PgConnectOptions;
+use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
+use std::path::Path;
 use std::{env, fs};
 use std::{fs::OpenOptions, io::Write};
-use std::path::Path;
-use sqlx::mysql::MySqlConnectOptions;
-use sqlx::sqlite::SqliteConnectOptions;
 use tokio::io;
 
 pub mod database;
@@ -235,7 +257,6 @@ database_type = \"{}\"",
     // Write to package.json
     fn write_to_package_json(&self) -> Result<(), Error> {
         let mut file = OpenOptions::new()
-            .write(true)
             .append(true)
             .open(&self.package_json)
             .expect("Failed to open package.json");
@@ -268,7 +289,6 @@ database_type = \"{}\"",
     // Write to README.md
     fn write_to_readme(&self) -> Result<(), Error> {
         let mut file = OpenOptions::new()
-            .write(true)
             .append(true)
             .open(&self.readme)
             .expect("Failed to open README.md");
@@ -313,7 +333,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
     // Write to .gitignore
     fn write_to_gitignore(&self) -> Result<(), Error> {
         let mut file = OpenOptions::new()
-            .write(true)
             .append(true)
             .open(&self.gitignore)
             .expect("Failed to open .gitignore");
@@ -364,11 +383,7 @@ static/styles.css
 @tailwind utilities;";
 
         write_to_file(&self.tailwind_css.to_string(), contents.as_bytes()).unwrap_or_else(|why| {
-            println!(
-                "Couldn't write to {}: {}",
-                self.tailwind_css.to_string(),
-                why.to_string()
-            );
+            println!("Couldn't write to {}: {}", self.tailwind_css, why);
         });
         Ok(())
     }
@@ -388,11 +403,7 @@ static/styles.css
 
         write_to_file(&self.tailwind_config.to_string(), contents.as_bytes()).unwrap_or_else(
             |why| {
-                println!(
-                    "Couldn't write to {}: {}",
-                    self.tailwind_config.to_string(),
-                    why.to_string()
-                );
+                println!("Couldn't write to {}: {}", self.tailwind_config, why);
             },
         );
         Ok(())
@@ -408,11 +419,7 @@ static/styles.css
 
         write_to_file(&self.postcss_config.to_string(), contents.as_bytes()).unwrap_or_else(
             |why| {
-                println!(
-                    "Couldn't write to {}: {}",
-                    self.postcss_config,
-                    why.to_string()
-                );
+                println!("Couldn't write to {}: {}", self.postcss_config, why);
             },
         );
         Ok(())
@@ -643,9 +650,7 @@ static/styles.css
                 println!("database_url: {database_url}");
 
                 // Generate the SQL content for the new project
-                let sql_content =
-                    load_sql_for_new_project(&project, database_data.clone())
-                        .await?;
+                let sql_content = load_sql_for_new_project(&project, database_data.clone()).await?;
 
                 // Establish a connection to the new database
                 let connection_result = PgConnectOptions::new()
@@ -718,9 +723,7 @@ static/styles.css
                 println!("database_url: {database_url}");
 
                 // Generate the SQL content for the new project
-                let sql_content =
-                    load_sql_for_new_project(&project, database_data.clone())
-                        .await?;
+                let sql_content = load_sql_for_new_project(&project, database_data.clone()).await?;
 
                 // Establish a connection to the new database
                 let connection_result = MySqlConnectOptions::new()
@@ -792,7 +795,7 @@ static/styles.css
         println!("Exiting...");
         std::process::exit(0);
     }
-    
+
     pub fn cli() -> Command {
         Command::new("RustyRoad")
             .about("CLI for Rusty Road")
@@ -1221,7 +1224,7 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     // this pattern needs to be repeated for each CRUD type
                     let model_name = input.trim();
 
-                    let _ = create_new_controller(model_name.to_string(), crud_type)
+                    create_new_controller(model_name.to_string(), crud_type)
                         .await
                         .expect("Error creating controller");
                 }
@@ -1262,9 +1265,8 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     // then run the command for each
                     // check if it's a rustyroad project
 
-                    get_project_name_from_rustyroad_toml().unwrap_or_else(|why| {
-                        panic!("This is not a Rusty Road project: {why}")
-                    });
+                    get_project_name_from_rustyroad_toml()
+                        .unwrap_or_else(|why| panic!("This is not a Rusty Road project: {why}"));
 
                     let migrations_path = Path::new("./config/database/migrations");
                     let mut migrations = Vec::new();
@@ -1285,23 +1287,21 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                 Some(("run", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
 
-
-                        run_migration(name.clone(), MigrationDirection::Up)
-                            .await
-                            .expect("Error running migration");
-                        println!("'{}' migration completed successfully!", name.clone());
-
+                    run_migration(name.clone(), MigrationDirection::Up)
+                        .await
+                        .expect("Error running migration");
+                    println!("'{}' migration completed successfully!", name.clone());
                 }
                 Some(("rollback", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
                     // Create a confirmation prompt
                     let confirmation = Confirm::new()
-                        .with_prompt(&format!(
+                        .with_prompt(format!(
                             "Are you sure you want to rollback the '{}' migration?",
                             name
                         ))
                         .interact()
-                        .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+                        .map_err(|err| io::Error::other(err))
                         .expect("Error rolling back migration: ");
 
                     if confirmation {
@@ -1318,9 +1318,7 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     }
                 }
                 Some(("list", _)) => {
-                    list_migrations()
-                        .await
-                        .expect("Error listing migrations");
+                    list_migrations().await.expect("Error listing migrations");
                 }
                 _ => {
                     println!("Invalid migration choice");
@@ -1336,7 +1334,7 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                         let confirmation = Confirm::new()
                             .with_prompt("Are you sure you want to add grapesjs to the project?")
                             .interact()
-                            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+                            .map_err(|err| io::Error::other(err))
                             .expect("Error adding grapesjs to the project: ");
 
                         if confirmation {
@@ -1372,42 +1370,35 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     _ => DatabaseType::Sqlite,
                 };
                 let database: Database = match database_type {
-                    DatabaseType::Postgres => {
-                        Database::new(
-                            name.clone(),
-                            username.clone(),
-                            password.clone(),
-                            host.clone(),
-                            port.clone().parse::<u16>().unwrap(),
-                            database_type.to_string().as_str(),
-                        )
-
-                    }
-                    DatabaseType::Mysql => {
-                        Database::new(
-                            name.clone(),
-                            username.clone(),
-                            password.clone(),
-                            host.clone(),
-                            port.clone().parse::<u16>().unwrap(),
-                            database_type.to_string().as_str(),
-                        )
-                    }
-                    DatabaseType::Sqlite => {
-                        Database::new(
-                            database_type.to_string(),
-                            "Sqlite Local DB".to_string(),
-                            "Not Needed".to_string(),
-                            "localhost".to_string(),
-                            0,
-                            "sqlite".trim_end(),
-                        )
-                    }
+                    DatabaseType::Postgres => Database::new(
+                        name.clone(),
+                        username.clone(),
+                        password.clone(),
+                        host.clone(),
+                        port.clone().parse::<u16>().unwrap(),
+                        database_type.to_string().as_str(),
+                    ),
+                    DatabaseType::Mysql => Database::new(
+                        name.clone(),
+                        username.clone(),
+                        password.clone(),
+                        host.clone(),
+                        port.clone().parse::<u16>().unwrap(),
+                        database_type.to_string().as_str(),
+                    ),
+                    DatabaseType::Sqlite => Database::new(
+                        database_type.to_string(),
+                        "Sqlite Local DB".to_string(),
+                        "Not Needed".to_string(),
+                        "localhost".to_string(),
+                        0,
+                        "sqlite".trim_end(),
+                    ),
                     DatabaseType::Mongo => {
                         todo!("Implement this");
                     }
                 };
-                
+
                 Self::create_new_project(name, database).await.err();
             }
             Some(("version", _matches)) => {

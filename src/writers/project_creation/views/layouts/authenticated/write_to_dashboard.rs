@@ -1,4 +1,4 @@
-use crate::writers::{ write_to_controllers_mod, write_to_dashboard_controller, write_to_file};
+use crate::writers::{write_to_controllers_mod, write_to_dashboard_controller, write_to_file};
 use crate::Project;
 use std::io::Error;
 
@@ -45,15 +45,16 @@ pub fn write_to_dashboard(project: Project) -> Result<(), Error> {
     println!("Current directory: {:?}", std::env::current_dir().unwrap());
 
     // define the new controllers mod with the current directory
-    let controllers_mod = format!("{}/src/controllers/mod.rs", std::env::current_dir().unwrap().to_str().unwrap());
-
-    write_to_controllers_mod(&controllers_mod, "dashboard".to_string()).unwrap_or_else(
-        |why| {
-            panic!(
-                "Couldn't write to the: {}: {}",
-                &project.dashboard_controller, why
-            )
-        },
+    let controllers_mod = format!(
+        "{}/src/controllers/mod.rs",
+        std::env::current_dir().unwrap().to_str().unwrap()
     );
+
+    write_to_controllers_mod(&controllers_mod, "dashboard".to_string()).unwrap_or_else(|why| {
+        panic!(
+            "Couldn't write to the: {}: {}",
+            &project.dashboard_controller, why
+        )
+    });
     Ok(())
 }

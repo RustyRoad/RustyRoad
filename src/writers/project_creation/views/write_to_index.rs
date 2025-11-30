@@ -5,7 +5,6 @@ use std::io::{Error, Write};
 // Write to index.html.tera
 pub fn write_to_index_html(project: &Project) -> Result<(), Error> {
     let mut file = OpenOptions::new()
-        .write(true)
         .append(true)
         .open(&project.index_html)
         .expect("Failed to open index.html");

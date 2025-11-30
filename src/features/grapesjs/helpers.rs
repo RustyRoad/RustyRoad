@@ -1,8 +1,8 @@
+use crate::features::Page;
+use crate::helpers::helpers::get_project_name_from_rustyroad_toml;
+use futures_util::TryFutureExt;
 use std::fs::OpenOptions;
 use std::io::Write;
-use crate::features::Page;
-use crate::helpers::helpers::{get_project_name_from_rustyroad_toml};
-use futures_util::TryFutureExt;
 use tera::Tera;
 pub fn render_index_page() -> Result<String, tera::Error> {
     // ensure this is a rustyroad project
@@ -20,16 +20,14 @@ pub fn render_index_page() -> Result<String, tera::Error> {
     };
     let mut templates = Vec::new();
 
-    tera.get_template_names().into_iter().for_each(|name| {
+    tera.get_template_names().for_each(|name| {
         templates.push(name.to_string());
     });
     let context = tera::Context::new();
     let rendered = tera.render("pages/index.html.tera", &context)?;
 
-
     Ok(rendered)
 }
-
 
 // store the index page in a page struct and save it to the database
 pub async fn save_index_page() {
@@ -101,9 +99,6 @@ pub async fn save_index_page() {
         .await;
 }
 
-
-
-
 /// # Name: update_index_controller
 /// # Description: Parses the index controller and replaces the template with the html in the database
 /// # Arguments:
@@ -118,20 +113,19 @@ pub async fn update_index_controller() -> Result<String, tera::Error> {
 
     //
 
- // read the index controller
+    // read the index controller
     let mut index_controller = std::fs::read_to_string("./src/controllers/index.rs")
         .unwrap_or_else(|err| {
             println!("Error reading index controller: {}", err);
             panic!("Error: {}", err);
         });
 
+    save_index_page().await;
 
-   save_index_page().await;
-
-    let new_index_code = format!(r#"
+    let new_index_code = r#"
       let result = Page::get_page_by_slug("index".to_string()).await;
-      match result {{
-            Ok(page) => {{
+      match result {
+            Ok(page) => {
                 context.insert("title", "Create Page");
                 context.insert("route_name", "create_page");
                 context.insert("html_content", &page.html_content);
@@ -140,16 +134,17 @@ pub async fn update_index_controller() -> Result<String, tera::Error> {
                 HttpResponse::Ok()
                     .content_type("text/html; charset=utf-8")
                     .body(s)
-            }}
-            Err(e) => {{
+            }
+            Err(e) => {
                 context.insert("error", &e.to_string());
                 let s = tmpl.render("pages/404.html.tera", &context).unwrap();
                 HttpResponse::Ok()
                     .content_type("text/html; charset=utf-8")
                     .body(s)
-            }}
-        }}
-    "#);
+            }
+        }
+    "#
+    .to_string();
 
     index_controller = index_controller.replace(
         "let rendered = tmpl.render(\"pages/index.html.tera\", &context).unwrap();
@@ -170,13 +165,12 @@ pub async fn update_index_controller() -> Result<String, tera::Error> {
     Ok("".to_string())
 }
 
-
 mod tests {
 
     #[test]
     fn test_render_index_page() {
         use color_eyre::owo_colors::OwoColorize;
-        
+
         // change directory to example-grapesjs
         std::env::set_current_dir("../test42").unwrap();
         // print the working directory
@@ -190,7 +184,6 @@ mod tests {
         }
     }
 
-
     #[tokio::test]
     async fn test_save_index_page() {
         // change directory to example-grapesjs
@@ -200,7 +193,9 @@ mod tests {
 
         crate::features::save_index_page().await;
 
-        let page = crate::features::Page::get_page_by_slug("index".to_string()).await.unwrap();
+        let page = crate::features::Page::get_page_by_slug("index".to_string())
+            .await
+            .unwrap();
 
         println!("Page: {:?}", page);
     }
@@ -212,7 +207,9 @@ mod tests {
         // print the working directory
         println!("Current directory: {:?}", std::env::current_dir());
 
-        crate::features::update_index_controller().await.expect("TODO: panic message");
+        crate::features::update_index_controller()
+            .await
+            .expect("TODO: panic message");
 
         println!("Updated index controller")
     }

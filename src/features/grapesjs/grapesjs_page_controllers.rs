@@ -1,13 +1,19 @@
-use std::fs;
-use std::fs::{OpenOptions, read_to_string};
-use std::io::Write;
-use std::path::PathBuf;
-use color_eyre::owo_colors::OwoColorize;
-use eyre::Error;
 use crate::features::write_to_get_page_by_id;
 use crate::generators::create_file;
-use crate::helpers::helpers::{add_or_update_import, determine_controller_path, prompt_to_create_controller};
-use crate::writers::{add_module_declaration, add_new_controller_to_main_rs, write_to_edit_page_get_controller, write_to_new_get_all_controller, write_to_new_post_controller, write_to_new_update_controller, write_to_page_dashboard_get_controller};
+use crate::helpers::helpers::{
+    add_or_update_import, determine_controller_path, prompt_to_create_controller,
+};
+use crate::writers::{
+    add_module_declaration, add_new_controller_to_main_rs, write_to_edit_page_get_controller,
+    write_to_new_get_all_controller, write_to_new_post_controller, write_to_new_update_controller,
+    write_to_page_dashboard_get_controller,
+};
+use color_eyre::owo_colors::OwoColorize;
+use eyre::Error;
+use std::fs;
+use std::fs::{read_to_string, OpenOptions};
+use std::io::Write;
+use std::path::PathBuf;
 
 pub fn write_to_get_page_details_controller() -> Result<(), Error> {
     let contents = r#"
@@ -66,7 +72,7 @@ pub async fn get_page_details(tmpl: Data<Tera>, user: Option<Identity>, id: Path
 }
 "#.to_string();
     // Determine the controller file path
-    let path = determine_controller_path(&"page");
+    let path = determine_controller_path("page");
 
     // Ensure the controller file exists, or create it
     let file_exists = PathBuf::from(&path).exists();
@@ -74,8 +80,8 @@ pub async fn get_page_details(tmpl: Data<Tera>, user: Option<Identity>, id: Path
         prompt_to_create_controller(&path).expect("Error prompting to create controller");
     }
     // Read and update the file contents
-    let mut  file_contents = fs::read_to_string(&path).expect("Couldn't read get_page_details controller");
-
+    let mut file_contents =
+        fs::read_to_string(&path).expect("Couldn't read get_page_details controller");
 
     file_contents = add_or_update_import(&file_contents, "actix_web", "get");
     file_contents = add_or_update_import(&file_contents, "actix_web", "web::Path");
@@ -143,7 +149,7 @@ pub async fn get_page_by_slug(tmpl: Data<Tera>, slug: Path<String>, user: Option
 "#.to_string();
 
     // Determine the controller file path
-    let path = determine_controller_path(&"page");
+    let path = determine_controller_path("page");
 
     // Ensure the controller file exists, or create it
     let file_exists = PathBuf::from(&path).exists();
@@ -152,7 +158,8 @@ pub async fn get_page_by_slug(tmpl: Data<Tera>, slug: Path<String>, user: Option
     }
 
     // Update imports
-    let mut file_contents = read_to_string(&path).expect("Couldn't read get_page_by_slug controller");
+    let mut file_contents =
+        read_to_string(&path).expect("Couldn't read get_page_by_slug controller");
     file_contents = add_or_update_import(&file_contents, "actix_web", "get");
     file_contents = add_or_update_import(&file_contents, "actix_web", "get");
     file_contents = add_or_update_import(&file_contents, "tera", "Tera");
@@ -162,7 +169,6 @@ pub async fn get_page_by_slug(tmpl: Data<Tera>, slug: Path<String>, user: Option
     file_contents = add_or_update_import(&file_contents, "actix_identity", "Identity");
     file_contents = add_or_update_import(&file_contents, "actix_web", "web::Data");
     file_contents = add_or_update_import(&file_contents, "actix_web", "web::Path");
-
 
     // Add the new controller content to the file
     file_contents.push_str("\n\n");
@@ -177,7 +183,6 @@ pub async fn get_page_by_slug(tmpl: Data<Tera>, slug: Path<String>, user: Option
     writeln!(file, "{}", file_contents)?;
 
     file.flush()?;
-
 
     add_new_controller_to_main_rs(None, Some("page"), "get_page_by_slug")?;
     Ok(())
@@ -215,12 +220,13 @@ pub async fn delete_page(tmpl: Data<Tera>, user: Option<Identity>, id: Path<i32>
     }
 }
 
-"#.to_string();
+"#
+    .to_string();
 
+    let path = determine_controller_path("page");
 
-    let path = determine_controller_path(&"page");
-
-    let mut file_contents = fs::read_to_string(&path).expect("Couldn't read delete_page controller");
+    let mut file_contents =
+        fs::read_to_string(&path).expect("Couldn't read delete_page controller");
 
     // Update imports
     file_contents = add_or_update_import(&file_contents, "actix_web", "get");
@@ -251,7 +257,6 @@ pub async fn delete_page(tmpl: Data<Tera>, user: Option<Identity>, id: Path<i32>
 
     Ok(())
 }
-
 
 pub fn write_to_image_upload_controller() -> Result<(), Error> {
     let contents = r#"
@@ -387,16 +392,17 @@ async fn upload_image(mut payload: Multipart, req: HttpRequest) -> HttpResponse 
         })
     })
 }
-"#.to_string();
+"#
+    .to_string();
 
     // Determine the controller file path
     let path = "./src/controllers/image.rs";
 
     // create the file
-    create_file(&path).expect("Error creating image controller.");
+    create_file(path).expect("Error creating image controller.");
 
     // Read and update the file contents
-    let mut file_contents = read_to_string(&path).expect("Couldn't read image controller");
+    let mut file_contents = read_to_string(path).expect("Couldn't read image controller");
 
     file_contents.push_str("\n\n");
     file_contents.push_str(&contents);
@@ -404,14 +410,17 @@ async fn upload_image(mut payload: Multipart, req: HttpRequest) -> HttpResponse 
     let mut file = OpenOptions::new()
         .write(true)
         .truncate(true)
-        .open(&path)
+        .open(path)
         .unwrap();
     // Write the updated contents to the file
     writeln!(file, "{}", file_contents)?;
 
     file.flush()?;
 
-    add_module_declaration("image".to_string(), std::path::Path::new("./src/controllers/mod.rs"))?;
+    add_module_declaration(
+        "image".to_string(),
+        std::path::Path::new("./src/controllers/mod.rs"),
+    )?;
 
     add_new_controller_to_main_rs(None, Some("image"), "upload_image")?;
 
@@ -432,8 +441,8 @@ pub fn write_to_all_page_controllers() -> Result<(), Error> {
 }
 pub mod tests {
     use std::fs::{self, create_dir};
-    use std::path::PathBuf;
     use std::io::{self};
+    use std::path::PathBuf;
 
     fn setup_test_environment() -> io::Result<(tempfile::TempDir, PathBuf)> {
         let temp_dir = tempfile::tempdir()?;
@@ -443,7 +452,7 @@ pub mod tests {
         let main_path = src_dir.join("main.rs");
         fs::File::create(&main_path)?;
         // write to mainrs
-        let  main_contents = r##"
+        let main_contents = r##"
         use actix_cors::Cors;
 use actix_files::Files;
 use actix_identity::IdentityMiddleware;
@@ -522,7 +531,8 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
-        "##.to_string();
+        "##
+        .to_string();
         fs::write(&main_path, main_contents)?;
         let page_controller_dir = src_dir.join("controllers");
         create_dir(&page_controller_dir)?;
@@ -535,8 +545,8 @@ async fn main() -> std::io::Result<()> {
 
     #[test]
     fn test_write_to_all_page_controllers() {
-        let (temp_dir, page_controller_path) = setup_test_environment()
-            .expect("Failed to set up test environment");
+        let (temp_dir, page_controller_path) =
+            setup_test_environment().expect("Failed to set up test environment");
 
         // change the current working directory to the temp directory
         std::env::set_current_dir(&temp_dir.path())
@@ -545,13 +555,18 @@ async fn main() -> std::io::Result<()> {
         crate::features::grapesjs::grapesjs_page_controllers::write_to_all_page_controllers()
             .expect("Error writing to all page controllers");
 
-        let  page_controller_contents = fs::read_to_string(&page_controller_path)
+        let page_controller_contents = fs::read_to_string(&page_controller_path)
             .expect("Error reading page controller contents");
 
         use color_eyre::owo_colors::OwoColorize;
-        println!("page_controller_contents: {}", page_controller_contents.purple());
+        println!(
+            "page_controller_contents: {}",
+            page_controller_contents.purple()
+        );
 
-        assert!(page_controller_contents.contains("use actix_web::HttpResponse;"),
-                "Page controller does not contain expected content");
+        assert!(
+            page_controller_contents.contains("use actix_web::HttpResponse;"),
+            "Page controller does not contain expected content"
+        );
     }
 }

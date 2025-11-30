@@ -1,8 +1,7 @@
-use crate::writers::write_to_file;
 use crate::generators::create_file;
+use crate::writers::write_to_file;
 use color_eyre::eyre::Result;
 use eyre::Error;
-
 
 pub fn write_to_edit_page_html() -> Result<(), Error> {
     let contents: String = r#"
@@ -318,6 +317,6 @@ pub fn write_to_edit_page_html() -> Result<(), Error> {
         "src/views/layouts/authenticated_page/page/edit_page.html.tera",
         contents.as_bytes(),
     )
-        .unwrap_or_else(|_| panic!("Error: Could not write to edit_page.html"));
+    .unwrap_or_else(|_| panic!("Error: Could not write to edit_page.html"));
     Ok(())
 }

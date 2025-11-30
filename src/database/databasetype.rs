@@ -123,22 +123,27 @@ impl DatabaseTypeTrait for MySqlDatabaseType {
     /// }
     /// }
     /// ```
-    fn get_database_types(&self, data_types_for_category: &Self::DataType, data_type_category: &Self::DataTypeCategory) -> Vec<TypesForDatabase> {
-        let   database_types = MySqlTypes::iter();
+    fn get_database_types(
+        &self,
+        data_types_for_category: &Self::DataType,
+        data_type_category: &Self::DataTypeCategory,
+    ) -> Vec<TypesForDatabase> {
+        let database_types = MySqlTypes::iter();
 
         let mut types_for_database = TypesForDatabase::new();
 
         for data_type in database_types {
             let _data_type = data_type.to_string();
-            let _data_type = data_type_category.get_data_types_from_data_type_category(DatabaseType::Mysql);
+            let _data_type =
+                data_type_category.get_data_types_from_data_type_category(DatabaseType::Mysql);
             let data_type = data_types_for_category.get_mysql_types(data_type_category);
-            types_for_database.add_mysql_type(data_type_category.to_string(), data_type).expect("Failed to add mysql type");
+            types_for_database
+                .add_mysql_type(data_type_category.to_string(), data_type)
+                .expect("Failed to add mysql type");
         }
 
         let types_for_database = vec![types_for_database];
         types_for_database
-
-
     }
 }
 

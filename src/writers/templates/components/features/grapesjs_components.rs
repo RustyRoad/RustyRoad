@@ -1,5 +1,5 @@
-use eyre::Error;
 use crate::writers::write_to_file;
+use eyre::Error;
 
 /// # Name: create_grapesjs_component
 /// ## Description:
@@ -117,5 +117,4 @@ pub fn add_grapesjs_to_header() -> Result<(), Error> {
     write_to_file(path, contents.as_bytes())?;
 
     Ok(())
-
 }

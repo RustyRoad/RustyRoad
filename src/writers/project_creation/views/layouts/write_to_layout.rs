@@ -1,6 +1,6 @@
 use eyre::Error;
 
-use crate::{Project, writers::write_to_file};
+use crate::{writers::write_to_file, Project};
 
 pub fn write_to_layout(project: Project) -> Result<(), Error> {
     let contents = r#"
@@ -24,14 +24,11 @@ pub fn write_to_layout(project: Project) -> Result<(), Error> {
       </div>
     </main>
     {% endblock content %}
-"#.to_string();
+"#
+    .to_string();
 
-    write_to_file(&project.layout_template, contents.as_bytes()).unwrap_or_else(|why| {
-        panic!(
-            "Couldn't write to {}: {}",
-            &project.layout_template, why
-        )
-    });
+    write_to_file(&project.layout_template, contents.as_bytes())
+        .unwrap_or_else(|why| panic!("Couldn't write to {}: {}", &project.layout_template, why));
 
     Ok(())
 }

@@ -26,8 +26,6 @@ use std::fs::create_dir;
 /// write_to_new_update_controller(controller_name);
 /// ```
 pub fn create_update_controller_in_existing_folder(model_name: &str) -> Result<(), Error> {
-
-
     // find the folder in the controllers directory with the name of the controller
     // if the folder does not exist, let the user know and ask them if they want to create
     // a new controller with that name
@@ -58,7 +56,7 @@ pub fn create_update_controller_in_existing_folder(model_name: &str) -> Result<(
                 println!("Failed to write to controller: {:?}", why.to_string());
             });
             // end the function
-            return Ok(());
+            Ok(())
         } else {
             println!("Please run the command again and enter a valid controller name.");
             // end the function
@@ -70,13 +68,11 @@ pub fn create_update_controller_in_existing_folder(model_name: &str) -> Result<(
             println!("Failed to write to controller: {:?}", why.to_string());
         });
         // Create a new file with the controllerName.html.tera
-        create_file(&format!("./views/pages/{}.html.tera", model_name)).unwrap_or_else(
-            |why| {
-                println!("Failed to create file: {:?}", why.to_string());
-            },
-        );
+        create_file(&format!("./views/pages/{}.html.tera", model_name)).unwrap_or_else(|why| {
+            println!("Failed to create file: {:?}", why.to_string());
+        });
         // end the function
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -127,7 +123,7 @@ pub fn create_update_controller_in_new_folder(controller_name: String) -> Result
     });
     // Create a new controller using the controllerName
     // Update the controllers/page file
-    let full_file_name = format!("./src/controllers/page");
+    let full_file_name = "./src/controllers/page".to_string();
     write_to_controllers_mod(&full_file_name, controller_name.clone()).unwrap_or_else(|why| {
         println!("Failed to write to controllers/mod: {:?}", why.to_string());
     });
@@ -167,13 +163,16 @@ pub fn create_update_controller_in_new_folder(controller_name: String) -> Result
     });
 
     // Create a new file with the controllerName.html.tera
-    create_file(&format!("./views/pages/{}.html.tera", controller_name)).expect("Failed to create file");
+    create_file(&format!("./views/pages/{}.html.tera", controller_name))
+        .expect("Failed to create file");
     // Write to controllerName.html.tera file
-    write_to_controller_name_html(controller_name.clone().as_str()).expect("Failed to write to controllerName.html.tera");
+    write_to_controller_name_html(controller_name.clone().as_str())
+        .expect("Failed to write to controllerName.html.tera");
 
     // update main.rs file
-    add_new_controller_to_main_rs(None,None, controller_name.clone().as_str()).expect("Failed to add to controller in main.rs");
+    add_new_controller_to_main_rs(None, None, controller_name.clone().as_str())
+        .expect("Failed to add to controller in main.rs");
 
     // end the function
-    return Ok(());
+    Ok(())
 }

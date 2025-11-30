@@ -1,6 +1,6 @@
-use sqlx::{Row, Column, ValueRef};
-use crate::database::{Database, DatabaseConnection};
 use crate::database::migrations::CustomMigrationError;
+use crate::database::{Database, DatabaseConnection};
+use sqlx::{Column, Row, ValueRef};
 
 /// Inspects and prints the database schema
 pub async fn inspect_schema() -> Result<(), CustomMigrationError> {
@@ -9,28 +9,28 @@ pub async fn inspect_schema() -> Result<(), CustomMigrationError> {
 
     let connection = Database::create_database_connection(&database)
         .await
-        .map_err(|e| CustomMigrationError::SendError(e))?;
+        .map_err(CustomMigrationError::SendError)?;
 
     match connection {
         DatabaseConnection::Pg(conn) => {
             let tables = sqlx::query(
                 "SELECT table_name FROM information_schema.tables 
-                 WHERE table_schema = 'public'"
+                 WHERE table_schema = 'public'",
             )
             .fetch_all(&*conn)
             .await?;
 
             println!("Database Schema:");
             println!("{:-<30}", "");
-            
+
             for table in tables {
                 let table_name: String = table.get("table_name");
                 println!("Table: {}", table_name);
-                
+
                 let columns = sqlx::query(
                     "SELECT column_name, data_type 
                      FROM information_schema.columns 
-                     WHERE table_name = $1"
+                     WHERE table_name = $1",
                 )
                 .bind(&table_name)
                 .fetch_all(&*conn)
@@ -47,22 +47,22 @@ pub async fn inspect_schema() -> Result<(), CustomMigrationError> {
         DatabaseConnection::MySql(conn) => {
             let tables = sqlx::query(
                 "SELECT table_name FROM information_schema.tables 
-                 WHERE table_schema = DATABASE()"
+                 WHERE table_schema = DATABASE()",
             )
             .fetch_all(&*conn)
             .await?;
 
             println!("Database Schema:");
             println!("{:-<30}", "");
-            
+
             for table in tables {
                 let table_name: String = table.get("table_name");
                 println!("Table: {}", table_name);
-                
+
                 let columns = sqlx::query(
                     "SELECT column_name, data_type 
                      FROM information_schema.columns 
-                     WHERE table_name = ?"
+                     WHERE table_name = ?",
                 )
                 .bind(&table_name)
                 .fetch_all(&*conn)
@@ -79,23 +79,21 @@ pub async fn inspect_schema() -> Result<(), CustomMigrationError> {
         DatabaseConnection::Sqlite(conn) => {
             let tables = sqlx::query(
                 "SELECT name FROM sqlite_master 
-                 WHERE type='table'"
+                 WHERE type='table'",
             )
             .fetch_all(&*conn)
             .await?;
 
             println!("Database Schema:");
             println!("{:-<30}", "");
-            
+
             for table in tables {
                 let table_name: String = table.get("name");
                 println!("Table: {}", table_name);
-                
-                let columns = sqlx::query(
-                    &format!("PRAGMA table_info({})", table_name)
-                )
-                .fetch_all(&*conn)
-                .await?;
+
+                let columns = sqlx::query(&format!("PRAGMA table_info({})", table_name))
+                    .fetch_all(&*conn)
+                    .await?;
 
                 for col in columns {
                     let name: String = col.get("name");
@@ -117,16 +115,14 @@ pub async fn execute_query(query: &str) -> Result<(), CustomMigrationError> {
 
     let connection = Database::create_database_connection(&database)
         .await
-        .map_err(|e| CustomMigrationError::SendError(e))?;
+        .map_err(CustomMigrationError::SendError)?;
 
     println!("Executing query: {}", query);
     println!("{:-<50}", "");
 
     match connection {
         DatabaseConnection::Pg(conn) => {
-            let rows = sqlx::query(query)
-                .fetch_all(&*conn)
-                .await?;
+            let rows = sqlx::query(query).fetch_all(&*conn).await?;
 
             if rows.is_empty() {
                 println!("No results found.");
@@ -137,7 +133,9 @@ pub async fn execute_query(query: &str) -> Result<(), CustomMigrationError> {
             if let Some(first_row) = rows.first() {
                 let columns = first_row.columns();
                 for (i, column) in columns.iter().enumerate() {
-                    if i > 0 { print!(" | "); }
+                    if i > 0 {
+                        print!(" | ");
+                    }
                     print!("{:<15}", column.name());
                 }
                 println!();
@@ -148,7 +146,9 @@ pub async fn execute_query(query: &str) -> Result<(), CustomMigrationError> {
             for row in rows {
                 let columns = row.columns();
                 for (i, column) in columns.iter().enumerate() {
-                    if i > 0 { print!(" | "); }
+                    if i > 0 {
+                        print!(" | ");
+                    }
                     let value = match row.try_get_raw(column.name()) {
                         Ok(value) => {
                             if value.is_null() {
@@ -176,9 +176,7 @@ pub async fn execute_query(query: &str) -> Result<(), CustomMigrationError> {
             }
         }
         DatabaseConnection::MySql(conn) => {
-            let rows = sqlx::query(query)
-                .fetch_all(&*conn)
-                .await?;
+            let rows = sqlx::query(query).fetch_all(&*conn).await?;
 
             if rows.is_empty() {
                 println!("No results found.");
@@ -189,7 +187,9 @@ pub async fn execute_query(query: &str) -> Result<(), CustomMigrationError> {
             if let Some(first_row) = rows.first() {
                 let columns = first_row.columns();
                 for (i, column) in columns.iter().enumerate() {
-                    if i > 0 { print!(" | "); }
+                    if i > 0 {
+                        print!(" | ");
+                    }
                     print!("{:<15}", column.name());
                 }
                 println!();
@@ -200,7 +200,9 @@ pub async fn execute_query(query: &str) -> Result<(), CustomMigrationError> {
             for row in rows {
                 let columns = row.columns();
                 for (i, column) in columns.iter().enumerate() {
-                    if i > 0 { print!(" | "); }
+                    if i > 0 {
+                        print!(" | ");
+                    }
                     let value = match row.try_get_raw(column.name()) {
                         Ok(value) => {
                             if value.is_null() {
@@ -228,9 +230,7 @@ pub async fn execute_query(query: &str) -> Result<(), CustomMigrationError> {
             }
         }
         DatabaseConnection::Sqlite(conn) => {
-            let rows = sqlx::query(query)
-                .fetch_all(&*conn)
-                .await?;
+            let rows = sqlx::query(query).fetch_all(&*conn).await?;
 
             if rows.is_empty() {
                 println!("No results found.");
@@ -241,7 +241,9 @@ pub async fn execute_query(query: &str) -> Result<(), CustomMigrationError> {
             if let Some(first_row) = rows.first() {
                 let columns = first_row.columns();
                 for (i, column) in columns.iter().enumerate() {
-                    if i > 0 { print!(" | "); }
+                    if i > 0 {
+                        print!(" | ");
+                    }
                     print!("{:<15}", column.name());
                 }
                 println!();
@@ -252,7 +254,9 @@ pub async fn execute_query(query: &str) -> Result<(), CustomMigrationError> {
             for row in rows {
                 let columns = row.columns();
                 for (i, column) in columns.iter().enumerate() {
-                    if i > 0 { print!(" | "); }
+                    if i > 0 {
+                        print!(" | ");
+                    }
                     let value = match row.try_get_raw(column.name()) {
                         Ok(value) => {
                             if value.is_null() {

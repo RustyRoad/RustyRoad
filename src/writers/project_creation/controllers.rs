@@ -1,8 +1,8 @@
+use crate::generators::create_file;
+use crate::helpers::helpers::add_or_update_import;
 use crate::writers::write_to_file;
 use crate::Project;
 use std::io::Error;
-use crate::generators::create_file;
-use crate::helpers::helpers::add_or_update_import;
 
 // Write to index controller
 pub fn write_to_index_controller(project: &Project) -> Result<(), Error> {
@@ -74,11 +74,11 @@ pub async fn dashboard_controller(
             .finish())
     }
 }
-"# .to_string();
-
+"#
+    .to_string();
 
     // Update imports
-    let mut  import_contents = add_or_update_import("", "actix_web", "get");
+    let mut import_contents = add_or_update_import("", "actix_web", "get");
     import_contents = add_or_update_import(&import_contents, "actix_web", "get");
     import_contents = add_or_update_import(&import_contents, "actix_web", "HttpResponse");
     import_contents = add_or_update_import(&import_contents, "tera", "Context");
@@ -92,11 +92,17 @@ pub async fn dashboard_controller(
     import_contents.push_str(&contents);
 
     // Write to file
-    write_to_file(&project.dashboard_controller.to_string(), import_contents.as_bytes()).expect("Couldn't write to dashboard controller");
+    write_to_file(
+        &project.dashboard_controller.to_string(),
+        import_contents.as_bytes(),
+    )
+    .expect("Couldn't write to dashboard controller");
 
-
-    println!("Test 1 for dashboard controller: {}", project.dashboard_controller.as_str());
-   Ok(())
+    println!(
+        "Test 1 for dashboard controller: {}",
+        project.dashboard_controller.as_str()
+    );
+    Ok(())
 }
 
 // Write to not_found controller
@@ -117,23 +123,22 @@ async fn not_found(tmpl: Data<Tera>) -> HttpResponse {
 }"#
     .to_string();
 
-
-
-// Update imports
-    let mut  import_contents = add_or_update_import("", "actix_web", "get");
+    // Update imports
+    let mut import_contents = add_or_update_import("", "actix_web", "get");
     import_contents = add_or_update_import(&import_contents, "actix_web", "HttpResponse");
     import_contents = add_or_update_import(&import_contents, "tera", "Context");
     import_contents = add_or_update_import(&import_contents, "tera", "Tera");
     import_contents = add_or_update_import(&import_contents, "actix_web", "web::Data");
-
-
-
 
     // Add the new controller content to the file
     import_contents.push_str("\n\n");
     import_contents.push_str(&contents);
 
     // Write to file
-    write_to_file(&project.not_found_controller.to_string(), import_contents.as_bytes()).expect("Couldn't write to not_found controller");
+    write_to_file(
+        &project.not_found_controller.to_string(),
+        import_contents.as_bytes(),
+    )
+    .expect("Couldn't write to not_found controller");
     Ok(())
 }

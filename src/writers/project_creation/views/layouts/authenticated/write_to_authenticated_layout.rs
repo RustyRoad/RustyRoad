@@ -1,6 +1,6 @@
 use crate::writers::write_to_file;
-use color_eyre::eyre::Result;
 use crate::Project;
+use color_eyre::eyre::Result;
 use std::io::Error;
 
 pub fn write_to_authenticated_layout(project: Project) -> Result<(), Error> {
@@ -18,7 +18,8 @@ pub fn write_to_authenticated_layout(project: Project) -> Result<(), Error> {
     {% endblock authenticated_content %}
     <!-- Custom main content for this page -->
     {% endblock main_content %}
-    "#.to_string();
+    "#
+    .to_string();
 
     write_to_file(&project.authenticated_layout, contents.as_bytes()).unwrap_or_else(|why| {
         panic!(

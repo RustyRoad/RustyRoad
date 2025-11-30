@@ -7,7 +7,6 @@ use std::{
 // Write to models/users.rs
 pub fn write_to_mysql_user_models(project: &Project) -> Result<(), Error> {
     let mut file = OpenOptions::new()
-        .write(true)
         .append(true)
         .open(project.clone().user_model)?;
     file.write_all(
@@ -135,7 +134,6 @@ impl UserLogin {
 // Write to models/users.rs
 pub fn write_to_postgres_user_models(project: &Project) -> Result<(), Error> {
     let mut file = OpenOptions::new()
-        .write(true)
         .append(true)
         .open(project.clone().user_model)?;
     file.write_all(
@@ -264,7 +262,6 @@ impl UserLogin {
 // Write to models/users.rs
 pub fn write_to_sqlite_user_models(project: &Project) -> Result<(), Error> {
     let mut file = OpenOptions::new()
-        .write(true)
         .append(true)
         .open(project.clone().user_model)?;
     file.write_all(

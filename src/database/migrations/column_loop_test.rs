@@ -38,12 +38,8 @@ use crate::database::{
 pub fn column_loop_test(num_columns: i32, migration_name: String) -> Result<String, Error> {
     let mut column_string = String::new();
 
-    let database = Database::get_database_from_rustyroad_toml().map_err(|_| {
-        io::Error::new(
-            io::ErrorKind::Other,
-            "Failed to get database from rustyroad.toml",
-        )
-    })?;
+    let database = Database::get_database_from_rustyroad_toml()
+        .map_err(|_| io::Error::other("Failed to get database from rustyroad.toml"))?;
     let database_type = database.database_type;
     let _types_for_database = TypesForDatabase::new();
 
@@ -74,7 +70,7 @@ pub fn column_loop_test(num_columns: i32, migration_name: String) -> Result<Stri
 
         let database_types = match database_type {
             DatabaseType::Postgres => PostgresDatabaseType
-                .get_database_types(&data_types_for_category, &data_type_category),
+                .get_database_types(&data_types_for_category, data_type_category),
             DatabaseType::Mysql => todo!("Implement MySqlDatabaseType.get_database_types"),
             DatabaseType::Sqlite => todo!("Implement SqliteDatabaseType.get_database_types"),
             DatabaseType::Mongo => todo!("Implement MongoDatabaseType.get_database_types"),
@@ -160,7 +156,7 @@ pub fn column_loop_test(num_columns: i32, migration_name: String) -> Result<Stri
                         let new_value3 =
                             new_value2.map(|x| x.unwrap().get(array_type_index - 1).unwrap());
 
-                        let new_value4 = new_value3.map(|x| x.clone());
+                        let new_value4 = new_value3.cloned();
 
                         new_value4.collect::<Vec<_>>()
                     }

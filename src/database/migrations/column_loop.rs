@@ -2,14 +2,16 @@ use rustyline::DefaultEditor;
 use std::io::{self, Error};
 use std::ops::Deref;
 
-use crate::database::{category::DataTypeCategory, databasetype::{DatabaseType, DatabaseTypeTrait, PostgresDatabaseType}, Database, PostgresTypes, MySqlDatabaseType};
-
+use crate::database::{
+    category::DataTypeCategory,
+    databasetype::{DatabaseType, DatabaseTypeTrait, PostgresDatabaseType},
+    Database, MySqlDatabaseType, PostgresTypes,
+};
 
 pub struct MigrationAndStruct {
     pub up_sql_contents: String,
     pub rust_struct_contents: String,
 }
-
 
 /// # Name: column_loop
 /// ## Description
@@ -35,7 +37,7 @@ pub struct MigrationAndStruct {
 pub fn column_loop(num_columns: i32, migration_name: String) -> Result<MigrationAndStruct, Error> {
     // Initialize the rustyline Editor with the default helper and in-memory history
     let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
-        panic!("Failed to create rustyline editor: {}", why.to_string());
+        panic!("Failed to create rustyline editor: {}", why);
     });
 
     let mut column_string = String::new();
@@ -46,11 +48,15 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<Migration
     println!("Database Type: {:?}", database_type);
     // let types_for_database = TypesForDatabase::new();
 
+    let mut struct_fields = String::new(); // To hold the struct fields
 
-    let mut struct_fields = String::new();  // To hold the struct fields
-
-    let struct_name = migration_name.chars().next().unwrap().to_uppercase().to_string() + &migration_name[1..];  // Capitalize the first letter
-
+    let struct_name = migration_name
+        .chars()
+        .next()
+        .unwrap()
+        .to_uppercase()
+        .to_string()
+        + &migration_name[1..]; // Capitalize the first letter
 
     for _ in 0..num_columns {
         let column_name = rl.readline("Enter the name of the column: ").unwrap();
@@ -72,7 +78,7 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<Migration
             .get(column_type_index - 1)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Invalid input"))?;
 
-        println!("You selected 1: {}", data_type_category.clone().to_string());
+        println!("You selected 1: {}", data_type_category.clone());
 
         // print database type
         println!("Database Type: {:?}", database_type);
@@ -85,9 +91,10 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<Migration
 
         let database_types = match database_type {
             DatabaseType::Postgres => PostgresDatabaseType
-                .get_database_types(&data_types_for_category, &data_type_category),
-            DatabaseType::Mysql => MySqlDatabaseType
-                .get_database_types(&data_types_for_category, &data_type_category),
+                .get_database_types(&data_types_for_category, data_type_category),
+            DatabaseType::Mysql => {
+                MySqlDatabaseType.get_database_types(&data_types_for_category, data_type_category)
+            }
             DatabaseType::Sqlite => todo!("Implement SqliteDatabaseType.get_database_types"),
             DatabaseType::Mongo => todo!("Implement MongoDatabaseType.get_database_types"),
         };
@@ -124,14 +131,14 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<Migration
         let new_type_input = rl
             .readline("Enter the type of the column: ")
             .unwrap_or_else(|why| {
-                panic!("Failed to get user input: {}", why.to_string());
+                panic!("Failed to get user input: {}", why);
             });
 
         let new_type_index = new_type_input
             .trim()
             .parse::<usize>()
             .unwrap_or_else(|why| {
-                panic!("Failed to parse user input: {}", why.to_string());
+                panic!("Failed to parse user input: {}", why);
             });
         println!("You selected 1: {}", new_type_index);
         // Get the selected type
@@ -152,11 +159,9 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<Migration
                 let postgres_types_hash_map_iter =
                     postgres_types_hash_map.map(|x| x.unwrap().get(new_type_index - 1).unwrap());
 
-                let postgres_types_hash_map_iter_clone =
-                    postgres_types_hash_map_iter.map(|x| x.clone());
+                let postgres_types_hash_map_iter_clone = postgres_types_hash_map_iter.cloned();
 
-                let selected_type_vector = postgres_types_hash_map_iter_clone.collect::<Vec<_>>();
-                selected_type_vector
+                postgres_types_hash_map_iter_clone.collect::<Vec<_>>()
             }
             DatabaseType::Mysql => todo!("Implement MySqlDatabaseType column_type mapping"),
             DatabaseType::Sqlite => todo!("Implement SqliteDatabaseType column_type mapping"),
@@ -200,7 +205,7 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<Migration
                 struct_fields.push_str(&format!(
                     "    pub {}: Vec<{}>,\n",
                     column_name.to_lowercase(),
-                    selected_type[0]  // Replace this with appropriate mapping to Rust types
+                    selected_type[0] // Replace this with appropriate mapping to Rust types
                 ));
             }
             _ => {
@@ -217,13 +222,10 @@ pub fn column_loop(num_columns: i32, migration_name: String) -> Result<Migration
                 struct_fields.push_str(&format!(
                     "    pub {}: {},\n",
                     column_name.to_lowercase(),
-                    selected_type[0]  // Replace this with appropriate mapping to Rust types
+                    selected_type[0] // Replace this with appropriate mapping to Rust types
                 ));
             }
         }
-
-
-
 
         println!("Column type selected: {:?}", selected_type);
     }

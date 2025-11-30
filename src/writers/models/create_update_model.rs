@@ -1,4 +1,7 @@
-use crate::database::{create_migration, Database, DatabaseType, find_migration_dir, MySqlTypes, PostgresTypes, SqliteTypes};
+use crate::database::{
+    create_migration, find_migration_dir, Database, DatabaseType, MySqlTypes, PostgresTypes,
+    SqliteTypes,
+};
 use crate::generators::create_file;
 use crate::helpers::helpers::get_project_name_from_rustyroad_toml;
 use color_eyre::{eyre::Error, Result};
@@ -68,13 +71,13 @@ pub async fn create_update_model(model_name: &str) -> Result<(), Error> {
 
     contents.push_str("#[table_name = \"");
 
-    contents.push_str(&model_name);
+    contents.push_str(model_name);
 
     contents.push_str("\"]\n");
 
     contents.push_str("pub struct ");
 
-    contents.push_str(&model_name);
+    contents.push_str(model_name);
 
     contents.push_str(" {\n");
 
@@ -90,7 +93,7 @@ pub async fn create_update_model(model_name: &str) -> Result<(), Error> {
 
     contents.push_str("impl ");
 
-    contents.push_str(&model_name);
+    contents.push_str(model_name);
 
     contents.push_str(" {\n");
 
@@ -107,7 +110,7 @@ pub async fn create_update_model(model_name: &str) -> Result<(), Error> {
 
     contents.push_str("        Self {\n");
 
-    for (_i, field) in fields.iter().enumerate() {
+    for field in fields.iter() {
         contents.push_str("            ");
         contents.push_str(field);
         contents.push_str(",\n");
@@ -125,7 +128,7 @@ pub async fn create_update_model(model_name: &str) -> Result<(), Error> {
     create_file(&format!("./src/models/{}.rs", model_name)).unwrap();
 
     // write the contents to the file
-    fs::write(&format!("./src/models/{}.rs", model_name), contents)?;
+    fs::write(format!("./src/models/{}.rs", model_name), contents)?;
 
     Ok(())
 }
@@ -194,16 +197,19 @@ pub async fn create_base_model(model_name: &str) -> Result<(), Error> {
     let file_path_string = migration_dir + "/up.sql";
     let file_path = std::path::Path::new(&file_path_string);
     // validate the file path
-    let file_path_bool = std::path::Path::is_file(&file_path);
+    let file_path_bool = std::path::Path::is_file(file_path);
 
     println!("File path: {:?}", file_path_bool);
 
     // get database type
-    let database_type = Database::get_database_from_rustyroad_toml().unwrap().database_type;
-
+    let database_type = Database::get_database_from_rustyroad_toml()
+        .unwrap()
+        .database_type;
 
     let struct_from_sql = match database_type {
-        DatabaseType::Postgres => generate_struct_from_postgres_sql(file_path, &PostgresTypes::BigInt),
+        DatabaseType::Postgres => {
+            generate_struct_from_postgres_sql(file_path, &PostgresTypes::BigInt)
+        }
         DatabaseType::Mysql => generate_struct_from_mysql_sql(file_path, &MySqlTypes::TinyInt),
         DatabaseType::Sqlite => generate_struct_from_sqlite_sql(file_path, &SqliteTypes::Integer),
         DatabaseType::Mongo => todo!(),
@@ -228,13 +234,13 @@ pub async fn create_base_model(model_name: &str) -> Result<(), Error> {
 
     contents.push_str("#[table_name = \"");
 
-    contents.push_str(&model_name);
+    contents.push_str(model_name);
 
     contents.push_str("\"]\n");
 
     contents.push_str("pub struct ");
 
-    contents.push_str(&model_name);
+    contents.push_str(model_name);
 
     contents.push_str(" {\n");
 
@@ -244,7 +250,7 @@ pub async fn create_base_model(model_name: &str) -> Result<(), Error> {
 
     contents.push_str("impl ");
 
-    contents.push_str(&model_name);
+    contents.push_str(model_name);
 
     contents.push_str(" {\n");
 
@@ -257,16 +263,17 @@ pub async fn create_base_model(model_name: &str) -> Result<(), Error> {
     create_file(&format!("./src/models/{}.rs", model_name)).unwrap();
 
     // write the contents to the file
-    fs::write(&format!("./src/models/{}.rs", model_name), &contents)?;
+    fs::write(format!("./src/models/{}.rs", model_name), &contents)?;
 
     println!("Contents: {}", contents);
 
     Ok(())
 }
 
-
-
-fn generate_struct_from_postgres_sql(file_path: &Path, db_type: &PostgresTypes) -> Result<String, Error> {
+fn generate_struct_from_postgres_sql(
+    file_path: &Path,
+    db_type: &PostgresTypes,
+) -> Result<String, Error> {
     // Read the SQL file
     let sql = fs::read_to_string(file_path)?;
 
@@ -281,7 +288,10 @@ fn generate_struct_from_postgres_sql(file_path: &Path, db_type: &PostgresTypes) 
         // If the line starts with "CREATE TABLE", extract the table name and start a new struct
         if line.to_uppercase().starts_with("CREATE TABLE") {
             let table_name = line.split_whitespace().nth(2).unwrap();
-            struct_def.push_str(&format!("\n#[derive(Debug, sqlx::FromRow)]\nstruct {} {{\n", table_name));
+            struct_def.push_str(&format!(
+                "\n#[derive(Debug, sqlx::FromRow)]\nstruct {} {{\n",
+                table_name
+            ));
         }
         // If the line starts with a word followed by a space and a word, treat it as a column definition
         else if line.chars().next().unwrap().is_alphanumeric() && line.contains(" ") {
@@ -299,7 +309,9 @@ fn generate_struct_from_postgres_sql(file_path: &Path, db_type: &PostgresTypes) 
                 PostgresTypes::ByteA => "Vec<u8>",
                 PostgresTypes::Timestamp | PostgresTypes::TimestampWithTimeZone => "NaiveDateTime",
                 PostgresTypes::Date => "NaiveDate",
-                PostgresTypes::Time |  PostgresTypes::TimeWithoutTimeZone | PostgresTypes::TimestampWithoutTimeZone  => "NaiveTime",
+                PostgresTypes::Time
+                | PostgresTypes::TimeWithoutTimeZone
+                | PostgresTypes::TimestampWithoutTimeZone => "NaiveTime",
                 PostgresTypes::Interval => "Interval",
                 PostgresTypes::Boolean => "bool",
                 PostgresTypes::Json | PostgresTypes::JsonB => "serde_json::Value",
@@ -332,19 +344,50 @@ fn generate_struct_from_mysql_sql(file_path: &Path, db_type: &MySqlTypes) -> Res
         // If the line starts with "CREATE TABLE", extract the table name and start a new struct
         if line.to_uppercase().starts_with("CREATE TABLE") {
             let table_name = line.split_whitespace().nth(2).unwrap();
-            struct_def.push_str(&format!("\n#[derive(Debug, sqlx::FromRow)]\nstruct {} {{\n", table_name));
+            struct_def.push_str(&format!(
+                "\n#[derive(Debug, sqlx::FromRow)]\nstruct {} {{\n",
+                table_name
+            ));
         }
         // If the line starts with a word followed by a space and a word, treat it as a column definition
         else if line.chars().next().unwrap().is_alphanumeric() && line.contains(" ") {
             let parts: Vec<&str> = line.split_whitespace().take(2).collect();
             let column_name = parts[0];
             let column_type = match db_type {
-                MySqlTypes::TinyInt | MySqlTypes::SmallInt | MySqlTypes::MediumInt | MySqlTypes::Int | MySqlTypes::BigInt => "i32",
+                MySqlTypes::TinyInt
+                | MySqlTypes::SmallInt
+                | MySqlTypes::MediumInt
+                | MySqlTypes::Int
+                | MySqlTypes::BigInt => "i32",
                 MySqlTypes::Float | MySqlTypes::Double | MySqlTypes::Decimal => "BigDecimal",
                 MySqlTypes::Bit => "bool",
-                MySqlTypes::Char | MySqlTypes::VarChar | MySqlTypes::Binary | MySqlTypes::VarBinary | MySqlTypes::TinyBlob | MySqlTypes::Blob | MySqlTypes::MediumBlob | MySqlTypes::LongBlob | MySqlTypes::TinyText | MySqlTypes::Text | MySqlTypes::MediumText | MySqlTypes::LongText | MySqlTypes::Enum | MySqlTypes::Set => "String",
-                MySqlTypes::Date | MySqlTypes::DateTime | MySqlTypes::Time | MySqlTypes::Timestamp | MySqlTypes::Year => "NaiveDateTime",
-                MySqlTypes::Geometry | MySqlTypes::Point | MySqlTypes::LineString | MySqlTypes::Polygon | MySqlTypes::MultiPoint | MySqlTypes::MultiLineString | MySqlTypes::MultiPolygon | MySqlTypes::GeometryCollection => "String",
+                MySqlTypes::Char
+                | MySqlTypes::VarChar
+                | MySqlTypes::Binary
+                | MySqlTypes::VarBinary
+                | MySqlTypes::TinyBlob
+                | MySqlTypes::Blob
+                | MySqlTypes::MediumBlob
+                | MySqlTypes::LongBlob
+                | MySqlTypes::TinyText
+                | MySqlTypes::Text
+                | MySqlTypes::MediumText
+                | MySqlTypes::LongText
+                | MySqlTypes::Enum
+                | MySqlTypes::Set => "String",
+                MySqlTypes::Date
+                | MySqlTypes::DateTime
+                | MySqlTypes::Time
+                | MySqlTypes::Timestamp
+                | MySqlTypes::Year => "NaiveDateTime",
+                MySqlTypes::Geometry
+                | MySqlTypes::Point
+                | MySqlTypes::LineString
+                | MySqlTypes::Polygon
+                | MySqlTypes::MultiPoint
+                | MySqlTypes::MultiLineString
+                | MySqlTypes::MultiPolygon
+                | MySqlTypes::GeometryCollection => "String",
                 MySqlTypes::Json | MySqlTypes::BinaryJson => "serde_json::Value",
                 MySqlTypes::BitField => "String",
                 MySqlTypes::NewDecimal => "BigDecimal",
@@ -352,7 +395,7 @@ fn generate_struct_from_mysql_sql(file_path: &Path, db_type: &MySqlTypes) -> Res
                 MySqlTypes::NotFound => "String",
                 MySqlTypes::EnumInner => "String",
                 MySqlTypes::SetInner => "String",
-                MySqlTypes::GeometryInner => "String"
+                MySqlTypes::GeometryInner => "String",
             };
             struct_def.push_str(&format!("    {}: {},\n", column_name, column_type));
         }
@@ -365,7 +408,10 @@ fn generate_struct_from_mysql_sql(file_path: &Path, db_type: &MySqlTypes) -> Res
     Ok(struct_def)
 }
 
-fn generate_struct_from_sqlite_sql(file_path: &Path, db_type: &SqliteTypes) -> Result<String, Error> {
+fn generate_struct_from_sqlite_sql(
+    file_path: &Path,
+    db_type: &SqliteTypes,
+) -> Result<String, Error> {
     // Read the SQL file
     let sql = fs::read_to_string(file_path)?;
 
@@ -380,7 +426,10 @@ fn generate_struct_from_sqlite_sql(file_path: &Path, db_type: &SqliteTypes) -> R
         // If the line starts with "CREATE TABLE", extract the table name and start a new struct
         if line.to_uppercase().starts_with("CREATE TABLE") {
             let table_name = line.split_whitespace().nth(2).unwrap();
-            struct_def.push_str(&format!("\n#[derive(Debug, sqlx::FromRow)]\nstruct {} {{\n", table_name));
+            struct_def.push_str(&format!(
+                "\n#[derive(Debug, sqlx::FromRow)]\nstruct {} {{\n",
+                table_name
+            ));
         }
         // If the line starts with a word followed by a space and a word, treat it as a column definition
         else if line.chars().next().unwrap().is_alphanumeric() && line.contains(" ") {
@@ -424,7 +473,6 @@ fn parse_and_categorize_sql(file_path: &Path) -> Result<(), Error> {
     let drop_table_pattern = Regex::new(r"(?i)DROP TABLE").unwrap();
     let drop_index_pattern = Regex::new(r"(?i)DROP INDEX").unwrap();
 
-
     // Split the SQL into statements
     let statements: Vec<&str> = sql.split(';').collect();
 
@@ -438,7 +486,7 @@ fn parse_and_categorize_sql(file_path: &Path) -> Result<(), Error> {
             println!("UPDATE statement: {}", statement);
         } else if delete_pattern.is_match(statement) {
             println!("DELETE statement: {}", statement);
-        }  else if foreign_key_pattern.is_match(statement) {
+        } else if foreign_key_pattern.is_match(statement) {
             println!("FOREIGN KEY constraint found: {}", statement);
         } else if null_pattern.is_match(statement) {
             println!("NULL constraint found: {}", statement);

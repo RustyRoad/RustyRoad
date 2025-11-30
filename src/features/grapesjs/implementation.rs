@@ -3,10 +3,7 @@ use crate::writers::{
     write_to_create_page_dashboard_get_controller, write_to_create_page_html,
     write_to_edit_page_html, write_to_page_dashboard_html, write_to_page_details_html,
 };
-use crate::writers::{
-     write_to_file,
-    write_to_page_dashboard_get_controller,
-};
+use crate::writers::{write_to_file, write_to_page_dashboard_get_controller};
 use chrono::Local;
 use std::env;
 use std::fs;
@@ -15,13 +12,21 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::database::{run_migration, Database, DatabaseType, MigrationDirection};
+use crate::features::grapesjs::grapesjs_page_controllers::{
+    write_to_all_page_controllers, write_to_image_upload_controller,
+};
 use crate::features::{update_cargo_toml_for_grapesjs, update_index_controller};
 use crate::generators::create_file;
 use color_eyre::eyre::Result;
 use eyre::Error;
-use crate::features::grapesjs::grapesjs_page_controllers::{write_to_all_page_controllers, write_to_image_upload_controller};
 
 pub struct GrapesJs();
+
+impl Default for GrapesJs {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl GrapesJs {
     pub fn new() -> Self {
@@ -57,15 +62,11 @@ impl GrapesJs {
 
             // create the file
             create_file(page_controller_file_location).unwrap_or_else(|_| {
-                panic!(
-                    "Error: Could not create {}",
-                    page_controller_file_location
-                )
+                panic!("Error: Could not create {}", page_controller_file_location)
             });
 
             // create the page details template
             write_to_page_details_html().expect("Couldn't write to page details html");
-
 
             println!("Writing to edit page html");
 
@@ -90,13 +91,13 @@ To access the page builder, go to the /page/{pageId} URL. For example, if you ar
             // write to the readme
             write_to_file(&readme_path, readme_text.as_bytes()).expect("Couldn't write to readme");
 
-            add_module_declaration(controller_name, &controller_module)
+            add_module_declaration(controller_name, controller_module)
                 .expect("Couldn't add page controller to main controller module");
 
             // add the model to the model module
             let model_name = "page".to_string();
             let model_path = Path::new("./src/models/mod.rs");
-            add_module_declaration(model_name, &model_path)
+            add_module_declaration(model_name, model_path)
                 .expect("Couldn't add page model to main model module");
 
             // add the new View/Template: PageDashboard.html.tera to the views/pages directory
@@ -117,12 +118,9 @@ To access the page builder, go to the /page/{pageId} URL. For example, if you ar
                 .await
                 .expect("Couldn't update index controller");
 
-            write_to_image_upload_controller()
-                .expect("Couldn't write to image upload controller");
+            write_to_image_upload_controller().expect("Couldn't write to image upload controller");
 
-            update_cargo_toml_for_grapesjs()
-                .expect("Couldn't update cargo toml for grapesjs");
-
+            update_cargo_toml_for_grapesjs().expect("Couldn't update cargo toml for grapesjs");
         } else {
             println!("Couldn't get current directory");
         }
@@ -143,22 +141,16 @@ pub async fn write_to_page_model() -> Result<(), Error> {
     let page_model_file_location = "src/models/page.rs";
 
     // create the file
-    create_file(page_model_file_location).unwrap_or_else(|_| {
-        panic!(
-            "Error: Could not create {}",
-            page_model_file_location
-        )
-    });
+    create_file(page_model_file_location)
+        .unwrap_or_else(|_| panic!("Error: Could not create {}", page_model_file_location));
 
     let mut page_model_file = OpenOptions::new()
-        .write(true)
         .append(true)
         .open(page_model_file_location)
         .unwrap_or_else(|_| panic!("Error: Could not open {}", page_model_file_location));
 
     // Original SQL queries with format! macro
-    let create_page_sql = format!(
-        "r#\"\
+    let create_page_sql = "r#\"\
     INSERT INTO page (
         title,
             html_content,
@@ -213,10 +205,9 @@ pub async fn write_to_page_model() -> Result<(), Error> {
             $41, $42, $43, $44
         )  RETURNING *;\
     \"#"
-    );
+    .to_string();
 
-    let update_page_sql = format!(
-        "r#\"\
+    let update_page_sql = "r#\"\
     UPDATE page
         SET
             title = $1,
@@ -267,54 +258,45 @@ pub async fn write_to_page_model() -> Result<(), Error> {
         WHERE id = $46
     RETURNING *;\
     \"#"
-    );
+    .to_string();
 
-    let get_page_by_id_sql = format!("r#\"SELECT * FROM page WHERE id = $1\"#;");
+    let get_page_by_id_sql = "r#\"SELECT * FROM page WHERE id = $1\"#;".to_string();
 
-    let get_page_by_slug_sql = format!("r#\"SELECT * FROM page WHERE slug = $1\"#;");
+    let get_page_by_slug_sql = "r#\"SELECT * FROM page WHERE slug = $1\"#;".to_string();
 
     let database = Database::get_database_from_rustyroad_toml().unwrap();
 
     let pool_connection_code = match database.database_type {
-        DatabaseType::Postgres => {
-            format!(
-                r#"
+        DatabaseType::Postgres => r#"
                let pool = Database::get_db_pool(database).await.unwrap();
 
-                let pool_connection = match pool {{
+                let pool_connection = match pool {
                     PoolConnection::Pg(pool) => pool,
 
                     _ => panic!("Error getting pg pool"),
-                }};
+                };
                 "#
-            )
-        }
-        DatabaseType::Mysql => {
-            format!(
-                r#"
+        .to_string(),
+        DatabaseType::Mysql => r#"
                 let pool = Database::get_db_pool(database).await.unwrap();
 
-                let pool_connection = match pool {{
+                let pool_connection = match pool {
                     PoolConnection::MySql(pool) => pool,
 
                     _ => panic!("Error getting mysql pool"),
-                }};
+                };
                 "#
-            )
-        }
-        DatabaseType::Sqlite => {
-            format!(
-                r#"
+        .to_string(),
+        DatabaseType::Sqlite => r#"
                 let pool = Database::get_db_pool(database).await.unwrap();
 
-                let pool_connection = match pool {{
+                let pool_connection = match pool {
                     PoolConnection::Sqlite(pool) => pool,
 
                     _ => panic!("Error getting sqlite pool"),
-                }};
+                };
                 "#
-            )
-        }
+        .to_string(),
         DatabaseType::Mongo => {
             todo!("Implement MongoDatabaseType.get_database_types")
         }
@@ -731,12 +713,7 @@ where
 
     page_model_file
         .write_all(page_model_contents.as_bytes())
-        .unwrap_or_else(|_| {
-            panic!(
-                "Error: Could not write to {}",
-                page_model_file_location
-            )
-        });
+        .unwrap_or_else(|_| panic!("Error: Could not write to {}", page_model_file_location));
 
     let database = Database::get_database_from_rustyroad_toml()
         .expect("Failed to get database from rustyroad.toml");
@@ -744,9 +721,7 @@ where
     let database_type = database.database_type;
 
     let page_migration_contents = match database_type {
-        DatabaseType::Postgres => {
-            format!(
-                r#"
+        DatabaseType::Postgres => r#"
 CREATE TABLE IF NOT EXISTS page (
     id SERIAL PRIMARY KEY,
     title TEXT,
@@ -799,11 +774,8 @@ CREATE TABLE IF NOT EXISTS page (
     is_published BOOLEAN
 );
     "#
-            )
-        }
-        DatabaseType::Mysql => {
-            format!(
-                r#"
+        .to_string(),
+        DatabaseType::Mysql => r#"
 CREATE TABLE IF NOT EXISTS page (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title TEXT,
@@ -856,11 +828,8 @@ CREATE TABLE IF NOT EXISTS page (
     is_published BOOLEAN
 );
     "#
-            )
-        }
-        DatabaseType::Sqlite => {
-            format!(
-                r#"
+        .to_string(),
+        DatabaseType::Sqlite => r#"
                     CREATE TABLE IF NOT EXISTS page (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         title TEXT,
@@ -912,8 +881,7 @@ CREATE TABLE IF NOT EXISTS page (
                         is_secure BOOLEAN
                     );
                 "#
-            )
-        }
+        .to_string(),
         DatabaseType::Mongo => {
             todo!("Implement MongoDatabaseType.get_database_types")
         }
@@ -969,7 +937,6 @@ pub fn append_graped_js_to_header() -> Result<(), Error> {
     let header_file_location = "src/views/sections/header.html.tera";
 
     let mut header_file = OpenOptions::new()
-        .write(true)
         .append(true)
         .open(header_file_location)
         .unwrap_or_else(|_| panic!("Error: Could not open {}", header_file_location));

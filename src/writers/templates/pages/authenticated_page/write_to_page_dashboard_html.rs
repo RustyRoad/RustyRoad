@@ -1,7 +1,7 @@
+use eyre::Error;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use eyre::Error;
 
 pub fn write_to_page_dashboard_html() -> Result<(), Error> {
     let contents = r#"

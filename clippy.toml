@@ -1,0 +1,5 @@
+# Clippy configuration for RustyRoad
+# These settings help manage clippy warnings during development
+
+# Allow these lints project-wide (they can be addressed later)
+allow-unwrap-in-tests = true

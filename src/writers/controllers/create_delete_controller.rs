@@ -1,9 +1,13 @@
+use crate::generators::create_file;
+use crate::writers;
+use crate::writers::{
+    add_new_controller_to_existing_module_in_main_rs, add_new_controller_to_main_rs,
+    write_to_controller_name_html, write_to_controllers_mod, write_to_new_delete_controller,
+    write_to_new_get_controller, write_to_previous_create_controller,
+};
+use eyre::Error;
 use std::fs;
 use std::fs::create_dir;
-use crate::generators::create_file;
-use crate::writers::{add_new_controller_to_existing_module_in_main_rs, add_new_controller_to_main_rs, write_to_controller_name_html, write_to_controllers_mod, write_to_new_get_controller, write_to_new_delete_controller, write_to_previous_create_controller};
-use eyre::Error;
-use crate::writers;
 
 /// # Name: create_create_controller_in_existing_folder
 /// This function creates a new create controller in an existing folder.
@@ -67,7 +71,7 @@ pub fn create_delete_controller_in_existing_folder(controller_name: String) -> R
                     println!("Failed to write to controller: {:?}", why.to_string());
                 });
                 // end the function
-                return Ok(());
+                Ok(())
             } else {
                 println!("Please run the command again and enter a valid controller name.");
                 // end the function
@@ -86,17 +90,18 @@ pub fn create_delete_controller_in_existing_folder(controller_name: String) -> R
                 },
             );
             // Write to controllerName.html.tera file
-            write_to_controller_name_html(controller_name.clone().as_str()).expect("Failed to write to controllerName.html.tera");
+            write_to_controller_name_html(controller_name.clone().as_str())
+                .expect("Failed to write to controllerName.html.tera");
             // update main.rs file
             add_new_controller_to_existing_module_in_main_rs(
                 input,
                 controller_name.clone().as_str(),
             )
-                .unwrap_or_else(|why| {
-                    println!("Failed to add to controller in main.rs: {:?}", why.kind());
-                });
+            .unwrap_or_else(|why| {
+                println!("Failed to add to controller in main.rs: {:?}", why.kind());
+            });
             // end the function
-            return Ok(());
+            Ok(())
         }
     } else {
         // if the user enters n, continue with the rest of the code
@@ -105,7 +110,7 @@ pub fn create_delete_controller_in_existing_folder(controller_name: String) -> R
             println!("Failed to write to controller: {:?}", why.to_string());
         });
         // end the function
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -151,24 +156,20 @@ pub fn create_delete_controller_in_new_folder(controller_name: String) -> Result
     }
 
     // Create a new directory with the controllerName
-    create_dir(format!("./src/controllers/{}", &controller_name)).unwrap_or_else(
-        |why| {
-            println!("Failed to create directory: {:?}", why.to_string());
-        },
-    );
+    create_dir(format!("./src/controllers/{}", &controller_name)).unwrap_or_else(|why| {
+        println!("Failed to create directory: {:?}", why.to_string());
+    });
     // Create a new controller using the controllerName
     // Update the controllers/page file
-    let full_file_name = format!("./src/controllers/page");
-    write_to_controllers_mod(&full_file_name, controller_name.clone())
-        .unwrap_or_else(|why| {
-            println!("Failed to write to controllers/mod: {:?}", why.to_string());
-        });
+    let full_file_name = "./src/controllers/page".to_string();
+    write_to_controllers_mod(&full_file_name, controller_name.clone()).unwrap_or_else(|why| {
+        println!("Failed to write to controllers/mod: {:?}", why.to_string());
+    });
 
     // create the controllers/page file
-    create_file(&format!("./src/controllers/{}/page", controller_name))
-        .unwrap_or_else(|why| {
-            println!("Failed to create file: {:?}", why.to_string());
-        });
+    create_file(&format!("./src/controllers/{}/page", controller_name)).unwrap_or_else(|why| {
+        println!("Failed to create file: {:?}", why.to_string());
+    });
 
     let mut components = Vec::new();
     // Create a vector and push the controllerName to the vector
@@ -179,18 +180,18 @@ pub fn create_delete_controller_in_new_folder(controller_name: String) -> Result
         &format!("./src/controllers/{}/page", &controller_name),
         components,
     )
-        .unwrap_or_else(|why| {
-            println!("Failed to write to page: {:?}", why.to_string());
-        });
+    .unwrap_or_else(|why| {
+        println!("Failed to write to page: {:?}", why.to_string());
+    });
 
     // Create a new file with the controllerName.rs
     create_file(&format!(
         "./src/controllers/{}/{}.rs",
         controller_name, controller_name
     ))
-        .unwrap_or_else(|why| {
-            println!("Failed to create file: {:?}", why.to_string());
-        });
+    .unwrap_or_else(|why| {
+        println!("Failed to create file: {:?}", why.to_string());
+    });
     // Write to controllerName.rs file
     write_to_new_delete_controller(controller_name.clone()).unwrap_or_else(|why| {
         println!(
@@ -200,17 +201,17 @@ pub fn create_delete_controller_in_new_folder(controller_name: String) -> Result
     });
 
     // Create a new file with the controllerName.html.tera
-    create_file(&format!("./views/pages/{}.html.tera", controller_name))
-        .unwrap_or_else(|why| {
-            println!("Failed to create file: {:?}", why.to_string());
-        });
+    create_file(&format!("./views/pages/{}.html.tera", controller_name)).unwrap_or_else(|why| {
+        println!("Failed to create file: {:?}", why.to_string());
+    });
     // Write to controllerName.html.tera file
-    write_to_controller_name_html(controller_name.clone().as_str()).expect("Failed to write to controllerName.html.tera");
+    write_to_controller_name_html(controller_name.clone().as_str())
+        .expect("Failed to write to controllerName.html.tera");
 
     // update main.rs file
-    add_new_controller_to_main_rs(None,None, controller_name.clone().as_str())
+    add_new_controller_to_main_rs(None, None, controller_name.clone().as_str())
         .expect("Failed to add to controller in main.rs");
 
     // end the function
-    return Ok(());
+    Ok(())
 }

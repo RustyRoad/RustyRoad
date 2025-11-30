@@ -33,7 +33,7 @@ pub fn write_to_sql(file_name: &String, sql: &str) -> Result<(), std::io::Error>
 
     let mut template = String::new();
 
-    template.push_str(&format!("{}", sql));
+    template.push_str(&sql.to_string());
 
     // write the template to the file
     write_to_file(file_name, template.as_bytes())

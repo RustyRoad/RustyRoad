@@ -1,9 +1,7 @@
-
-use eyre::Error;
 use crate::writers::write_to_file;
+use eyre::Error;
 
 pub fn write_to_404_html(file_name: &str) -> Result<(), Error> {
-
     let contents = r#"
     {% extends 'base.html.tera' %}
 {% block title %}404 Page Not Found{% endblock title %}
@@ -25,7 +23,7 @@ pub fn write_to_404_html(file_name: &str) -> Result<(), Error> {
 {% endblock content %}
     "#;
 
-    write_to_file(&file_name, contents.as_bytes())?;
+    write_to_file(file_name, contents.as_bytes())?;
 
     Ok(())
 }

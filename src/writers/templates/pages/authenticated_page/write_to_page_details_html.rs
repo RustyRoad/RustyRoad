@@ -1,8 +1,8 @@
+use crate::generators::create_file;
+use color_eyre::eyre::{Error, Result};
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
-use color_eyre::eyre::{Error, Result};
-use crate::generators::create_file;
 
 pub fn write_to_page_details_html() -> Result<(), Error> {
     let contents = r##"
@@ -639,11 +639,10 @@ pub fn write_to_page_details_html() -> Result<(), Error> {
     let mut file = OpenOptions::new()
         .write(true)
         .truncate(true)
-        .open(&path)
+        .open(path)
         .unwrap();
     // Write the updated contents to the file
     writeln!(file, "{}", contents)?;
     file.flush()?;
     Ok(())
-
 }

@@ -15,10 +15,7 @@ pub async fn load_sql_for_new_project(
         Ok(hashed_password) => hashed_password,
         Err(err) => {
             eprintln!("Failed to hash admin password: {:?}", err);
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Failed to hash admin password",
-            ));
+            return Err(std::io::Error::other("Failed to hash admin password"));
         }
     };
 
@@ -99,7 +96,7 @@ pub async fn load_sql_for_new_project(
             // write the down migration to the file
             for (idx, statement) in down_statements.iter().enumerate() {
                 write_to_file(
-                    &format!("{}", &project.initial_migration_down),
+                    &(&project.initial_migration_down).to_string(),
                     statement.as_bytes(),
                 )
                 .unwrap_or_else(|why| {
@@ -187,7 +184,7 @@ CREATE TABLE Sessions (
             // write the template to the file
             for (idx, statement) in statements.iter().enumerate() {
                 write_to_file(
-                    &format!("{}", &project.initial_migration_up),
+                    &(&project.initial_migration_up).to_string(),
                     statement.as_bytes(),
                 )
                 .unwrap_or_else(|why| {
@@ -202,13 +199,13 @@ CREATE TABLE Sessions (
 
             // create the down migration
             let mut down_statements = Vec::new();
-            down_statements.push(format!("DROP SCHEMA public CASCADE;"));
-            down_statements.push(format!("CREATE SCHEMA public;"));
+            down_statements.push("DROP SCHEMA public CASCADE;".to_string());
+            down_statements.push("CREATE SCHEMA public;".to_string());
 
             // write the down migration to the file
             for (idx, statement) in down_statements.iter().enumerate() {
                 write_to_file(
-                    &format!("{}", &project.initial_migration_down),
+                    &(&project.initial_migration_down).to_string(),
                     statement.as_bytes(),
                 )
                 .unwrap_or_else(|why| {
@@ -297,7 +294,7 @@ CREATE TABLE Sessions (
             // write the template to the file
             for (idx, statement) in statements.iter().enumerate() {
                 write_to_file(
-                    &format!("{}", &project.initial_migration_up),
+                    &(&project.initial_migration_up).to_string(),
                     statement.as_bytes(),
                 )
                 .unwrap_or_else(|why| {
@@ -317,7 +314,7 @@ CREATE TABLE Sessions (
             // write the down migration to the file
             for (idx, statement) in down_statements.iter().enumerate() {
                 write_to_file(
-                    &format!("{}", &project.initial_migration_down),
+                    &(&project.initial_migration_down).to_string(),
                     statement.as_bytes(),
                 )
                 .unwrap_or_else(|why| {

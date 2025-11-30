@@ -1,7 +1,7 @@
-use chrono::{NaiveDateTime, TimeZone, DateTime, Utc};
 use crate::database::{Database, PoolConnection};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use serde::Deserialize;
-use sqlx::{FromRow, query_as};
+use sqlx::{query_as, FromRow};
 
 /// # Name: Page
 /// ### Description: A struct that represents a page created with page
@@ -93,7 +93,13 @@ pub struct Page {
     pub schema_date_published: Option<NaiveDateTime>,
     pub schema_date_modified: Option<NaiveDateTime>,
     pub is_secure: bool,
-    pub is_published: bool
+    pub is_published: bool,
+}
+
+impl Default for Page {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Page {
@@ -147,7 +153,7 @@ impl Page {
             schema_date_published: None,
             schema_date_modified: None,
             is_secure: false,
-            is_published: false
+            is_published: false,
         }
     }
 
@@ -230,7 +236,7 @@ impl Page {
             _ => panic!("Error getting pg pool"),
         };
 
-        let new_page: Page = query_as(&sql)
+        let new_page: Page = query_as(sql)
             .bind(new_html.title)
             .bind(new_html.html_content)
             .bind(new_html.associated_user_id)
@@ -310,10 +316,7 @@ impl Page {
             _ => panic!("Error getting pg pool"),
         };
 
-        let page: Page = query_as(&sql)
-            .bind(id)
-            .fetch_one(&pool_connection)
-            .await?;
+        let page: Page = query_as(sql).bind(id).fetch_one(&pool_connection).await?;
         Ok(page)
     }
 
@@ -339,10 +342,7 @@ impl Page {
             _ => panic!("Error getting pg pool"),
         };
 
-        let page: Page = query_as(&sql)
-            .bind(slug)
-            .fetch_one(&pool_connection)
-            .await?;
+        let page: Page = query_as(sql).bind(slug).fetch_one(&pool_connection).await?;
         Ok(page)
     }
 
@@ -358,8 +358,7 @@ impl Page {
     /// let result = Page::update_page(id, new_html);
     /// ```
     pub async fn update_page(id: i32, new_html: Page) -> Result<serde_json::Value, sqlx::Error> {
-        let sql =
-            r#"
+        let sql = r#"
         UPDATE page
         SET
             title = $1,
@@ -423,7 +422,7 @@ impl Page {
             _ => panic!("Error getting pg pool"),
         };
 
-        let updated_page: Page = query_as(&sql)
+        let updated_page: Page = query_as(sql)
             .bind(new_html.title)
             .bind(new_html.html_content)
             .bind(new_html.created_at)
@@ -502,7 +501,7 @@ impl Page {
             _ => panic!("Error getting pg pool"),
         };
 
-        let pages: Vec<Page> = query_as(&sql).fetch_all(&pool_connection).await?;
+        let pages: Vec<Page> = query_as(sql).fetch_all(&pool_connection).await?;
         Ok(serde_json::json!({
             "status": "success",
             "message": "Pages retrieved successfully",
@@ -512,8 +511,8 @@ impl Page {
 }
 
 fn deserialize_unix_timestamp<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
-    where
-        D: serde::Deserializer<'de>,
+where
+    D: serde::Deserializer<'de>,
 {
     let timestamp = i64::deserialize(deserializer)?;
     Ok(Utc

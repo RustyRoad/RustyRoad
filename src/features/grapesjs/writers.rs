@@ -1,12 +1,14 @@
+use crate::generators::create_file;
+use crate::helpers::helpers::{
+    add_or_update_import, determine_controller_path, prompt_to_create_controller,
+};
+use crate::writers::{add_new_controller_to_main_rs, write_to_file};
+use color_eyre::eyre::Result;
+use eyre::Error;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::PathBuf;
-use crate::generators::create_file;
-use crate::writers::{add_new_controller_to_main_rs, write_to_file};
-use color_eyre::eyre::Result;
-use eyre::Error;
-use crate::helpers::helpers::{add_or_update_import, determine_controller_path, prompt_to_create_controller};
 
 pub fn write_to_get_page_by_id() -> Result<(), Error> {
     let contents = r#"
@@ -83,7 +85,7 @@ async fn get_page_by_id(tmpl: Data<Tera>, id: Path<i32>, user: Option<Identity>)
 
     // Add the get_page_by_id controller to the main.rs file
     println!("Adding the get_page_by_id controller to the main.rs file...");
-    add_new_controller_to_main_rs(None,Some("page"), "get_page_by_id")
+    add_new_controller_to_main_rs(None, Some("page"), "get_page_by_id")
         .expect("Error adding the get_page_by_id controller to the main.rs file");
     // call the html writer
     write_to_get_page_by_id_html().expect("Error writing the page.html.tera file");
@@ -107,7 +109,6 @@ pub fn write_to_get_page_by_id_html() -> Result<(), Error> {
 
     Ok(())
 }
-
 
 pub fn update_cargo_toml_for_grapesjs() -> Result<(), Error> {
     let contents = r##"
@@ -171,8 +172,5 @@ version = "0.7.2"
 
     println!("Cargo.toml updated successfully.");
 
-
     Ok(())
 }
-
-

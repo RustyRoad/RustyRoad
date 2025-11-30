@@ -7,9 +7,9 @@ pub fn write_to_header(name: &String) -> Result<(), Error> {
 <title>{% block title %}{% endblock title %} - #Title</title>"#
         .to_string();
     // Append page title to the title tag
-    contents = contents.replace("#Title", &name.as_str());
-    write_to_file(&name, contents.as_bytes())
-        .unwrap_or_else(|why| panic!("Couldn't write to {}: {}", &name, why.to_string()));
+    contents = contents.replace("#Title", name.as_str());
+    write_to_file(name, contents.as_bytes())
+        .unwrap_or_else(|why| panic!("Couldn't write to {}: {}", &name, why));
     Ok(())
 }
 
@@ -124,7 +124,7 @@ pub fn write_to_header_with_grapesjs(name: &String) -> Result<(), Error> {
 
     contents = contents + &header;
 
-    write_to_file(&name, contents.as_bytes())
-        .unwrap_or_else(|why| panic!("Couldn't write to {}: {}", &name, why.to_string()));
+    write_to_file(name, contents.as_bytes())
+        .unwrap_or_else(|why| panic!("Couldn't write to {}: {}", &name, why));
     Ok(())
 }

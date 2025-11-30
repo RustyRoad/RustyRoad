@@ -1,8 +1,8 @@
-use std::path::Path;
-use eyre::Error;
-use color_eyre::Result;
 use crate::generators::create_file;
 use crate::writers::write_to_file;
+use color_eyre::Result;
+use eyre::Error;
+use std::path::Path;
 
 pub fn write_to_create_page_html() -> Result<(), Error> {
     let contents: String = r#"
@@ -299,8 +299,7 @@ pub fn write_to_create_page_html() -> Result<(), Error> {
     "#
         .to_string();
 
-    let path =
-        Path::new("src/views/layouts/authenticated_page/page/create_page.html.tera");
+    let path = Path::new("src/views/layouts/authenticated_page/page/create_page.html.tera");
     if !path.exists() {
         println!("Creating the create_page.html.tera file...");
         create_file("src/views/layouts/authenticated_page/page/create_page.html.tera")
@@ -310,6 +309,6 @@ pub fn write_to_create_page_html() -> Result<(), Error> {
         "src/views/layouts/authenticated_page/page/create_page.html.tera",
         contents.as_bytes(),
     )
-        .unwrap_or_else(|_| panic!("Error: Could not write to create_page.html"));
+    .unwrap_or_else(|_| panic!("Error: Could not write to create_page.html"));
     Ok(())
 }

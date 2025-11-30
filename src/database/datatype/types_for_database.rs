@@ -20,6 +20,12 @@ pub struct TypesForDatabase {
     pub sqlite: SqliteTypeMap,
 }
 
+impl Default for TypesForDatabase {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TypesForDatabase {
     /// Creates a new `TypesForDatabase` instance.
     ///
@@ -362,7 +368,7 @@ impl fmt::Display for TypesForDatabase {
 }
 
 // Implement the IntoIterator trait for TypesForDatabase
-impl<'a> IntoIterator for &'a TypesForDatabase {
+impl IntoIterator for &TypesForDatabase {
     type Item = String;
     type IntoIter = std::vec::IntoIter<Self::Item>;
 

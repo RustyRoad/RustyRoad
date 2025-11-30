@@ -2,8 +2,8 @@ use crate::writers::write_to_file;
 use crate::Project;
 use color_eyre::eyre::Result;
 use regex::Regex;
-use std::{env, fs};
 use std::io::Error;
+use std::{env, fs};
 /// This function writes initial content to the main.rs file of a new RustyRoad project.
 /// The content includes setting up an Actix web server with three controllers: index, dashboard, and login.
 ///
@@ -131,12 +131,21 @@ async fn main() -> std::io::Result<()> {
 ///
 /// add_new_controller_to_main_rs(None, None,"about").expect("Failed to add new controller to main.rs");
 /// ```
-pub fn add_new_controller_to_main_rs(project_name: Option<&str>,folder_or_file_name: Option<&str>, controller_name: &str) -> Result<(), Error> {
+pub fn add_new_controller_to_main_rs(
+    project_name: Option<&str>,
+    folder_or_file_name: Option<&str>,
+    controller_name: &str,
+) -> Result<(), Error> {
     println!("CONTROLLER NAME: {}", &controller_name);
     // Check for the current working directory
     let mut current_dir = match env::current_dir() {
         Ok(dir) => dir,
-        Err(e) => return Err(Error::new(std::io::ErrorKind::Other, format!("Error getting current directory: {}", e))),
+        Err(e) => {
+            return Err(Error::other(format!(
+                "Error getting current directory: {}",
+                e
+            )))
+        }
     };
     // backup the current directory
     let backup_dir = current_dir.clone();
@@ -146,7 +155,10 @@ pub fn add_new_controller_to_main_rs(project_name: Option<&str>,folder_or_file_n
     if let Some(proj_name) = project_name {
         let project_path = current_dir.join(proj_name);
         if project_path.is_dir() {
-            println!("Changing into project directory: {}", project_path.display());
+            println!(
+                "Changing into project directory: {}",
+                project_path.display()
+            );
             env::set_current_dir(&project_path)?;
             // verify the new directory is the project directory
             current_dir = env::current_dir()?;
@@ -154,15 +166,16 @@ pub fn add_new_controller_to_main_rs(project_name: Option<&str>,folder_or_file_n
         }
     }
 
-
     // Check if main.rs exists in the src directory
     let mut main_rs_path = current_dir.join("src");
     main_rs_path.push("main.rs");
     println!("main.rs path is: {}", main_rs_path.display());
     if !main_rs_path.exists() || !main_rs_path.is_file() {
-        return Err(Error::new(std::io::ErrorKind::NotFound, "main.rs not found in src directory"));
+        return Err(Error::new(
+            std::io::ErrorKind::NotFound,
+            "main.rs not found in src directory",
+        ));
     }
-
 
     // ensure that the controllers folder exists
     let controllers_folder = current_dir.join("src/controllers");
@@ -179,7 +192,7 @@ pub fn add_new_controller_to_main_rs(project_name: Option<&str>,folder_or_file_n
     // ensure that the controllers/mod.rs file has a newline at the end
     let mut contents = fs::read_to_string(&controllers_mod_rs)?;
     if !contents.ends_with("\n") {
-        contents.push_str("\n");
+        contents.push('\n');
         fs::write(controllers_mod_rs, contents)?;
     }
 
@@ -238,7 +251,10 @@ pub fn add_new_controller_to_main_rs(project_name: Option<&str>,folder_or_file_n
 ///
 /// add_new_controller_to_existing_module_in_main_rs("page", "about").expect("Failed to add new controller to main.rs");
 /// ```
-pub fn add_new_controller_to_existing_module_in_main_rs(existing_controller_name: &str, new_controller_name: &str) -> Result<(), Error> {
+pub fn add_new_controller_to_existing_module_in_main_rs(
+    existing_controller_name: &str,
+    new_controller_name: &str,
+) -> Result<(), Error> {
     // Check for the current working directory
     let current_dir = std::env::current_dir().unwrap();
 

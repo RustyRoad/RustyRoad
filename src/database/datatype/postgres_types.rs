@@ -19,6 +19,7 @@ use strum_macros::{Display, EnumIter};
     serde::Serialize,
     serde::Deserialize,
     EnumIter,
+    Default,
 )]
 pub enum PostgresTypes {
     /// A 2 byte signed integer.
@@ -39,6 +40,7 @@ pub enum PostgresTypes {
     /// - Alias: INT, INT4
     /// - Note: The integer type is generally the default choice when you need to store a number.
     /// - https://www.postgresql.org/docs/12/datatype-numeric.html#DATATYPE-INTEGER
+    #[default]
     Integer,
     /// An 8 byte signed integer.
     /// - Range: -9223372036854775808 to +9223372036854775807
@@ -702,11 +704,5 @@ impl Ord for PostgresTypesMap {
 impl PartialOrd for PostgresTypesMap {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
-    }
-}
-
-impl Default for PostgresTypes {
-    fn default() -> Self {
-        PostgresTypes::Integer
     }
 }

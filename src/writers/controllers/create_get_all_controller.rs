@@ -40,7 +40,6 @@ pub async fn create_get_all_controller(model_name: String) -> Result<(), Error> 
 
     write_to_new_get_all_controller(model_name.clone().to_string())
         .expect("Failed to write to new get all controller");
-    
 
     Ok(())
 }

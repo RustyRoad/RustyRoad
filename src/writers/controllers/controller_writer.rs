@@ -2,12 +2,12 @@ use crate::helpers::helpers::*;
 use crate::writers::{add_new_controller_to_main_rs, write_to_file, write_to_module};
 use color_eyre;
 use color_eyre::eyre::Result;
+use color_eyre::owo_colors::OwoColorize;
 use eyre::*;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use color_eyre::owo_colors::OwoColorize;
 
 /// # Name: write_to_controller_name_html
 /// This function generates the html for a controller's view.
@@ -22,21 +22,19 @@ use color_eyre::owo_colors::OwoColorize;
 /// write_to_controller_name_html("test").expect("Error writing to controllerName.html.tera");
 /// ```
 pub fn write_to_controller_name_html(controller_name: &str) -> Result<(), Error> {
-    let contents = format!(
-        r#"{{% extends 'base.html.tera' %}}
-{{% block title %}}Index{{% endblock title %}}
-{{% block head %}}
-{{{{ super() }}}}
-{{% endblock head %}}
-{{% block content %}}
+    let contents = r#"{% extends 'base.html.tera' %}
+{% block title %}Index{% endblock title %}
+{% block head %}
+{{ super() }}
+{% endblock head %}
+{% block content %}
 <div class='relative px-6 lg:px-8'>
 <div class='mx-auto  max-w-2xl py-32 sm:py-48 lg:py-56' >
-<h1 class='text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-none mb-4'>Your controller's Name: {{{{controller_name}}}}</h1>
+<h1 class='text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-none mb-4'>Your controller's Name: {{controller_name}}</h1>
 <p class='text-xl sm:text-2xl lg:text-3xl font-medium mb-8'>This is a rustyroad project</p>
 </div>
 </div>
-{{% endblock content %}}"#
-    );
+{% endblock content %}"#.to_string();
 
     // write to the file
     write_to_file(
@@ -47,7 +45,7 @@ pub fn write_to_controller_name_html(controller_name: &str) -> Result<(), Error>
         println!(
             "Couldn't write to {}: {}",
             &format!("./views/pages/{}.html.tera", controller_name).to_string(),
-            why.to_string()
+            why
         );
     });
     Ok(())
@@ -104,7 +102,7 @@ pub fn write_to_controller_name_html_with_authorized_view(
                 folder_name, controller_name
             )
             .to_string(),
-            why.to_string()
+            why
         );
     });
     Ok(())
@@ -181,7 +179,7 @@ pub async fn get_all_{}s() -> HttpResponse {{
     file_contents = add_or_update_import(&file_contents, "actix_web", "get");
     file_contents = add_or_update_import(&file_contents, "actix_web", "HttpResponse");
     file_contents = add_or_update_import(&file_contents, "crate", "models");
-    file_contents = add_or_update_import(&file_contents, "models",&capitalize_model_name);
+    file_contents = add_or_update_import(&file_contents, "models", &capitalize_model_name);
     file_contents = add_or_update_import(&file_contents, "actix_web", "web::Data");
     file_contents = add_or_update_import(&file_contents, "actix_web", "web::Json");
 
@@ -200,13 +198,15 @@ pub async fn get_all_{}s() -> HttpResponse {{
 
     file.flush()?;
 
-    add_new_controller_to_main_rs(None,Some(&model_name), &format!("get_all_{}s", &model_name))?; // Assuming this function exists
+    add_new_controller_to_main_rs(
+        None,
+        Some(&model_name),
+        &format!("get_all_{}s", &model_name),
+    )?; // Assuming this function exists
 
     println!("Successfully written to {}.rs", model_name);
     Ok(())
 }
-
-
 
 /// This function writes a new Actix Web controller handler function to a Rust source file.
 ///
@@ -253,7 +253,8 @@ pub fn write_to_new_get_controller(model_name: String) -> Result<(), Error> {
             context.insert("controller_name", "{}");
             let rendered = tmpl.render("pages/{}.html.tera", &context).unwrap();
             HttpResponse::Ok().body(rendered)
-        }}"#, &model_name, &model_name, &model_name, &model_name, &model_name
+        }}"#,
+        &model_name, &model_name, &model_name, &model_name, &model_name
     );
 
     // Determine the controller file path
@@ -283,12 +284,11 @@ pub fn write_to_new_get_controller(model_name: String) -> Result<(), Error> {
     // Write the updated contents to the file
     fs::write(PathBuf::from(&path), file_contents.as_bytes())?;
 
-    add_new_controller_to_main_rs(None,Some(&model_name), &format!("get_{}", &model_name))?; // Assuming this function exists
+    add_new_controller_to_main_rs(None, Some(&model_name), &format!("get_{}", &model_name))?; // Assuming this function exists
 
     println!("Successfully written to {}", &path);
 
     Ok(())
-
 }
 
 /// # Name: write_to_initial_get_controller_authorized_view
@@ -350,12 +350,7 @@ pub async fn {}_controller_with_authorized_view(
             .finish()
     }}
 }}"#,
-        &model_name,
-        &model_name,
-        &model_name,
-        &model_name,
-        &model_name,
-        &model_name
+        &model_name, &model_name, &model_name, &model_name, &model_name, &model_name
     );
 
     // Determine the controller file path
@@ -380,7 +375,11 @@ pub async fn {}_controller_with_authorized_view(
     file_contents = add_or_update_import(&file_contents, "tera", "Context");
     file_contents = add_or_update_import(&file_contents, "tera", "Tera");
     file_contents = add_or_update_import(&file_contents, "models::user", "UserLogin");
-    file_contents = add_or_update_import(&file_contents, format!("models::{}", &model_name).as_str(), &capitalized_model_name);
+    file_contents = add_or_update_import(
+        &file_contents,
+        format!("models::{}", &model_name).as_str(),
+        &capitalized_model_name,
+    );
 
     // Add the new controller content to the file
     file_contents.push_str("\n\n");
@@ -389,7 +388,11 @@ pub async fn {}_controller_with_authorized_view(
     // Write the updated contents to the file
     fs::write(PathBuf::from(&path), file_contents.as_bytes())?;
 
-    add_new_controller_to_main_rs(None,Some(&model_name), &format!("{}_controller_with_authorized_view", &model_name))?; // Assuming this function exists
+    add_new_controller_to_main_rs(
+        None,
+        Some(&model_name),
+        &format!("{}_controller_with_authorized_view", &model_name),
+    )?; // Assuming this function exists
 
     println!("Successfully written to {}.rs", model_name);
 
@@ -432,8 +435,8 @@ pub fn write_to_new_post_controller(model_name: String) -> Result<(), Error> {
     // }
 
     // Define the contents to be written to the file
-    let controller_contents =
-        format!(r#"
+    let controller_contents = format!(
+        r#"
 /// Alert: This is a generated controller.
 /// The controller is generated by the rustyroad CLI.
 /// It is a best guess at what the controller should look like.
@@ -463,16 +466,16 @@ pub async fn create_{}({}: Json<{}>,user: Option<Identity>) -> HttpResponse {{
    // if they are not logged in, we need to redirect them to the login page
 }}
 "#,
-                &model_name,
-                &model_name,
-                &model_name,
-                &capitalized_model_name,
-                &capitalized_model_name,
-                &model_name,
-                &model_name,
-                &model_name,
-                &model_name
-        );
+        &model_name,
+        &model_name,
+        &model_name,
+        &capitalized_model_name,
+        &capitalized_model_name,
+        &model_name,
+        &model_name,
+        &model_name,
+        &model_name
+    );
 
     // Determine the controller file path
     let path = determine_controller_path(&model_name);
@@ -507,7 +510,6 @@ pub async fn create_{}({}: Json<{}>,user: Option<Identity>) -> HttpResponse {{
 
         println!("Controller contents: {}", &controller_contents.green());
 
-
         let mut file = OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -518,7 +520,7 @@ pub async fn create_{}({}: Json<{}>,user: Option<Identity>) -> HttpResponse {{
 
         file.flush()?;
 
-        add_new_controller_to_main_rs(None,Some(&model_name), &format!("create_{}", &model_name))?; // Assuming this function exists
+        add_new_controller_to_main_rs(None, Some(&model_name), &format!("create_{}", &model_name))?; // Assuming this function exists
 
         println!("Successfully written to {}.rs", model_name);
         Ok(())
@@ -566,7 +568,6 @@ pub fn write_to_new_delete_controller(model_name: String) -> Result<(), Error> {
 
     // Define the contents to be written to the file
 
-
     let contents = format!(
         r#"#[delete("/{}/{{id}}")]
         pub async fn delete_{}(id: Path<i32>, user: Option<Identity>) -> HttpResponse {{
@@ -580,10 +581,7 @@ pub fn write_to_new_delete_controller(model_name: String) -> Result<(), Error> {
                 HttpResponse::Unauthorized().json("You must be logged in to delete.")
             }}
         }}"#,
-        &model_name,
-        &model_name,
-        &capitalized_model_name,
-        &model_name
+        &model_name, &model_name, &capitalized_model_name, &model_name
     );
 
     // Determine the controller file path
@@ -607,7 +605,11 @@ pub fn write_to_new_delete_controller(model_name: String) -> Result<(), Error> {
     file_contents = add_or_update_import(&file_contents, "actix_identity", "Identity");
     file_contents = add_or_update_import(&file_contents, "crate", "models");
     file_contents = add_or_update_import(&file_contents, "models::user", "UserLogin");
-    file_contents = add_or_update_import(&file_contents, format!("models::{}", &model_name).as_str(), &capitalized_model_name);
+    file_contents = add_or_update_import(
+        &file_contents,
+        format!("models::{}", &model_name).as_str(),
+        &capitalized_model_name,
+    );
 
     // Add the new controller content to the file
     file_contents.push_str("\n\n");
@@ -616,13 +618,12 @@ pub fn write_to_new_delete_controller(model_name: String) -> Result<(), Error> {
     // Write the updated contents to the file
     fs::write(PathBuf::from(&path), file_contents.as_bytes())?;
 
-    add_new_controller_to_main_rs(None,Some(&model_name), &format!("delete_{}", &model_name))?; // Assuming this function exists
+    add_new_controller_to_main_rs(None, Some(&model_name), &format!("delete_{}", &model_name))?; // Assuming this function exists
 
     println!("Successfully written to {}.rs", model_name);
 
     Ok(())
 }
-
 
 /// # Name: write_to_new_update_controller
 /// This function writes to a new update controller.
@@ -703,7 +704,6 @@ pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
     file_contents = add_or_update_import(&file_contents, "actix_web", "web::Json");
     file_contents = add_or_update_import(&file_contents, "actix_web", "web::Path");
 
-
     // Add the new controller content to the file
     file_contents.push_str("\n\n");
     file_contents.push_str(&new_controller_content);
@@ -719,7 +719,7 @@ pub fn write_to_new_update_controller(model_name: String) -> Result<(), Error> {
 
     file.flush()?;
 
-    add_new_controller_to_main_rs(None,Some(&model_name), &format!("update_{}", &model_name))?; // Assuming this function exists
+    add_new_controller_to_main_rs(None, Some(&model_name), &format!("update_{}", &model_name))?; // Assuming this function exists
 
     println!("Successfully written to {}.rs", model_name);
 
@@ -761,7 +761,6 @@ pub fn write_to_new_get_controller_with_authorized_view(model_name: String) -> R
         }
     }
 
-
     // Define the contents to be written to the file
     // This includes importing necessary Actix Web and Tera modules, defining the controller handler function,
     // and setting up the Tera template rendering
@@ -789,12 +788,7 @@ pub fn write_to_new_get_controller_with_authorized_view(model_name: String) -> R
                             .finish()
                         }}
                     }}"#,
-        &model_name,
-        &model_name,
-        &model_name,
-        &model_name,
-        &model_name,
-        &model_name
+        &model_name, &model_name, &model_name, &model_name, &model_name, &model_name
     );
 
     // Determine the controller file path
@@ -810,28 +804,32 @@ pub fn write_to_new_get_controller_with_authorized_view(model_name: String) -> R
     let mut file_contents = fs::read_to_string(&path)?;
 
     if !file_contents.contains(&controller_signature) {
-    // Update imports
-    file_contents = add_or_update_import(&file_contents, "actix_web", "get");
-    file_contents = add_or_update_import(&file_contents, "actix_web", "web");
-    file_contents = add_or_update_import(&file_contents, "actix_web", "HttpResponse");
-    file_contents = add_or_update_import(&file_contents, "tera", "Context");
-    file_contents = add_or_update_import(&file_contents, "tera", "Tera");
-    file_contents = add_or_update_import(&file_contents, "actix_identity", "Identity");
-    file_contents = add_or_update_import(&file_contents, "crate", "models");
-    file_contents = add_or_update_import(&file_contents, "models::user", "UserLogin");
+        // Update imports
+        file_contents = add_or_update_import(&file_contents, "actix_web", "get");
+        file_contents = add_or_update_import(&file_contents, "actix_web", "web");
+        file_contents = add_or_update_import(&file_contents, "actix_web", "HttpResponse");
+        file_contents = add_or_update_import(&file_contents, "tera", "Context");
+        file_contents = add_or_update_import(&file_contents, "tera", "Tera");
+        file_contents = add_or_update_import(&file_contents, "actix_identity", "Identity");
+        file_contents = add_or_update_import(&file_contents, "crate", "models");
+        file_contents = add_or_update_import(&file_contents, "models::user", "UserLogin");
 
-    // Add the new controller content to the file
-    file_contents.push_str("\n\n");
-    file_contents.push_str(&new_controller_content);
-    file_contents.push_str("\n\n");
-    // Write the updated contents to the file
-    fs::write(PathBuf::from(&path), file_contents.as_bytes())?;
+        // Add the new controller content to the file
+        file_contents.push_str("\n\n");
+        file_contents.push_str(&new_controller_content);
+        file_contents.push_str("\n\n");
+        // Write the updated contents to the file
+        fs::write(PathBuf::from(&path), file_contents.as_bytes())?;
 
-    add_new_controller_to_main_rs(None,Some(&model_name), &format!("authenticated_view_for_{}", &model_name))?; // Assuming this function exists
+        add_new_controller_to_main_rs(
+            None,
+            Some(&model_name),
+            &format!("authenticated_view_for_{}", &model_name),
+        )?; // Assuming this function exists
 
-    println!("Successfully written to {}.rs", model_name);
+        println!("Successfully written to {}.rs", model_name);
 
-    Ok(())
+        Ok(())
     } else {
         println!("The controller already exists.");
         Ok(())
@@ -850,8 +848,14 @@ pub fn write_to_new_get_controller_with_authorized_view(model_name: String) -> R
 /// use rustyroad::writers::write_to_previous_get_controller;
 /// write_to_previous_get_controller("user".to_string(), "get_user".to_string());
 /// ```
-pub fn write_to_previous_get_controller(previous_controller_name: String, new_controller_name: String) -> Result<(), Error> {
-    let controller_signature = format!("#[get(\"/{}/{}\")]", &previous_controller_name, &new_controller_name);
+pub fn write_to_previous_get_controller(
+    previous_controller_name: String,
+    new_controller_name: String,
+) -> Result<(), Error> {
+    let controller_signature = format!(
+        "#[get(\"/{}/{}\")]",
+        &previous_controller_name, &new_controller_name
+    );
     // Define the contents to be written to the file
     // This includes importing necessary Actix Web and Tera modules, defining the controller handler function,
     // and setting up the Tera template rendering
@@ -882,19 +886,15 @@ pub fn write_to_previous_get_controller(previous_controller_name: String, new_co
     // lets get the contents of the file first
     let mut file_contents = fs::read_to_string(&path).unwrap();
     if !file_contents.contains(&controller_signature) {
-    // and then append the new contents to the file
-    file_contents.push_str(&contents);
+        // and then append the new contents to the file
+        file_contents.push_str(&contents);
 
-    write_to_file(&path, file_contents.as_bytes()).unwrap_or_else(|why| {
-        println!(
-            "Failed to write to {}: {:?}",
-            &path,
-            why.kind()
-        );
-    });
+        write_to_file(&path, file_contents.as_bytes()).unwrap_or_else(|why| {
+            println!("Failed to write to {}: {:?}", &path, why.kind());
+        });
 
-    // Return Ok if everything succeeded
-    Ok(())
+        // Return Ok if everything succeeded
+        Ok(())
     } else {
         println!("The controller already exists.");
         Ok(())
@@ -913,8 +913,14 @@ pub fn write_to_previous_get_controller(previous_controller_name: String, new_co
 /// use rustyroad::writers::write_to_previous_create_controller;
 /// write_to_previous_create_controller("user".to_string(), "create_user".to_string());
 /// ```
-pub fn write_to_previous_create_controller(previous_controller_name: String, new_controller_name: String) -> Result<(), Error> {
-    let controller_signature = format!("#[post(\"/{}/{}\")]", previous_controller_name, new_controller_name);
+pub fn write_to_previous_create_controller(
+    previous_controller_name: String,
+    new_controller_name: String,
+) -> Result<(), Error> {
+    let controller_signature = format!(
+        "#[post(\"/{}/{}\")]",
+        previous_controller_name, new_controller_name
+    );
 
     // Define the contents to be written to the file
     // This includes importing necessary Actix Web and Tera modules, defining the controller handler function,
@@ -970,8 +976,8 @@ pub fn write_to_previous_create_controller(previous_controller_name: String, new
         previous_controller_name, previous_controller_name
     );
 
-    path = if std::path::Path::exists((&path).as_ref()) {
-    path.to_string()
+    path = if std::path::Path::exists(path.as_ref()) {
+        path.to_string()
     } else {
         format!("./src/controllers/{}.rs", previous_controller_name)
     };
@@ -980,19 +986,15 @@ pub fn write_to_previous_create_controller(previous_controller_name: String, new
     // lets get the contents of the file first
     let mut file_contents = fs::read_to_string(&path).unwrap();
     if !file_contents.contains(&controller_signature) {
-    // and then append the new contents to the file
-    file_contents.push_str(&contents);
+        // and then append the new contents to the file
+        file_contents.push_str(&contents);
 
-    write_to_file(&path, file_contents.as_bytes()).unwrap_or_else(|why| {
-        println!(
-            "Failed to write to {}: {:?}",
-            &path,
-            why.kind()
-        );
-    });
+        write_to_file(&path, file_contents.as_bytes()).unwrap_or_else(|why| {
+            println!("Failed to write to {}: {:?}", &path, why.kind());
+        });
 
-    // Return Ok if everything succeeded
-    Ok(())
+        // Return Ok if everything succeeded
+        Ok(())
     } else {
         println!("The controller already exists.");
         Ok(())
@@ -1063,7 +1065,9 @@ async fn {}_controller(tmpl: web::Data<Tera>) -> HttpResponse {{
 /// use rustyroad::writers::write_to_new_post_controller;
 /// write_to_new_post_controller("login".to_string());
 /// ```
-pub fn write_to_initial_post_controller_authentication(controller_name: String) -> Result<(), Error> {
+pub fn write_to_initial_post_controller_authentication(
+    controller_name: String,
+) -> Result<(), Error> {
     // trim the controller_name to remove the text before the last slash and the text before the .rs
     let new_controller_name = controller_name
         .trim_start_matches("./src/controllers/")
@@ -1136,7 +1140,11 @@ async fn user_logout(
 ///
 /// write_to_controller_file_no_folder(model_name.to_string(), import_contents.to_string(), method_contents.to_string());
 /// ```
-pub fn write_to_controller_file_no_folder(model_name: String, import_contents: String, method_contents: String) {
+pub fn write_to_controller_file_no_folder(
+    model_name: String,
+    import_contents: String,
+    method_contents: String,
+) {
     // Define the path to the file
     let path = format!("./src/controllers/{}.rs", model_name);
 
@@ -1169,18 +1177,21 @@ pub fn write_to_controller_file_no_folder(model_name: String, import_contents: S
 
     match fs::write(PathBuf::from(&path), combined_contents.as_bytes()) {
         std::result::Result::Ok(()) => {
-            add_new_controller_to_main_rs(None,Some(&model_name), &format!("create_{}", &model_name))
-                .unwrap_or_else(|why| {
-                    println!(
-                        "Couldn't add the create_{} controller to the main.rs file: {}",
-                        &model_name,
-                        why.to_string()
-                    );
-                });
+            add_new_controller_to_main_rs(
+                None,
+                Some(&model_name),
+                &format!("create_{}", &model_name),
+            )
+            .unwrap_or_else(|why| {
+                println!(
+                    "Couldn't add the create_{} controller to the main.rs file: {}",
+                    &model_name, why
+                );
+            });
 
             let mut components = Vec::new();
 
-            components.push(format!("{}", &model_name));
+            components.push((&model_name).to_string());
 
             let module_path = format!("src/controllers/{}.rs", &model_name);
 
@@ -1254,7 +1265,7 @@ async fn page_dashboard(tmpl: Data<Tera>, user: Option<Identity>) -> HttpRespons
 "#;
 
     // Define the path to the file
-    let path = format!("./src/controllers/dashboard.rs",);
+    let path = "./src/controllers/dashboard.rs".to_string();
 
     // Write the contents to the file
     // The write_to_file function is assumed to be a function that takes a path and a byte slice and writes the bytes to the file at the path
@@ -1263,44 +1274,41 @@ async fn page_dashboard(tmpl: Data<Tera>, user: Option<Identity>) -> HttpRespons
     // Read the contents of the file so we don't overwrite it
     let mut file_contents = fs::read_to_string(path.clone())?;
     if !file_contents.contains(controller_signature) {
-    // Update imports in the file contents
-    file_contents = add_or_update_import(&file_contents, "crate", "models");
-    file_contents = add_or_update_import(&file_contents, "models", "Page");
-    file_contents = add_or_update_import(&file_contents, "actix_web", "get");
-    file_contents = add_or_update_import(&file_contents, "actix_web", "web");
-    file_contents = add_or_update_import(&file_contents, "actix_web", "HttpResponse");
-    file_contents = add_or_update_import(&file_contents, "actix_web", "http::header::LOCATION");
-    file_contents = add_or_update_import(&file_contents, "tera", "Context");
-    file_contents = add_or_update_import(&file_contents, "tera", "Tera");
-    file_contents = add_or_update_import(&file_contents, "actix_identity", "Identity");
-    file_contents = add_or_update_import(&file_contents, "serde_json", "json");
+        // Update imports in the file contents
+        file_contents = add_or_update_import(&file_contents, "crate", "models");
+        file_contents = add_or_update_import(&file_contents, "models", "Page");
+        file_contents = add_or_update_import(&file_contents, "actix_web", "get");
+        file_contents = add_or_update_import(&file_contents, "actix_web", "web");
+        file_contents = add_or_update_import(&file_contents, "actix_web", "HttpResponse");
+        file_contents = add_or_update_import(&file_contents, "actix_web", "http::header::LOCATION");
+        file_contents = add_or_update_import(&file_contents, "tera", "Context");
+        file_contents = add_or_update_import(&file_contents, "tera", "Tera");
+        file_contents = add_or_update_import(&file_contents, "actix_identity", "Identity");
+        file_contents = add_or_update_import(&file_contents, "serde_json", "json");
 
+        // Add two new lines to the end of the file
+        file_contents.push_str("\n\n");
 
+        // Add the new controller content to the file
+        file_contents.push_str(new_controller_content);
 
+        // Write the updated contents to the file
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&path)
+            .unwrap();
+        // Write the updated contents to the file
+        writeln!(file, "{}", file_contents)?;
 
-    // Add two new lines to the end of the file
-    file_contents.push_str("\n\n");
+        file.flush()?;
 
-    // Add the new controller content to the file
-    file_contents.push_str(new_controller_content);
+        println!("Successfully written to dashboard.rs");
 
-    // Write the updated contents to the file
-    let mut file = OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .open(&path)
-        .unwrap();
-    // Write the updated contents to the file
-    writeln!(file, "{}", file_contents)?;
+        // add the page_dashboard controller to the main.rs file
+        add_new_controller_to_main_rs(None, None, "page_dashboard")?;
 
-    file.flush()?;
-
-    println!("Successfully written to dashboard.rs");
-
-    // add the page_dashboard controller to the main.rs file
-    add_new_controller_to_main_rs(None,None, "page_dashboard")?;
-
-    Ok(())
+        Ok(())
     } else {
         println!("The controller already exists.");
         Ok(())
@@ -1356,34 +1364,32 @@ async fn create_page_dashboard(tmpl: Data<Tera>, user: Option<Identity>) -> Http
 }
 "#;
 
-    let path = format!("./src/controllers/dashboard.rs",);
+    let path = "./src/controllers/dashboard.rs".to_string();
 
     let mut file_contents = fs::read_to_string(path.clone())?;
     if !file_contents.contains(controller_signature) {
-    // Add two new lines to the end of the file
-    file_contents.push_str("\n\n");
+        // Add two new lines to the end of the file
+        file_contents.push_str("\n\n");
 
-    // Add the new controller content to the file
-    file_contents.push_str(new_controller_content);
+        // Add the new controller content to the file
+        file_contents.push_str(new_controller_content);
 
-    // Write the updated contents to the file
-    fs::write(PathBuf::from(path), file_contents.as_bytes())?;
+        // Write the updated contents to the file
+        fs::write(PathBuf::from(path), file_contents.as_bytes())?;
 
-    println!("Successfully written to dashboard.rs");
+        println!("Successfully written to dashboard.rs");
 
-    // add the create_page_dashboard controller to the main.rs file
-    add_new_controller_to_main_rs(None,None, "create_page_dashboard")?;
+        // add the create_page_dashboard controller to the main.rs file
+        add_new_controller_to_main_rs(None, None, "create_page_dashboard")?;
 
-    Ok(())
+        Ok(())
     } else {
         println!("The controller already exists.");
         Ok(())
     }
 }
 
-
-pub fn  write_to_edit_page_get_controller() -> Result<(), Error> {
-
+pub fn write_to_edit_page_get_controller() -> Result<(), Error> {
     let controller_signature = "#[get(\"/page/{id}/edit\")]";
     // Define the contents to be written to the file
     // This includes importing necessary Actix Web and Tera modules, defining the controller handler function,
@@ -1419,7 +1425,7 @@ pub async fn edit_page(tmpl: Data<Tera>, id: Path<i32>, user: Option<Identity>) 
 }
     "#;
 
-    let path = format!("./src/controllers/page.rs");
+    let path = "./src/controllers/page.rs".to_string();
 
     let mut file_contents = fs::read_to_string(path.clone())?;
 
@@ -1440,8 +1446,6 @@ pub async fn edit_page(tmpl: Data<Tera>, id: Path<i32>, user: Option<Identity>) 
         // Add the new controller content to the file
         file_contents.push_str(new_controller_content);
 
-
-
         // Write the updated contents to the file
         let mut file = OpenOptions::new()
             .write(true)
@@ -1456,7 +1460,7 @@ pub async fn edit_page(tmpl: Data<Tera>, id: Path<i32>, user: Option<Identity>) 
         println!("Successfully written to dashboard.rs");
 
         // add the create_page_dashboard controller to the main.rs file
-        add_new_controller_to_main_rs(None, Some(&"page"), "edit_page")?;
+        add_new_controller_to_main_rs(None, Some("page"), "edit_page")?;
 
         Ok(())
     } else {
@@ -1464,7 +1468,6 @@ pub async fn edit_page(tmpl: Data<Tera>, id: Path<i32>, user: Option<Identity>) 
         Ok(())
     }
 }
-
 
 pub fn write_to_new_dashboard_get_controller_to_test(file_path: &Path) -> Result<(), Error> {
     // Define the contents to be written to the file
@@ -1530,10 +1533,6 @@ async fn page_dashboard(tmpl: web::Data<Tera>, user: Option<Identity>) -> impl R
     println!("Successfully written to dashboard.rs");
     Ok(())
 }
-
-
-
-
 
 #[cfg(test)]
 mod tests {

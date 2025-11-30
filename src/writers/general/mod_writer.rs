@@ -34,7 +34,7 @@ pub fn write_to_module(module_path: &String, module: Vec<String>) -> Result<(), 
     }
 
     // Add an empty line
-    template.push_str("\n");
+    template.push('\n');
 
     // use the modules after they are created
 
@@ -43,5 +43,5 @@ pub fn write_to_module(module_path: &String, module: Vec<String>) -> Result<(), 
     }
 
     // write the template to the file
-    write_to_file(&module_path, template.as_bytes())
+    write_to_file(module_path, template.as_bytes())
 }
