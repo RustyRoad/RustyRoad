@@ -25,6 +25,82 @@ use super::column_loop::column_loop;
 
 const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 
+/// Parsed column with constraints
+struct ParsedColumn {
+    name: String,
+    sql_type: String,
+    constraints: Vec<String>,
+    foreign_key: Option<(String, String, String)>, // (constraint_name, ref_table, ref_column)
+}
+
+/// Parse a column definition string into structured components
+/// Format: name:type[:constraints]
+/// Constraints can be: nullable, not_null, primary_key, unique, default=value, references=table(column)
+fn parse_column_definition(col_def: &str) -> Option<ParsedColumn> {
+    let parts: Vec<&str> = col_def.split(':').collect();
+    if parts.len() < 2 {
+        eprintln!("Skipping invalid column definition: '{}'. Format is name:type[:constraints]", col_def);
+        return None;
+    }
+    
+    let col_name = parts[0].to_string();
+    let col_type = parts[1];
+    let sql_type = map_common_type_to_sql(col_type);
+    
+    let mut constraints = Vec::new();
+    let mut foreign_key = None;
+    
+    if parts.len() > 2 {
+        let constraints_str = parts[2];
+        for constraint in constraints_str.split(',') {
+            match constraint.to_lowercase().as_str() {
+                "primary_key" => constraints.push("PRIMARY KEY".to_string()),
+                "not_null" => constraints.push("NOT NULL".to_string()),
+                "nullable" | "null" => {
+                    // Explicitly nullable - don't add NOT NULL
+                    // In SQL, columns are nullable by default, so this is a no-op
+                    // but we acknowledge it to avoid the warning
+                }
+                "unique" => constraints.push("UNIQUE".to_string()),
+                _ if constraint.to_lowercase().starts_with("default=") => {
+                    let default_value = constraint.splitn(2, '=').nth(1).unwrap_or("");
+                    let quoted_value = if default_value.chars().all(char::is_numeric) 
+                        || default_value.to_lowercase() == "true" 
+                        || default_value.to_lowercase() == "false"
+                        || default_value.to_lowercase() == "null"
+                        || default_value.starts_with("'") {
+                        default_value.to_string()
+                    } else {
+                        format!("'{}'", default_value)
+                    };
+                    constraints.push(format!("DEFAULT {}", quoted_value));
+                }
+                _ if constraint.to_lowercase().starts_with("references=") => {
+                    // Parse references=table(column) or references=table
+                    let ref_value = constraint.splitn(2, '=').nth(1).unwrap_or("");
+                    let ref_pattern = Regex::new(r"^(\w+)(?:\((\w+)\))?$").unwrap();
+                    if let Some(captures) = ref_pattern.captures(ref_value) {
+                        let ref_table = captures.get(1).unwrap().as_str().to_string();
+                        let ref_column = captures.get(2).map_or("id".to_string(), |m| m.as_str().to_string());
+                        let constraint_name = format!("fk_{}_{}", col_name, ref_table);
+                        foreign_key = Some((constraint_name, ref_table, ref_column));
+                    } else {
+                        eprintln!("Warning: Invalid references format '{}' for column '{}'. Use references=table or references=table(column)", ref_value, col_name);
+                    }
+                }
+                _ => eprintln!("Warning: Unsupported constraint '{}' for column '{}'. Supported: nullable, not_null, primary_key, unique, default=value, references=table(column)", constraint, col_name),
+            }
+        }
+    }
+    
+    Some(ParsedColumn {
+        name: col_name,
+        sql_type,
+        constraints,
+        foreign_key,
+    })
+}
+
 /// Represents the type of migration operation
 #[derive(Debug, PartialEq)]
 enum MigrationType {
@@ -167,48 +243,33 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
     
     let (up_sql_contents, down_sql_contents, folder_name) = match migration_type {
         MigrationType::CreateTable(table_name) => {
-            // Existing CREATE TABLE logic
+            // CREATE TABLE logic using the centralized column parser
             let mut column_definitions_sql = Vec::new();
+            let mut foreign_key_constraints = Vec::new();
             
             if columns.is_empty() {
                 println!("No columns specified. Adding default 'id SERIAL PRIMARY KEY' column.");
                 column_definitions_sql.push("id SERIAL PRIMARY KEY".to_string());
             } else {
-                for col_def in columns {
-                    let parts: Vec<&str> = col_def.split(':').collect();
-                    if parts.len() < 2 {
-                        eprintln!("Skipping invalid column definition: '{}'. Format is name:type[:constraints]", col_def);
-                        continue;
-                    }
-                    let col_name = parts[0];
-                    let col_type = parts[1];
-                    let sql_type = map_common_type_to_sql(col_type);
-
-                    let mut constraints_sql = Vec::new();
-                    if parts.len() > 2 {
-                        let constraints_str = parts[2];
-                        for constraint in constraints_str.split(',') {
-                            match constraint.to_lowercase().as_str() {
-                                "primary_key" => constraints_sql.push("PRIMARY KEY".to_string()),
-                                "not_null" => constraints_sql.push("NOT NULL".to_string()),
-                                "unique" => constraints_sql.push("UNIQUE".to_string()),
-                                _ if constraint.starts_with("default=") => {
-                                    let default_value = constraint.splitn(2, '=').nth(1).unwrap_or("");
-                                    let quoted_value = if default_value.chars().all(char::is_numeric) {
-                                        default_value.to_string()
-                                    } else {
-                                        format!("'{}'", default_value)
-                                    };
-                                    constraints_sql.push(format!("DEFAULT {}", quoted_value));
-                                }
-                                _ => eprintln!("Warning: Unsupported constraint '{}' for column '{}'", constraint, col_name),
-                            }
+                for col_def in &columns {
+                    if let Some(parsed) = parse_column_definition(col_def) {
+                        let constraints_str = parsed.constraints.join(" ");
+                        let column_sql = format!("{} {} {}", parsed.name, parsed.sql_type, constraints_str).trim().to_string();
+                        column_definitions_sql.push(column_sql);
+                        
+                        // Collect foreign key constraints
+                        if let Some((constraint_name, ref_table, ref_column)) = parsed.foreign_key {
+                            foreign_key_constraints.push(format!(
+                                "CONSTRAINT {} FOREIGN KEY ({}) REFERENCES {}({})",
+                                constraint_name, parsed.name, ref_table, ref_column
+                            ));
                         }
                     }
-
-                    column_definitions_sql.push(format!("{} {} {}", col_name, sql_type, constraints_sql.join(" ")).trim().to_string());
                 }
             }
+            
+            // Append foreign key constraints to column definitions
+            column_definitions_sql.extend(foreign_key_constraints);
 
             let up_sql = format!(
                 "CREATE TABLE IF NOT EXISTS {} (\n    {}\n);",
@@ -226,32 +287,38 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
         },
         
         MigrationType::AddColumn { table_name, columns: cols_to_add } => {
-            // New ALTER TABLE logic
+            // ALTER TABLE logic using the centralized column parser
             let mut alter_statements = Vec::new();
             let mut foreign_key_statements = Vec::new();
             let mut column_names_for_down = Vec::new();
             
             if !columns.is_empty() {
-                // Use columns from CLI
-                for col_def in columns {
-                    let parts: Vec<&str> = col_def.split(':').collect();
-                    if parts.len() < 2 {
-                        eprintln!("Skipping invalid column definition: '{}'. Format is name:type[:constraints]", col_def);
-                        continue;
-                    }
-                    let col_name = parts[0];
-                    let col_type = parts[1];
-                    let sql_type = map_common_type_to_sql(col_type);
-
-                    alter_statements.push(format!("ADD COLUMN {} {}", col_name, sql_type));
-                    column_names_for_down.push(col_name.to_string());
-                    
-                    // Check if this is a foreign key column
-                    if let Some((constraint_name, ref_table)) = generate_foreign_key_info(col_name) {
-                        foreign_key_statements.push(format!(
-                            "ADD CONSTRAINT {} FOREIGN KEY ({}) REFERENCES {}(id)",
-                            constraint_name, col_name, ref_table
-                        ));
+                // Use columns from CLI with full constraint support
+                for col_def in &columns {
+                    if let Some(parsed) = parse_column_definition(col_def) {
+                        let constraints_str = parsed.constraints.join(" ");
+                        let column_sql = if constraints_str.is_empty() {
+                            format!("ADD COLUMN {} {}", parsed.name, parsed.sql_type)
+                        } else {
+                            format!("ADD COLUMN {} {} {}", parsed.name, parsed.sql_type, constraints_str)
+                        };
+                        alter_statements.push(column_sql);
+                        column_names_for_down.push(parsed.name.clone());
+                        
+                        // Handle explicit foreign key constraints from references=
+                        if let Some((constraint_name, ref_table, ref_column)) = parsed.foreign_key {
+                            foreign_key_statements.push(format!(
+                                "ADD CONSTRAINT {} FOREIGN KEY ({}) REFERENCES {}({})",
+                                constraint_name, parsed.name, ref_table, ref_column
+                            ));
+                        }
+                        // Also auto-detect foreign keys from column naming convention
+                        else if let Some((constraint_name, ref_table)) = generate_foreign_key_info(&parsed.name) {
+                            foreign_key_statements.push(format!(
+                                "ADD CONSTRAINT {} FOREIGN KEY ({}) REFERENCES {}(id)",
+                                constraint_name, parsed.name, ref_table
+                            ));
+                        }
                     }
                 }
             } else {
