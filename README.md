@@ -207,6 +207,26 @@ If you encounter an error like this: `LINK : fatal error LNK1181: cannot open in
 
 ## What is RustyRoad?
 
+### How `rustyroad.toml` is used
+
+RustyRoad reads your database settings from a TOML file in your **project root**.
+
+- Default (dev): RustyRoad reads `./rustyroad.toml`
+- If `ENVIRONMENT` is set and **not** `dev`: RustyRoad reads `./rustyroad.<ENVIRONMENT>.toml`
+
+Examples:
+
+- `ENVIRONMENT=prod` → reads `rustyroad.prod.toml`
+- `ENVIRONMENT=test` → reads `rustyroad.test.toml`
+
+There is **no** special `rustyroad.dev.toml`—dev is the plain `rustyroad.toml` file.
+
+If you’re unsure what RustyRoad is going to read on your machine, run:
+
+`rustyroad config`
+
+(It prints `ENVIRONMENT=...`, the config filename, and a sanitized view of the parsed database settings.)
+
 RustyRoad is a Rust **CLI + generator toolkit** inspired by Ruby on Rails.
 
 It focuses on:

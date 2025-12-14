@@ -994,6 +994,20 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     .allow_external_subcommands(false),
             )
             .subcommand(
+                Command::new("config")
+                    .about("Show which config file RustyRoad will use")
+                    .long_about(
+                        "Prints the active ENVIRONMENT and the config filename RustyRoad will read.\n\n\
+By default RustyRoad uses: ./rustyroad.toml\n\
+If ENVIRONMENT is set (and not 'dev'), RustyRoad uses: ./rustyroad.<ENVIRONMENT>.toml\n\n\
+Example:\n\
+  ENVIRONMENT=prod rustyroad config\n",
+                    )
+                    .subcommand_required(false)
+                    .arg_required_else_help(false)
+                    .allow_external_subcommands(false),
+            )
+            .subcommand(
                 Command::new("db")
                     .about("Database operations")
                     .subcommand(
@@ -1445,6 +1459,57 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
             }
             Some(("version", _matches)) => {
                 println!("Rusty Road Version: {}", env!("CARGO_PKG_VERSION"));
+            }
+            Some(("config", _matches)) => {
+                let environment = env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
+                let file_name = if environment == "dev" {
+                    "rustyroad.toml".to_string()
+                } else {
+                    format!("rustyroad.{}.toml", environment)
+                };
+
+                println!("ENVIRONMENT={}", environment);
+                println!("Database config file: {}", file_name);
+
+                match Database::get_database_from_rustyroad_toml() {
+                    Ok(db) => {
+                        let password_hint = if db.password.is_empty() {
+                            "(empty)".to_string()
+                        } else {
+                            format!("(set, {} chars)", db.password.len())
+                        };
+
+                        println!("Database:");
+                        println!("  type: {}", db.database_type.to_string().to_ascii_lowercase());
+                        println!("  host: {}", db.host);
+                        println!("  port: {}", db.port);
+                        println!("  name: {}", db.name);
+                        println!("  user: {}", db.username);
+                        println!("  password: {}", password_hint);
+                    }
+                    Err(e) => {
+                        println!("Could not load database config: {}", e);
+                    }
+                }
+
+                // Project name is stored in rustyroad.toml under [rustyroad_project].name.
+                // We intentionally try only rustyroad.toml here since other ENV-specific files may only contain [database].
+                let project_name = std::fs::read_to_string("rustyroad.toml")
+                    .ok()
+                    .and_then(|contents| toml::from_str::<toml::Value>(&contents).ok())
+                    .and_then(|v| v.get("rustyroad_project").and_then(|t| t.as_table()).cloned())
+                    .and_then(|t| {
+                        t.get("name")
+                            .and_then(|name| name.as_str())
+                            .map(|s| s.to_string())
+                    });
+
+                match project_name {
+                    Some(name) => println!("Project name: {}", name),
+                    None => println!(
+                        "Project name: (unknown) — add [rustyroad_project] name=\"...\" to rustyroad.toml"
+                    ),
+                }
             }
             Some(("db", matches)) => match matches.subcommand() {
                 Some(("schema", _)) => {
