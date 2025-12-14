@@ -179,219 +179,161 @@ If you encounter an error like this: `LINK : fatal error LNK1181: cannot open in
     [target.'cfg(windows)']
     rustflags = ["-C", "link-arg=/LIBPATH:C:\\Program Files\\PostgreSQL\\13\\lib"]
     ```
+<p align="center">
+  <a href="https://github.com/RustyRoad/RustyRoad" rel="noopener">
+    <img src="https://avatars.githubusercontent.com/u/138265565?s=400&u=eb116ae7b42e521b884d1288213df00032130f6a&v=4" alt="RustyRoad logo" width="200">
+  </a>
+</p>
 
-_Note: Replace `C:\\Program Files\\PostgreSQL\\13\\lib` with your exact path where PostgreSQL is installed._
+<h1 align="center">RustyRoad</h1>
 
-_Note: The Rust build script uses this `POSTGRES_LIB_PATH` environment variable._
+<p align="center">
+  Rails-flavored scaffolding and migrations for Rust web apps (Actix + Tera + SQLx).
+</p>
 
-#### Solving the Generated Project linkage issue on Windows
+<div align="center">
 
-1. Navigate to your rustyroad project's root directory (where your `Cargo.toml` file is located).
-    ```bash
-    cd to/your/project/directory
-    ```
-2. Inside this directory, find the `.cargo` directory, or create it if it doesn't exist.
+[![Rust](https://img.shields.io/badge/rust-gray.svg?&logo=rust&logoColor=orange)](https://www.rust-lang.org/)
+[![CI](https://img.shields.io/github/actions/workflow/status/RustyRoad/RustyRoad/ci.yml?branch=main)](https://github.com/RustyRoad/RustyRoad/actions)
+[![Crates.io](https://img.shields.io/crates/v/rustyroad.svg)](https://crates.io/crates/rustyroad)
+[![Docs.rs](https://img.shields.io/docsrs/rustyroad)](https://docs.rs/rustyroad)
+[![Issues](https://img.shields.io/github/issues/RustyRoad/RustyRoad.svg)](https://github.com/RustyRoad/RustyRoad/issues)
+[![PRs](https://img.shields.io/github/issues-pr/RustyRoad/RustyRoad.svg)](https://github.com/RustyRoad/RustyRoad/pulls)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+</div>
+
+> RustyRoad is under active development. For day-to-day use, prefer the latest released version on crates.io.
+
+## What is RustyRoad?
+
+RustyRoad is a Rust **CLI + generator toolkit** inspired by Ruby on Rails.
+
+It focuses on:
+- generating a consistent project structure
+- generating controllers/routes/models
+- generating and running database migrations
+- providing a few productivity-focused database commands
+
+Under the hood, generated projects use Actix for HTTP, Tera for templates, and SQLx for database support.
+
+If you’re curious about the motivation, there’s a short write-up here:
+https://rileyseaburg.com/posts/rust-needs-a-rails
+
+## Features
+
+- Project generator (`rustyroad new`)
+- Generators (`rustyroad generate ...`)
+- Database migrations (`rustyroad migration ...`)
+- Database inspection / queries (`rustyroad db ...`, `rustyroad query ...`)
+- Optional GrapesJS feature (drag-and-drop editor) via `rustyroad feature add grapesjs`
+
+## Install
+
+### From crates.io
 
 ```bash
-mkdir .cargo    # if .cargo directory doesn't exist
-```
-
-3. Inside the `.cargo` directory, create or edit the `config.toml` file.
-
-```bash
-cd .cargo
-touch config.toml  # if config.toml doesn't exist
-```
-
-4. Open the `config.toml` file in your preferred text editor. Add the following lines to the `config.toml` file, replacing `C:\\ProgramData\\PostgreSQL\\16rc1\\lib` with the actual path (use double backslashes) where your `libpq.lib` file is located.
-
-```toml
-[target.'cfg(windows)']
-rustflags = ["-C", "link-arg=/LIBPATH:C:\\ProgramData\\PostgreSQL\\16rc1\\lib"]
-```
-
-5. Save and close the file.
-6. Now when you build your project again with `cargo build` or `cargo run`, the build should find the `libpq.lib` file correctly.
-
-### Installing Node Version Manager (nvm) for Windows <a name="installing_node_version_manager_nvm_for_windows"></a>
-
-The Rusty Road project uses Node.js, which we'll manage versions with by using Node Version Manager (nvm). To install nvm for Windows:
-
-1. Visit the latest release page for nvm for Windows at https://github.com/coreybutler/nvm-windows/releases
-2. Download the `nvm-setup.zip` file.
-3. Extract the zip file and run the installer (`nvm-setup.exe`).
-4. Follow the instructions provided by the installer.
-5. Once nvm is installed, close your terminal or command prompt and open a new one for the changes to take effect.
-6. Verify that nvm is installed correctly by typing `nvm version` into your new terminal. If a version number is displayed, nvm has been installed successfully.
-
-### Prerequisites <a name = "prerequisites"></a>
-
-Rust is required to build and run Rusty Road. You can install Rust using rustup. rustup is a tool that helps manage Rust installations, it allows for installing multiple versions of Rust and switching between them easily.
-
-```
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-
-### Installing <a name = "installing"></a>
-
-#### Crates.io <a name="crates_io"></a>
-Rusty Road is available on [crates.io](https://crates.io/crates/rustyroad). You can install it using cargo:
-
-```
 cargo install rustyroad
 ```
 
-Bonus Step #1 (optional): Add the following to your .bashrc or .zshrc file to make the rustyroad command available in your terminal:
-
-```
-export PATH="$HOME/.cargo/bin:$PATH"
-```
-
-Bonus Step #2 (optional): Create a symbolic link to the rustyroad command in your ~/.cargo/bin directory.
-This will create a symlink from rustyroad to rr inside ~/.cargo/bin/ directory. 
-Now you can invoke `rr` command which is just a symlink to rustyroad.
-
-```
-sudo ln -s ~/.cargo/bin/rustyroad /usr/local/bin/rr
-```
-
-(Windows users can download the executable from the [releases page](https://github.com/RileySeaburg/Rusty-Road/releases) and add it to their PATH.)
-
-
-#### Installing from source <a name="installing_from_source"></a>
-
-Clone the repository and run the setup script.
-
-```
-git clone --recurse-submodules https://github.com/RustyRoad/RustyRoad
-```
-
-```
-cd RustyRoad
-```
-
-```
-cargo run
-```
-
-
-## 🎈 Usage <a name="usage"></a>
-
-
-The cli will prompt you to create a new project. Enter the name of your project and the cli will create a new project in the current directory.
+### From source
 
 ```bash
-$ rustyroad
-CLI for Rusty Road
-
-Usage: rustyroad <COMMAND>
-
-Commands:
-  new                 Creates a new project
-  generate            Generates a new controller, model, or controller
-  migration           Runs migrations
-  feature             Adds a feature to the project
-  kubernetes_project  Creates a new rustyroad project for use in kubernetes
-  version             Prints the version of Rusty Road
-  db                  Database operations
-  help                Print this message or the help of the given subcommand(s)
-
-Options:
-  -h, --help  Print help
+git clone --recurse-submodules https://github.com/RustyRoad/RustyRoad
+cd RustyRoad
+cargo build
 ```
-Follow the command flow to create a new project
 
-```shell
+## Quick start
+
+Create a new project:
+
+```bash
 rustyroad new my_project
 ```
 
-Generate a new route
-```shell
+Generate a route/controller:
+
+```bash
 rustyroad generate route users
 ```
 
-Note: If you want to run an example project, be sure to run the migrations first.
-
-```shell
-cd example
-
-# List migrations (and see what names RustyRoad expects)
-rustyroad migration list
-
-# Run all migrations (up) in order
-rustyroad migration all
-
-# Or run a single migration by name
-# (the name is the part after the timestamp in the folder name)
-rustyroad migration run create_users_table
-```
-
-### Where migrations live
+## Migrations
 
 RustyRoad expects migrations in this exact location (do not create a plain `./migrations/` folder):
 
 - `./config/database/migrations/<timestamp>-<name>/up.sql`
 - `./config/database/migrations/<timestamp>-<name>/down.sql`
 
-Generate a migration (folder + files) with:
+List migrations:
 
-```shell
+```bash
+rustyroad migration list
+```
+
+Run all migrations (up) in order:
+
+```bash
+rustyroad migration all
+```
+
+Run a single migration by name (the name is the part after the timestamp in the folder name):
+
+```bash
+rustyroad migration run create_users_table
+```
+
+Generate a migration (folder + files):
+
+```bash
 rustyroad migration generate create_users_table id:serial:primary_key email:string:not_null,unique
 ```
 
-### Database Operations
+## Database commands
 
-Rusty Road provides powerful database operations through the `db` command:
+Inspect schema:
 
-#### Inspect Database Schema
-```shell
+```bash
 rustyroad db schema
 ```
 
-#### Execute SQL Queries
-Run any SQL query directly from the command line:
+Run ad-hoc queries:
 
-```shell
+```bash
 rustyroad query "SELECT * FROM users LIMIT 10;"
+rustyroad query "SELECT COUNT(*) AS total_users FROM users;"
 ```
 
+## Optional: GrapesJS
+
+RustyRoad can scaffold an optional GrapesJS editor experience:
+
+```bash
+rustyroad feature add grapesjs
+```
+
+You can learn more about GrapesJS at https://grapesjs.com/ and see the example project at `example-grapesjs/`.
+
+## Examples
+
+- `example/` – a basic generated app
+- `example-grapesjs/` – a generated app with GrapesJS enabled
+
+## Troubleshooting
+
+### Building from source on Windows (PostgreSQL linkage)
+
+If you build this repository from source on Windows and see errors about `POSTGRES_LIB_PATH` or `libpq.lib`, install PostgreSQL and set `POSTGRES_LIB_PATH` to the directory containing `libpq.lib`.
+
+## Contributing
+
+Contributions are welcome! Please see `CONTRIBUTING.md`.
+
+## License
+
+MIT — see `LICENSE`.
+
+## Dedication
+
+Dedicated to Rusty (2014–2023). ❤️
 ```shell
-rustyroad query "SELECT COUNT(*) as total_users FROM users;"
-```
-
-```shell
-rustyroad query "SELECT name, email FROM users WHERE active = true;"
-```
-
-The query command supports all three database types (PostgreSQL, MySQL, SQLite) and provides:
-- Formatted output with column headers
-- Proper handling of different data types
-- Error messages for invalid queries
-- Support for empty result sets
-
-This feature is particularly useful for:
-- Debugging and data inspection
-- Quick database queries during development
-- Administrative tasks and data analysis
-
-## ⛏️ Built With <a name = "tech_stack"></a>
-
-- [Rust](https://www.rust-lang.org/) - Programming Language
-- [actix](https://actix.rs/) - Web Framework
-- [Sqlx](https://github.com/launchbadge/sqlx) - SQLx
-- [Tera](https://tera.netlify.app/) - Template Engine
-- [PostgreSQL](https://www.postgresql.org/) - Database
-- [Cucumber Rust](https://github.com/cucumber-rs) - Testing
-
-## ✍️ Authors <a name = "authors"></a>
-
-- [@rileyseaburg](https://github.com/RileySeaburg) - Idea & Initial work
-
-See also the list of [contributors](https://github.com/RustyRoad/RustyRoad/contributors)
-who participated in this project.
-
-## 🎉 Acknowledgments <a name = "acknowledgments"></a>
-
-- Creator of Ruby on Rails, David Heinemeier Hansson (DHH)
-- Creator of Rust, Graydon Hoare
