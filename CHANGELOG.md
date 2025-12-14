@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.23] - 2025-12-14
+
+### Added
+- **Migration CLI guidance**: Expanded `rustyroad migration --help` to explain where migrations live and the expected folder/file structure.
+- **Beginner/LLM-friendly aliases**: `rustyroad migration generate` now supports `new`, `create`, and `make` aliases; `migration status` is an alias of `migration list`.
+
+### Fixed
+- `rustyroad migration all` now correctly runs all migrations (previously attempted to run directory names as migrations).
+- Implemented `migration redo <name>` (down then up) and `migration reset` (rollback all) behaviors to match CLI help.
+
+### Changed
+- Improved migration/runtime error messages to be more actionable (missing `rustyroad.toml`, missing migrations directory, and common misplacement in `./migrations`).
+- Updated README migration examples to match the current CLI.
+
 ## [1.0.22] - 2025-11-30
 
 ### Added

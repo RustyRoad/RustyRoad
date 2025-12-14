@@ -55,8 +55,7 @@ use sqlx::mysql::MySqlConnectOptions;
 use sqlx::postgres::PgConnectOptions;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
-use std::path::Path;
-use std::{env, fs};
+use std::env;
 use std::{fs::OpenOptions, io::Write};
 use tokio::io;
 
@@ -842,10 +841,19 @@ static/styles.css
             )
             .subcommand(
                 Command::new("migration")
-                    .about("Runs migrations")
+                    .about("Database schema migrations")
+                    .long_about(
+                        "Database migrations manage schema changes over time.\n\nWhere migrations live:\n  ./config/database/migrations/<timestamp>-<name>/{up.sql,down.sql}\n\nDo NOT create a plain ./migrations/ folder — RustyRoad will not read it.\n\nTypical flow:\n  1) Generate a migration (creates folder + up.sql + down.sql)\n  2) Edit up.sql / down.sql if needed\n  3) Run migrations\n",
+                    )
+                    .after_help(
+                        "EXAMPLES:\n  rustyroad migration generate create_users_table id:serial:primary_key email:string:not_null,unique\n  rustyroad migration all\n  rustyroad migration run create_users_table\n  rustyroad migration rollback create_users_table\n  rustyroad migration list\n",
+                    )
                     .subcommand(
                         Command::new("generate")
-                            .about("Generates a new migration file with the specified table name and columns.")
+                            .alias("new")
+                            .alias("create")
+                            .alias("make")
+                            .about("Generate a new migration folder with up.sql and down.sql")
                             .long_about(
 "Generates UP and DOWN SQL migration files for creating a new table.
 Specify the table name and the columns with their types and optional constraints.
@@ -868,36 +876,46 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     )
                     .subcommand(
                         Command::new("all")
-                            .about("Runs all the migrations in the migration directory"),
+                            .about("Run all migrations (up) in timestamp order")
+                            .after_help(
+                                "This reads migrations from ./config/database/migrations and applies each migration's up.sql.\n\nExample:\n  rustyroad migration all\n",
+                            ),
                     )
                     .subcommand(
                         Command::new("run")
                             .about("Run a specific migration by name")
-                            .arg(arg!(<name> "The name of the migration to run.")),
+                            .arg(arg!(<name> "The migration name (the part after the timestamp in the folder name)."))
+                            .arg_required_else_help(true)
+                            .after_help(
+                                "If you're not sure what the name is, run: rustyroad migration list\n\nExample:\n  rustyroad migration run create_users_table\n",
+                            ),
                     )
                     .subcommand(
                         Command::new("rollback")
-                            .about("Rolls back the last migration")
-                            .arg(arg!(<name> "The name of the migration")),
+                            .about("Rollback (down) a specific migration by name")
+                            .arg(arg!(<name> "The migration name (e.g., create_users_table)."))
+                            .arg_required_else_help(true),
                     )
                     .subcommand(
                         Command::new("redo")
-                            .about("Rolls back the last migration and runs it again")
-                            .arg(arg!(<name> "The name of the migration")),
+                            .about("Rollback (down) then run (up) a migration by name")
+                            .arg(arg!(<name> "The migration name (e.g., create_users_table)."))
+                            .arg_required_else_help(true),
                     )
                     .subcommand(
                         Command::new("reset")
-                            .about("Rolls back all migrations")
-                            .arg(arg!(<name> "The name of the migration")),
-                    )
-                    .subcommand(
-                        Command::new("status")
-                            .about("Prints the status of all migrations")
-                            .arg(arg!(<name> "The name of the migration")),
+                            .about("Rollback ALL migrations (down) in reverse timestamp order")
+                            .after_help(
+                                "This is destructive. It will execute down.sql for each migration.\n\nExample:\n  rustyroad migration reset\n",
+                            ),
                     )
                     .subcommand(
                         Command::new("list")
-                            .about("Lists all migrations and their status (applied or not)"),
+                            .alias("status")
+                            .about("List migrations and whether they're applied")
+                            .after_help(
+                                "Example:\n  rustyroad migration list\n",
+                            ),
                     )
                     .subcommand_help_heading("SUBCOMMANDS:")
                     // if no subcommand is provided, print help
@@ -1250,39 +1268,19 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                         .map(|vals| vals.map(|s| s.to_string()).collect())
                         .unwrap_or_else(Vec::new);
 
-                    // TODO: Modify create_migration to accept `columns` Vec<String>
-                    // For now, it still calls the old interactive version
-                    println!("Migration Name: {}", name);
-                    println!("Columns specified: {:?}", columns);
+                    println!("Generating migration: {}", name);
                     // Pass the captured columns vector to the updated create_migration function
                     create_migration(&name, columns)
                         .await
                         .expect("Error creating migration");
                 }
                 Some(("all", _)) => {
-                    // run all the migrations
-                    // get each migration from the migrations directory
-                    // then run the command for each
-                    // check if it's a rustyroad project
-
                     get_project_name_from_rustyroad_toml()
                         .unwrap_or_else(|why| panic!("This is not a Rusty Road project: {why}"));
 
-                    let migrations_path = Path::new("./config/database/migrations");
-                    let mut migrations = Vec::new();
-
-                    for entry in fs::read_dir(migrations_path).unwrap() {
-                        let entry = entry.unwrap();
-                        let path = entry.path();
-                        let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
-                        migrations.push(file_name);
-                    }
-
-                    for migration in migrations {
-                        run_migration(migration, MigrationDirection::Up)
-                            .await
-                            .expect("Error running migration");
-                    }
+                    run_all_migrations(MigrationDirection::Up)
+                        .await
+                        .expect("Error running migrations");
                 }
                 Some(("run", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
@@ -1315,6 +1313,50 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                         );
                     } else {
                         println!("'{}' migration rollback canceled by user.", name);
+                    }
+                }
+                Some(("redo", matches)) => {
+                    let name = matches.get_one::<String>("name").unwrap().to_string();
+
+                    let confirmation = Confirm::new()
+                        .with_prompt(format!(
+                            "Redo will rollback (down) then re-apply (up) the '{}' migration. Continue?",
+                            name
+                        ))
+                        .interact()
+                        .map_err(|err| io::Error::other(err))
+                        .expect("Error confirming redo migration: ");
+
+                    if confirmation {
+                        println!("Rolling back '{}'...", name);
+                        run_migration(name.clone(), MigrationDirection::Down)
+                            .await
+                            .expect("Error rolling back migration");
+                        println!("Re-applying '{}'...", name);
+                        run_migration(name.clone(), MigrationDirection::Up)
+                            .await
+                            .expect("Error running migration");
+                        println!("'{}' migration redo completed successfully!", name);
+                    } else {
+                        println!("'{}' migration redo canceled by user.", name);
+                    }
+                }
+                Some(("reset", _)) => {
+                    let confirmation = Confirm::new()
+                        .with_prompt(
+                            "Reset will rollback ALL migrations (down) in reverse order. This is destructive. Continue?",
+                        )
+                        .interact()
+                        .map_err(|err| io::Error::other(err))
+                        .expect("Error confirming reset migrations: ");
+
+                    if confirmation {
+                        run_all_migrations(MigrationDirection::Down)
+                            .await
+                            .expect("Error rolling back migrations");
+                        println!("All migrations rolled back successfully.");
+                    } else {
+                        println!("Migration reset canceled by user.");
                     }
                 }
                 Some(("list", _)) => {

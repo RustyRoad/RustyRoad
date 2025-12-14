@@ -5,6 +5,7 @@ use sqlx::postgres::{PgConnectOptions, PgPool};
 use sqlx::sqlite::SqlitePool;
 use std::error::Error;
 use std::fs;
+use std::io;
 use std::sync::Arc;
 use toml::Value;
 
@@ -180,33 +181,73 @@ impl Database {
         } else {
             format!("rustyroad.{}.toml", environment)
         };
-        let file = fs::read_to_string(file_name)
-            .unwrap_or_else(|_| panic!("Error: Could not find the configuration file"));
-        let toml: Value = toml::from_str(&file).unwrap();
-        let database_table = toml["database"].as_table().unwrap();
+
+        let file = fs::read_to_string(&file_name).map_err(|e| {
+            io::Error::new(
+                e.kind(),
+                format!(
+                    "RustyRoad could not read '{file_name}'.\n\nRun this command from your project root (the folder containing '{file_name}').\nIf you haven't created a project yet, run: rustyroad new <project_name>\n\nOriginal error: {e}",
+                ),
+            )
+        })?;
+
+        let toml: Value = toml::from_str(&file).map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "Failed to parse '{file_name}'.\n\nMake sure it contains a [database] section.\n\nOriginal error: {e}",
+                ),
+            )
+        })?;
+
+        let database_table = toml
+            .get("database")
+            .and_then(|v| v.as_table())
+            .ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!(
+                        "'{file_name}' is missing a [database] section.\n\nExpected something like:\n\n[database]\ndatabase_name = \"my_db\"\ndatabase_user = \"user\"\ndatabase_password = \"pass\"\ndatabase_host = \"localhost\"\ndatabase_port = \"5432\"\ndatabase_type = \"postgres\"\n",
+                    ),
+                )
+            })?;
+
+        let get_required = |key: &str| -> Result<&str, io::Error> {
+            database_table
+                .get(key)
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| {
+                    io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!(
+                            "'{file_name}' is missing [database].{key}.\n\nSee README for the expected rustyroad.toml format.",
+                        ),
+                    )
+                })
+        };
+
+        let database_name = get_required("database_name")?.to_string();
+        let database_user = get_required("database_user")?.to_string();
+        let database_password = get_required("database_password")?.to_string();
+        let database_host = get_required("database_host")?.to_string();
+        let database_port_raw = get_required("database_port")?;
+        let database_port = database_port_raw.parse::<u16>().map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "'{file_name}' has an invalid [database].database_port value '{database_port_raw}'. Expected a number like '5432'.\n\nOriginal error: {e}",
+                ),
+            )
+        })?;
+        let database_type = get_required("database_type")?;
+
         Ok(Database::new(
-            database_table["database_name"]
-                .as_str()
-                .unwrap()
-                .to_string(),
-            database_table["database_user"]
-                .as_str()
-                .unwrap()
-                .to_string(),
-            database_table["database_password"]
-                .as_str()
-                .unwrap()
-                .to_string(),
-            database_table["database_host"]
-                .as_str()
-                .unwrap()
-                .to_string(),
-            database_table["database_port"]
-                .as_str()
-                .unwrap()
-                .parse::<u16>()
-                .unwrap(),
-            database_table["database_type"].as_str().unwrap(),
+            database_name,
+            database_user,
+            database_password,
+            database_host,
+            database_port,
+            database_type,
         ))
     }
 

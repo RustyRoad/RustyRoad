@@ -1,6 +1,7 @@
 use chrono::Local;
 use regex::Regex;
 use sqlx::Executor;
+use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, DirEntry};
@@ -11,7 +12,7 @@ use std::{
     io::{self, ErrorKind},
 };
 
-use crate::database::{Database, DatabaseConnection, DatabaseType};
+use crate::database::{Database, DatabaseConnection};
 use rustyline::DefaultEditor;
 use serde::de::StdError;
 use serde_derive::Deserialize;
@@ -24,6 +25,7 @@ use crate::Project;
 use super::column_loop::column_loop;
 
 const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
+const MIGRATIONS_DIR: &str = "./config/database/migrations";
 
 /// Parsed column with constraints
 struct ParsedColumn {
@@ -226,15 +228,23 @@ pub struct ColumnInput {
 pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io::Error> {
     let path = std::env::current_dir().unwrap();
 
-    if fs::read_to_string(path.join("rustyroad.toml")).is_err() {
-        return Err(io::Error::other(
-            "Error reading the rustyroad.toml, please see the documentation for more information.",
+    let config_path = path.join("rustyroad.toml");
+    if !config_path.exists() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "RustyRoad could not find 'rustyroad.toml' in the current directory.\n\nRun migration commands from your RustyRoad project root (the folder that contains rustyroad.toml).\nIf you haven't created a project yet, run: rustyroad new <project_name>\n",
         ));
     }
 
-    if let Ok(_) = fs::create_dir("config/database") {}
+    // Ensure the migrations directory exists (this is the only supported location)
+    create_dir_all(MIGRATIONS_DIR)?;
 
-    if let Ok(_) = fs::create_dir("config/database/migrations") {}
+    // Helpful hint for beginners/LLMs that often create the wrong folder name.
+    if Path::new("./migrations").is_dir() {
+        eprintln!(
+            "Note: Found './migrations/'. RustyRoad does NOT use that folder. Migrations must live under './config/database/migrations/'."
+        );
+    }
 
     // Parse the migration name to determine the operation type
     let migration_type = parse_migration_name(name, &columns);
@@ -379,6 +389,14 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
     };
 
     create_migration_files(&folder_name, &up_sql_contents, &down_sql_contents)?;
+
+    println!("Migration created: {name}");
+    println!("Location: {folder_name}/");
+    println!("Edit these files:");
+    println!("  {folder_name}/up.sql");
+    println!("  {folder_name}/down.sql");
+    println!("Then run:");
+    println!("  rustyroad migration run {name}");
 
     Ok(())
 }
@@ -646,39 +664,47 @@ pub async fn run_migration(
 ) -> Result<(), CustomMigrationError> {
     // get the database
     let database: Database = Database::get_database_from_rustyroad_toml().expect("Couldn't parse the rustyroad.toml file. Please check the documentation for a proper implementation.");
-    match database.database_type {
-        DatabaseType::Postgres => {
-            println!("Database Type: PostGres");
+
+    if !Path::new(MIGRATIONS_DIR).exists() {
+        let mut message = format!(
+            "No migrations directory found at '{MIGRATIONS_DIR}'.\n\nRustyRoad only reads migrations from:\n  {MIGRATIONS_DIR}/<timestamp>-<name>/up.sql\n  {MIGRATIONS_DIR}/<timestamp>-<name>/down.sql\n\nTo create a migration:\n  rustyroad migration generate <name> ...\n",
+        );
+        if Path::new("./migrations").is_dir() {
+            message.push_str(
+                "\nNote: Found './migrations/'. RustyRoad does NOT read that folder. Use './config/database/migrations/' instead.\n",
+            );
         }
-        DatabaseType::Mysql => {
-            println!("Database Type: MySql");
-        }
-        DatabaseType::Sqlite => {
-            println!("Database Type: Sqlite");
-        }
-        _ => {
-            println!("coming soon");
-        }
+        return Err(CustomMigrationError::IoError(io::Error::new(
+            io::ErrorKind::NotFound,
+            message,
+        )));
     }
-    let migrations_dir_path = "./config/database/migrations".to_string();
+
+    let migrations_dir_path = MIGRATIONS_DIR.to_string();
     // find the folder that has the name of the migration in the migrations directory with the latest timestamp
-    let migration_dir_selected =
-        find_migration_dir(migrations_dir_path.clone(), migration_name.clone())
-            .unwrap_or_else(|why| panic!("Couldn't find migration directory: {}", why));
+    let migration_dir_selected = find_migration_dir(migrations_dir_path.clone(), migration_name.clone())
+        .map_err(|e| CustomMigrationError::IoError(io::Error::new(io::ErrorKind::NotFound, e.to_string())))?;
     // Generate the path to the migrations directory at runtime
     let migration_dir = &migration_dir_selected;
-    println!("Migration directory: {:?}", migration_dir);
     // Get migration files from the specified directory
     let mut migration_files: Vec<_> = fs::read_dir(migration_dir.clone())
-        .unwrap_or_else(|why| panic!("Couldn't read migrations directory: {}", why))
+        .map_err(|e| {
+            CustomMigrationError::IoError(io::Error::new(
+                e.kind(),
+                format!(
+                    "Failed to read migration directory '{migration_dir}'.\n\nExpected files: up.sql and down.sql\n\nOriginal error: {e}",
+                ),
+            ))
+        })?
         .filter_map(Result::ok)
         .collect();
     // Sort the migration files based on their name (to apply them in order)
     migration_files.sort_by_key(|entry| entry.file_name());
 
-    // Print the path to the migration directory and the migration name
-    println!("Migration directory path: {:?}", migration_dir.clone());
-    println!("Migration name: {:?}", &migration_name.clone());
+    println!(
+        "Running migration '{migration_name}' ({:?}) from directory: {migration_dir}",
+        direction
+    );
 
     // create the connection pool
     let connection = Database::create_database_connection(&database)
@@ -884,15 +910,19 @@ pub fn find_migration_dir(
     migrations_dir_path: String,
     migration_name: String,
 ) -> Result<String, Box<dyn Error>> {
-    println!("Searching for migration directory: {}", migration_name);
-    // Initialize the rustyline Editor with the default helper and in-memory history
-    let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
-        panic!("Failed to create rustyline editor: {}", why);
-    });
-    println!(
-        "Migrations directory path: {:?}",
-        migrations_dir_path.clone()
-    );
+    let migrations_root = Path::new(&migrations_dir_path);
+    if !migrations_root.exists() {
+        let mut message = format!(
+            "No migrations directory found at '{}'.\n\nRustyRoad expects migrations in:\n  {MIGRATIONS_DIR}/<timestamp>-<name>/up.sql\n  {MIGRATIONS_DIR}/<timestamp>-<name>/down.sql\n\nCreate one with:\n  rustyroad migration generate <name> ...\n",
+            migrations_dir_path
+        );
+        if Path::new("./migrations").is_dir() {
+            message.push_str(
+                "\nNote: Found './migrations/'. RustyRoad does NOT read that folder. Use './config/database/migrations/' instead.\n",
+            );
+        }
+        return Err(Box::new(io::Error::new(io::ErrorKind::NotFound, message)));
+    }
     // get all the migration directories
     let mut migration_dirs = Vec::new();
     for entry in fs::read_dir(migrations_dir_path)? {
@@ -902,8 +932,6 @@ pub fn find_migration_dir(
             migration_dirs.push(path);
         }
     }
-    println!("Migration directories: {:?}", migration_dirs.clone());
-
     // filter the migration directories by the migration name
     let mut filtered_migration_dirs = Vec::new();
     for migration_dir in migration_dirs {
@@ -912,42 +940,39 @@ pub fn find_migration_dir(
             .expect("Failed to get file name")
             .to_str()
             .ok_or("Failed to convert OsStr to str")?;
-        println!("Migration directory name: {}", migration_dir_name);
         // Extract the name part after the timestamp and hyphen
         if let Some(name_part) = migration_dir_name.split_once('-').map(|(_, name)| name) {
             if name_part == migration_name {
                 // Exact match comparison
                 filtered_migration_dirs.push(migration_dir);
-                println!(
-                    "Filtered migration directories (exact match): {:?}",
-                    filtered_migration_dirs.clone()
-                );
             }
         }
     }
 
     // if there is only one migration directory with the given name, return it
     if filtered_migration_dirs.len() == 1 {
-        println!(
-            "Filtered migration directories: {:?}",
-            filtered_migration_dirs.clone()
-        );
         return Ok(filtered_migration_dirs[0].to_str().unwrap().to_string());
     }
 
     // if there are multiple migration directories with the given name, prompt the user to choose one
     if filtered_migration_dirs.len() > 1 {
+        // Initialize the rustyline Editor only when we need to prompt.
+        let mut rl = DefaultEditor::new().unwrap_or_else(|why| {
+            panic!("Failed to create rustyline editor: {}", why);
+        });
+
         let mut migration_dir_names = Vec::new();
-        println!(
-            "Filtered migration directories: {:?}",
-            filtered_migration_dirs.clone()
-        );
         for migration_dir in &filtered_migration_dirs {
-            println!("Migration directory: {:?}", migration_dir.clone());
             let migration_dir_name = migration_dir.file_name().unwrap().to_str().unwrap();
-            println!("Migration directory name: {}", migration_dir_name);
             migration_dir_names.push(migration_dir_name);
         }
+
+        println!("Multiple migrations named '{migration_name}' were found:");
+        for name in &migration_dir_names {
+            println!("  {name}");
+        }
+        println!("Type the exact directory name you want to run (including timestamp):");
+
         let migration_dir_name = rl
             .readline_with_initial(
                 "Which migration do you want to execute? ",
@@ -974,9 +999,27 @@ pub fn find_migration_dir(
         }
     }
 
-    Err(Box::new(std::io::Error::other(
-        "Failed to find migration directory",
-    )))
+    // No matches
+    let available = fs::read_dir(MIGRATIONS_DIR)
+        .ok()
+        .into_iter()
+        .flat_map(|iter| iter.filter_map(Result::ok))
+        .filter(|entry| entry.path().is_dir())
+        .filter_map(|entry| entry.file_name().to_str().map(|s| s.to_string()))
+        .collect::<Vec<_>>();
+
+    let mut message = format!(
+        "Could not find a migration named '{migration_name}'.\n\nRustyRoad looks for folders like:\n  {MIGRATIONS_DIR}/<timestamp>-{migration_name}/\n\nTry:\n  rustyroad migration list\n",
+    );
+
+    if !available.is_empty() {
+        message.push_str("\nAvailable migration directories:\n");
+        for item in available {
+            message.push_str(&format!("  {item}\n"));
+        }
+    }
+
+    Err(Box::new(io::Error::new(io::ErrorKind::NotFound, message)))
 }
 
 #[derive(Debug)]
@@ -1032,10 +1075,9 @@ async fn execute_migration_with_connection(
         if path.extension() != Some(std::ffi::OsStr::new("sql")) {
             continue;
         }
-        let mut file = fs::File::open(&path).expect("Failed to open migration file");
+        let mut file = fs::File::open(&path)?;
         let mut sql = String::new();
-        file.read_to_string(&mut sql)
-            .expect("Failed to read migration file");
+        file.read_to_string(&mut sql)?;
 
         // Skip the migration if it is a down.sql file and we're migrating up, or vice versa
         let is_down_file = path.file_stem() == Some(std::ffi::OsStr::new("down"));
@@ -1085,8 +1127,48 @@ pub async fn list_migrations() -> Result<(), CustomMigrationError> {
         .await
         .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why));
 
+    // Ensure the migrations tracking table exists (list/status should work even before first run)
+    match connection.clone() {
+        DatabaseConnection::Pg(conn) => {
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    direction VARCHAR(10) NOT NULL
+                )",
+            )
+            .await
+            .map_err(CustomMigrationError::from)?;
+        }
+        DatabaseConnection::MySql(conn) => {
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    direction VARCHAR(10) NOT NULL
+                )",
+            )
+            .await
+            .map_err(CustomMigrationError::from)?;
+        }
+        DatabaseConnection::Sqlite(conn) => {
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    direction TEXT NOT NULL
+                )",
+            )
+            .await
+            .map_err(CustomMigrationError::from)?;
+        }
+    }
+
     // Get all migration files from the migrations directory
-    let migrations_dir = Path::new("./config/database/migrations");
+    let migrations_dir = Path::new(MIGRATIONS_DIR);
     let mut migration_files = Vec::new();
 
     if migrations_dir.exists() {
@@ -1143,27 +1225,42 @@ pub async fn list_migrations() -> Result<(), CustomMigrationError> {
         },
     };
 
-    println!("Migrations:");
-    println!("{:<30} {:<20} {:<10}", "Name", "Applied At", "Status");
-    println!("{:-<30} {:-<20} {:-<10}", "", "", "");
+    // Build a map of latest status per migration name (ordered by applied_at, so later wins)
+    let mut latest_by_name: HashMap<String, (String, String)> = HashMap::new();
+    for (name, applied_at, direction) in &applied_migrations {
+        latest_by_name.insert(name.clone(), (applied_at.clone(), direction.clone()));
+    }
 
-    // Print all migration files with their status
+    println!("Migrations (from disk + database):");
+    println!("{:<30} {:<22} {:<12}", "Name", "Last Applied At", "Status");
+    println!("{:-<30} {:-<22} {:-<12}", "", "", "");
+
     for migration in &migration_files {
-        let applied = applied_migrations
-            .iter()
-            .find(|(name, _, dir)| name == migration && dir == "up");
-        let rolled_back = applied_migrations
-            .iter()
-            .find(|(name, _, dir)| name == migration && dir == "down");
+        match latest_by_name.get(migration) {
+            Some((applied_at, dir)) if dir == "up" => {
+                println!("{:<30} {:<22} {:<12}", migration, applied_at, "Applied");
+            }
+            Some((applied_at, dir)) if dir == "down" => {
+                println!("{:<30} {:<22} {:<12}", migration, applied_at, "Rolled back");
+            }
+            _ => {
+                println!("{:<30} {:<22} {:<12}", migration, "", "Pending");
+            }
+        }
+    }
 
-        let status = match (applied, rolled_back) {
-            (Some((_, applied_at, _)), None) => format!("Applied at {}", applied_at),
-            (None, Some(_)) => "Rolled back".to_string(),
-            (None, None) => "Pending".to_string(),
-            _ => "Unknown".to_string(),
-        };
-
-        println!("{:<30} {:<20} {:<10}", migration, "", status);
+    // Show records in the DB that no longer exist on disk (useful for debugging)
+    let mut orphaned = Vec::new();
+    for (name, applied_at, dir) in &applied_migrations {
+        if !migration_files.iter().any(|m| m == name) {
+            orphaned.push((name.clone(), applied_at.clone(), dir.clone()));
+        }
+    }
+    if !orphaned.is_empty() {
+        println!("\nNote: The database contains migration records that are missing on disk:");
+        for (name, applied_at, dir) in orphaned {
+            println!("  {name} ({dir}) at {applied_at}");
+        }
     }
 
     Ok(())

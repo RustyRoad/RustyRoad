@@ -316,7 +316,28 @@ Note: If you want to run an example project, be sure to run the migrations first
 ```shell
 cd example
 
-rustyroad migration run
+# List migrations (and see what names RustyRoad expects)
+rustyroad migration list
+
+# Run all migrations (up) in order
+rustyroad migration all
+
+# Or run a single migration by name
+# (the name is the part after the timestamp in the folder name)
+rustyroad migration run create_users_table
+```
+
+### Where migrations live
+
+RustyRoad expects migrations in this exact location (do not create a plain `./migrations/` folder):
+
+- `./config/database/migrations/<timestamp>-<name>/up.sql`
+- `./config/database/migrations/<timestamp>-<name>/down.sql`
+
+Generate a migration (folder + files) with:
+
+```shell
+rustyroad migration generate create_users_table id:serial:primary_key email:string:not_null,unique
 ```
 
 ### Database Operations
