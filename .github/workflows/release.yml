@@ -11,6 +11,9 @@ name: Release
         required: true
         type: string
 
+permissions:
+  contents: write
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -47,6 +50,10 @@ jobs:
     if: >
       github.event_name == 'release' ||
       github.event_name == 'workflow_dispatch'
+    env:
+      # Prefer the repo's existing CRATES_TOKEN secret, but allow the more common
+      # CARGO_REGISTRY_TOKEN secret name as a fallback.
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_TOKEN || secrets.CARGO_REGISTRY_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -63,10 +70,65 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Publish to crates.io
-        run: cargo publish --token ${{ secrets.CRATES_TOKEN }}
+      - name: Validate Cargo.toml version matches input
+        if: github.event_name == 'workflow_dispatch'
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_TOKEN }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          MANIFEST_VERSION=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          text = Path('Cargo.toml').read_text(encoding='utf-8')
+          m = re.search(r'^version\s*=\s*"([^"]+)"\s*$', text, re.MULTILINE)
+          if not m:
+              raise SystemExit('Could not determine version from Cargo.toml')
+          print(m.group(1))
+          PY
+          )
+
+          if [ "$MANIFEST_VERSION" != "$INPUT_VERSION" ]; then
+            echo "::error::Release requested for version '$INPUT_VERSION', but Cargo.toml is '$MANIFEST_VERSION'."
+            echo "::error::Update Cargo.toml (and CHANGELOG.md) and push, then re-run the workflow."
+            exit 1
+          fi
+
+      - name: Validate GitHub release tag matches Cargo.toml version
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          MANIFEST_VERSION=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          text = Path('Cargo.toml').read_text(encoding='utf-8')
+          m = re.search(r'^version\s*=\s*"([^"]+)"\s*$', text, re.MULTILINE)
+          if not m:
+              raise SystemExit('Could not determine version from Cargo.toml')
+          print(m.group(1))
+          PY
+          )
+
+          EXPECTED_TAG="v$MANIFEST_VERSION"
+          if [ "$RELEASE_TAG" != "$EXPECTED_TAG" ]; then
+            echo "::error::GitHub release tag is '$RELEASE_TAG' but Cargo.toml is '$MANIFEST_VERSION' (expected tag '$EXPECTED_TAG')."
+            echo "::error::Fix the tag/version mismatch before publishing to crates.io."
+            exit 1
+          fi
+
+      - name: Ensure crates.io token is configured
+        run: |
+          set -euo pipefail
+          if [ -z "${CARGO_REGISTRY_TOKEN:-}" ]; then
+            echo "::error::Missing crates.io token. Configure repository secret CRATES_TOKEN (or CARGO_REGISTRY_TOKEN)."
+            exit 1
+          fi
+
+      - name: Publish to crates.io
+        run: cargo publish --locked
 
   build-binaries:
     name: Build Release Binaries
