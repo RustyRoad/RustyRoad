@@ -801,6 +801,12 @@ static/styles.css
             .subcommand_required(true)
             .arg_required_else_help(true)
             .allow_external_subcommands(true)
+            .arg(
+                arg!(--format <FORMAT> "Output format (text, json)")
+                    .required(false)
+                    .default_value("text")
+                    .value_parser(["text", "json"])
+            )
             .subcommand(
                 Command::new("new")
                     .about("Creates a new project")
@@ -813,6 +819,21 @@ static/styles.css
                     .subcommand(
                         Command::new("controller")
                             .about("Generates a new controller")
+                            .long_about(
+                                "Interactively creates a new controller for a model.\n\n\
+                                PREREQUISITES:\n\
+                                 - Must be run from your RustyRoad project root (where rustyroad.toml exists)\n\
+                                 - The model you reference should already exist\n\n\
+                                PROMPTS:\n\
+                                 1. Controller type: GET (Read), POST (Create), PUT (Update), DELETE\n\
+                                 2. Model name to create a controller for\n\n\
+                                FILES CREATED:\n\
+                                 - src/controllers/<model_name>/mod.rs\n\
+                                 - src/controllers/<model_name>/<action>.rs\n\n\
+                                EXAMPLE:\n\
+                                 rustyroad generate controller\n\
+                                 # Then follow the prompts\n"
+                            )
                             .subcommand_required(false)
                             .arg_required_else_help(false)
                             .allow_external_subcommands(false),
@@ -820,6 +841,19 @@ static/styles.css
                     .subcommand(
                         Command::new("model")
                             .about("Generates a new model")
+                            .long_about(
+                                "Creates a new Rust model file for database operations.\n\n\
+                                CONFIG:\n\
+                                  Reads database type from ./rustyroad.toml to generate database-specific code.\n\n\
+                                PREREQUISITES:\n\
+                                  - Must be run from your RustyRoad project root\n\n\
+                                FILES CREATED:\n\
+                                  - src/models/<name>.rs\n\
+                                  - Updates src/models/mod.rs\n\n\
+                                EXAMPLE:\n\
+                                  rustyroad generate model user\n\
+                                  rustyroad generate model blog_post\n"
+                            )
                             .arg(arg!(<name> "The name of the model"))
                             .subcommand_required(false)
                             .arg_required_else_help(true)
@@ -877,6 +911,18 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     .subcommand(
                         Command::new("all")
                             .about("Run all migrations (up) in timestamp order")
+                            .long_about(
+                                "Applies all pending migrations from ./config/database/migrations/ in timestamp order.\n\n\
+                                CONFIG:\n\
+                                 Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
+                                BEHAVIOR:\n\
+                                 - Executes each up.sql file in timestamp order\n\
+                                 - Records applied migrations in _rustyroad_migrations table\n\
+                                 - Skips already-applied migrations\n\n\
+                                EXAMPLE:\n\
+                                 rustyroad migration all\n\
+                                 ENVIRONMENT=prod rustyroad migration all\n"
+                            )
                             .after_help(
                                 "This reads migrations from ./config/database/migrations and applies each migration's up.sql.\n\nExample:\n  rustyroad migration all\n",
                             ),
@@ -884,6 +930,15 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     .subcommand(
                         Command::new("run")
                             .about("Run a specific migration by name")
+                            .long_about(
+                                "Runs a specific migration by name.\n\n\
+                                CONFIG:\n\
+                                 Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
+                                The name is the part after the timestamp (e.g., for 20231225120000-create_users, use: create_users)\n\n\
+                                EXAMPLE:\n\
+                                 rustyroad migration run create_users\n\
+                                 ENVIRONMENT=prod rustyroad migration run add_email_column\n"
+                            )
                             .arg(arg!(<name> "The migration name (the part after the timestamp in the folder name)."))
                             .arg_required_else_help(true)
                             .after_help(
@@ -893,18 +948,45 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     .subcommand(
                         Command::new("rollback")
                             .about("Rollback (down) a specific migration by name")
+                            .long_about(
+                                "Rollbacks (down) a specific migration by name.\n\n\
+                                CONFIG:\n\
+                                 Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
+                                WARNING: This is destructive. It will undo the changes made by the migration.\n\n\
+                                EXAMPLE:\n\
+                                 rustyroad migration rollback create_users\n\
+                                 ENVIRONMENT=prod rustyroad migration rollback add_email_column\n"
+                            )
                             .arg(arg!(<name> "The migration name (e.g., create_users_table)."))
                             .arg_required_else_help(true),
                     )
                     .subcommand(
                         Command::new("redo")
                             .about("Rollback (down) then run (up) a migration by name")
+                            .long_about(
+                                "Rollbacks (down) then runs (up) a migration by name.\n\n\
+                                CONFIG:\n\
+                                 Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
+                                Useful when testing or debugging migration changes.\n\n\
+                                EXAMPLE:\n\
+                                 rustyroad migration redo create_users\n\
+                                 ENVIRONMENT=prod rustyroad migration redo add_email_column\n"
+                            )
                             .arg(arg!(<name> "The migration name (e.g., create_users_table)."))
                             .arg_required_else_help(true),
                     )
                     .subcommand(
                         Command::new("reset")
                             .about("Rollback ALL migrations (down) in reverse timestamp order")
+                            .long_about(
+                                "Rollbacks ALL migrations (down) in reverse timestamp order.\n\n\
+                                CONFIG:\n\
+                                 Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
+                                WARNING: This is destructive. It will undo all migrations and reset the database schema.\n\n\
+                                EXAMPLE:\n\
+                                 rustyroad migration reset\n\
+                                 ENVIRONMENT=prod rustyroad migration reset\n"
+                            )
                             .after_help(
                                 "This is destructive. It will execute down.sql for each migration.\n\nExample:\n  rustyroad migration reset\n",
                             ),
@@ -913,6 +995,18 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                         Command::new("list")
                             .alias("status")
                             .about("List migrations and whether they're applied")
+                            .long_about(
+                                "Lists migrations and whether they're applied.\n\n\
+                                CONFIG:\n\
+                                 Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
+                                OUTPUT:\n\
+                                 - Applied: Migration has been run (up)\n\
+                                 - Rolled back: Migration has been undone (down)\n\
+                                 - Pending: Migration exists but has not been run\n\n\
+                                EXAMPLE:\n\
+                                 rustyroad migration list\n\
+                                 ENVIRONMENT=prod rustyroad migration list\n"
+                            )
                             .after_help(
                                 "Example:\n  rustyroad migration list\n",
                             ),
@@ -1013,6 +1107,19 @@ Example:\n\
                     .subcommand(
                         Command::new("schema")
                             .about("Inspect database schema")
+                            .long_about(
+                                "Lists all tables and their columns from the connected database.\n\n\
+                                CONFIG:\n\
+                                 Reads from ./rustyroad.toml by default.\n\
+                                 Set ENVIRONMENT=<env> to use ./rustyroad.<env>.toml instead.\n\n\
+                                PREREQUISITES:\n\
+                                 - Must be run from your RustyRoad project root\n\
+                                 - Database must be reachable\n\n\
+                                Supports: PostgreSQL, MySQL, SQLite\n\n\
+                                EXAMPLE:\n\
+                                 rustyroad db schema\n\
+                                 ENVIRONMENT=prod rustyroad db schema\n"
+                            )
                     )
                     .subcommand_required(true)
                     .arg_required_else_help(true)
@@ -1020,9 +1127,32 @@ Example:\n\
             .subcommand(
                 Command::new("query")
                     .about("Execute SQL query")
+                    .long_about(
+                        "Executes a SQL query against the database configured in rustyroad.toml.\n\n\
+                        CONFIG:\n\
+                         Reads from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml if ENVIRONMENT is set).\n\n\
+                        PREREQUISITES:\n\
+                         - Must be run from your RustyRoad project root (where rustyroad.toml exists)\n\
+                         - Database must be reachable\n\n\
+                        EXAMPLES:\n\
+                         rustyroad query \"SELECT * FROM users\"\n\
+                         ENVIRONMENT=prod rustyroad query \"SELECT COUNT(*) FROM orders\"\n\n\
+                        WARNING: Destructive queries (UPDATE, DELETE, DROP) execute immediately with no confirmation.\n"
+                    )
                     .arg(arg!(<QUERY> "SQL query to execute"))
                     .arg_required_else_help(true)
             )
+    }
+
+    fn print_config_info() {
+        let environment = std::env::var("ENVIRONMENT").unwrap_or("dev".to_string());
+        let file_name = if environment == "dev" {
+            "rustyroad.toml".to_string()
+        } else {
+            format!("rustyroad.{}.toml", environment)
+        };
+        println!("Config file: {}", file_name);
+        println!("Environment: {}", environment);
     }
 
     pub fn push_args() -> Vec<Arg> {
@@ -1031,6 +1161,7 @@ Example:\n\
 
     pub async fn run() {
         let matches = Self::cli().get_matches();
+        let format = matches.get_one::<String>("format").unwrap().as_str();
         match matches.subcommand() {
             // New Project Case
             Some(("new", matches)) => {
@@ -1289,6 +1420,7 @@ Example:\n\
                         .expect("Error creating migration");
                 }
                 Some(("all", _)) => {
+                    Self::print_config_info();
                     get_project_name_from_rustyroad_toml()
                         .unwrap_or_else(|why| panic!("This is not a Rusty Road project: {why}"));
 
@@ -1297,6 +1429,7 @@ Example:\n\
                         .expect("Error running migrations");
                 }
                 Some(("run", matches)) => {
+                    Self::print_config_info();
                     let name = matches.get_one::<String>("name").unwrap().to_string();
 
                     run_migration(name.clone(), MigrationDirection::Up)
@@ -1305,6 +1438,7 @@ Example:\n\
                     println!("'{}' migration completed successfully!", name.clone());
                 }
                 Some(("rollback", matches)) => {
+                    Self::print_config_info();
                     let name = matches.get_one::<String>("name").unwrap().to_string();
                     // Create a confirmation prompt
                     let confirmation = Confirm::new()
@@ -1330,6 +1464,7 @@ Example:\n\
                     }
                 }
                 Some(("redo", matches)) => {
+                    Self::print_config_info();
                     let name = matches.get_one::<String>("name").unwrap().to_string();
 
                     let confirmation = Confirm::new()
@@ -1356,6 +1491,7 @@ Example:\n\
                     }
                 }
                 Some(("reset", _)) => {
+                    Self::print_config_info();
                     let confirmation = Confirm::new()
                         .with_prompt(
                             "Reset will rollback ALL migrations (down) in reverse order. This is destructive. Continue?",
@@ -1374,7 +1510,8 @@ Example:\n\
                     }
                 }
                 Some(("list", _)) => {
-                    list_migrations().await.expect("Error listing migrations");
+                    Self::print_config_info();
+                    list_migrations(format).await.expect("Error listing migrations");
                 }
                 _ => {
                     println!("Invalid migration choice");
@@ -1468,29 +1605,19 @@ Example:\n\
                     format!("rustyroad.{}.toml", environment)
                 };
 
-                println!("ENVIRONMENT={}", environment);
-                println!("Database config file: {}", file_name);
-
-                match Database::get_database_from_rustyroad_toml() {
-                    Ok(db) => {
-                        let password_hint = if db.password.is_empty() {
-                            "(empty)".to_string()
-                        } else {
-                            format!("(set, {} chars)", db.password.len())
-                        };
-
-                        println!("Database:");
-                        println!("  type: {}", db.database_type.to_string().to_ascii_lowercase());
-                        println!("  host: {}", db.host);
-                        println!("  port: {}", db.port);
-                        println!("  name: {}", db.name);
-                        println!("  user: {}", db.username);
-                        println!("  password: {}", password_hint);
-                    }
+                let db = match Database::get_database_from_rustyroad_toml() {
+                    Ok(db) => db,
                     Err(e) => {
                         println!("Could not load database config: {}", e);
+                        return;
                     }
-                }
+                };
+
+                let password_hint = if db.password.is_empty() {
+                    "".to_string()
+                } else {
+                    format!("(set, {} chars)", db.password.len())
+                };
 
                 // Project name is stored in rustyroad.toml under [rustyroad_project].name.
                 // We intentionally try only rustyroad.toml here since other ENV-specific files may only contain [database].
@@ -1504,16 +1631,44 @@ Example:\n\
                             .map(|s| s.to_string())
                     });
 
-                match project_name {
-                    Some(name) => println!("Project name: {}", name),
-                    None => println!(
-                        "Project name: (unknown) — add [rustyroad_project] name=\"...\" to rustyroad.toml"
-                    ),
+                if format == "json" {
+                    let output = serde_json::json!({
+                        "environment": environment,
+                        "config_file": file_name,
+                        "database": {
+                            "type": db.database_type.to_string().to_ascii_lowercase(),
+                            "host": db.host,
+                            "port": db.port,
+                            "name": db.name,
+                            "user": db.username,
+                            "password": password_hint
+                        },
+                        "project_name": project_name.unwrap_or_else(|| "(unknown)".to_string())
+                    });
+                    println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                } else {
+                    println!("ENVIRONMENT={}", environment);
+                    println!("Database config file: {}", file_name);
+
+                    println!("Database:");
+                    println!("  type: {}", db.database_type.to_string().to_ascii_lowercase());
+                    println!("  host: {}", db.host);
+                    println!("  port: {}", db.port);
+                    println!("  name: {}", db.name);
+                    println!("  user: {}", db.username);
+                    println!("  password: {}", password_hint);
+
+                    match project_name {
+                        Some(name) => println!("Project name: {}", name),
+                        None => println!(
+                            "Project name: (unknown) — add [rustyroad_project] name=\"...\" to rustyroad.toml"
+                        ),
+                    }
                 }
             }
             Some(("db", matches)) => match matches.subcommand() {
                 Some(("schema", _)) => {
-                    inspect_schema()
+                    inspect_schema(format)
                         .await
                         .unwrap_or_else(|e| println!("Error inspecting schema: {}", e));
                 }
@@ -1523,7 +1678,7 @@ Example:\n\
             },
             Some(("query", matches)) => {
                 let query = matches.get_one::<String>("QUERY").unwrap();
-                execute_query(query)
+                execute_query(query, format)
                     .await
                     .unwrap_or_else(|e| println!("Error executing query: {}", e));
             }

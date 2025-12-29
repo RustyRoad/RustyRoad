@@ -61,8 +61,12 @@ impl GrapesJs {
             let controller_module = Path::new("./src/controllers/mod.rs");
 
             // create the file
-            create_file(page_controller_file_location).unwrap_or_else(|_| {
-                panic!("Error: Could not create {}", page_controller_file_location)
+            create_file(page_controller_file_location).unwrap_or_else(|e| {
+                panic!(
+                    "Error: Could not create file at '{}'.\n\n\
+                    Original error: {}",
+                    page_controller_file_location, e
+                )
             });
 
             // create the page details template
@@ -137,7 +141,18 @@ To access the page builder, go to the /page/{pageId} URL. For example, if you ar
 /// ```
 pub async fn write_to_page_model() -> Result<(), Error> {
     fs::read_to_string("./rustyroad.toml")
-        .unwrap_or_else(|_| panic!("Error: This is not a RustyRoad project. Please run `rustyroad new` to create a new project."));
+        .unwrap_or_else(|_| {
+            let current_dir_path = std::env::current_dir()
+                .unwrap_or_else(|_| ".".into());
+            let current_dir = current_dir_path.display();
+            panic!(
+                "Error: This is not a RustyRoad project.\n\n\
+                Current directory: {}\n\
+                Could not find rustyroad.toml.\n\n\
+                Please run `rustyroad new` to create a new project.",
+                current_dir
+            )
+        });
     let page_model_file_location = "src/models/page.rs";
 
     // create the file

@@ -7,7 +7,12 @@ pub mod helpers {
 
     pub fn get_project_name_from_rustyroad_toml() -> Result<String, Error> {
         let file = fs::read_to_string("rustyroad.toml")
-            .unwrap_or_else(|_| panic!("Error: Could not find rustyroad.toml"));
+            .unwrap_or_else(|_| panic!(
+                "Could not find rustyroad.toml in '{}'.\n\n\
+                Run this command from your RustyRoad project root (the folder containing rustyroad.toml).\n\
+                If you haven't created a project, run: rustyroad new <project_name>",
+                std::env::current_dir().unwrap_or_else(|_| ".".into()).display()
+            ));
         let toml: Value = toml::from_str(&file).unwrap();
         let project_table = toml["rustyroad_project"].as_table().unwrap();
         Ok(project_table["name"].as_str().unwrap().to_string())

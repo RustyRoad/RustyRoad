@@ -15,7 +15,7 @@ use std::{
 use crate::database::{Database, DatabaseConnection};
 use rustyline::DefaultEditor;
 use serde::de::StdError;
-use serde_derive::Deserialize;
+use serde_derive::{Deserialize, Serialize};
 use strum_macros::Display;
 
 use crate::generators::create_file;
@@ -23,6 +23,19 @@ use crate::writers::write_to_file;
 use crate::Project;
 
 use super::column_loop::column_loop;
+
+#[derive(Serialize)]
+struct MigrationEntry {
+    name: String,
+    timestamp: String,
+    status: String,
+}
+
+#[derive(Serialize)]
+struct MigrationsOutput {
+    config_file: String,
+    migrations: Vec<MigrationEntry>,
+}
 
 const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 const MIGRATIONS_DIR: &str = "./config/database/migrations";
@@ -603,6 +616,7 @@ pub enum CustomMigrationError {
     SqlxError(sqlx::Error),
     RunError(Box<dyn StdError + Send + Sync>),
     SendError(Box<dyn StdError + Send>),
+    JsonError(serde_json::Error),
 }
 
 impl Display for CustomMigrationError {
@@ -613,6 +627,7 @@ impl Display for CustomMigrationError {
             Self::IoError(err) => Display::fmt(err, f),
             Self::SqlxError(err) => Display::fmt(err, f),
             Self::SendError(err) => Display::fmt(err, f),
+            Self::JsonError(err) => Display::fmt(err, f),
         }
     }
 }
@@ -640,6 +655,12 @@ impl From<sqlx::Error> for CustomMigrationError {
 impl From<Box<dyn StdError + Send + Sync>> for CustomMigrationError {
     fn from(err: Box<dyn StdError + Send + Sync>) -> Self {
         Self::RunError(err)
+    }
+}
+
+impl From<serde_json::Error> for CustomMigrationError {
+    fn from(err: serde_json::Error) -> Self {
+        Self::JsonError(err)
     }
 }
 
@@ -1118,9 +1139,16 @@ async fn execute_migration_with_connection(
 ///
 /// list_migrations().await?;
 /// ```
-pub async fn list_migrations() -> Result<(), CustomMigrationError> {
+pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
     // get the database
     let database: Database = Database::get_database_from_rustyroad_toml().expect("Couldn't parse the rustyroad.toml file. Please check the documentation for a proper implementation.");
+
+    let environment = std::env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
+    let config_file = if environment == "dev" {
+        "rustyroad.toml".to_string()
+    } else {
+        format!("rustyroad.{}.toml", environment)
+    };
 
     // create the connection pool
     let connection = Database::create_database_connection(&database)
@@ -1231,35 +1259,61 @@ pub async fn list_migrations() -> Result<(), CustomMigrationError> {
         latest_by_name.insert(name.clone(), (applied_at.clone(), direction.clone()));
     }
 
-    println!("Migrations (from disk + database):");
-    println!("{:<30} {:<22} {:<12}", "Name", "Last Applied At", "Status");
-    println!("{:-<30} {:-<22} {:-<12}", "", "", "");
+    if format == "json" {
+        let mut migrations_list: Vec<MigrationEntry> = Vec::new();
+        for migration in &migration_files {
+            let (timestamp, status) = match latest_by_name.get(migration) {
+                Some((applied_at, dir)) if dir == "up" => {
+                    (applied_at.clone(), "Applied".to_string())
+                }
+                Some((applied_at, dir)) if dir == "down" => {
+                    (applied_at.clone(), "Rolled back".to_string())
+                }
+                _ => ("".to_string(), "Pending".to_string()),
+            };
+            migrations_list.push(MigrationEntry {
+                name: migration.clone(),
+                timestamp,
+                status,
+            });
+        }
 
-    for migration in &migration_files {
-        match latest_by_name.get(migration) {
-            Some((applied_at, dir)) if dir == "up" => {
-                println!("{:<30} {:<22} {:<12}", migration, applied_at, "Applied");
-            }
-            Some((applied_at, dir)) if dir == "down" => {
-                println!("{:<30} {:<22} {:<12}", migration, applied_at, "Rolled back");
-            }
-            _ => {
-                println!("{:<30} {:<22} {:<12}", migration, "", "Pending");
+        let output = MigrationsOutput {
+            config_file,
+            migrations: migrations_list,
+        };
+        println!("{}", serde_json::to_string_pretty(&output)?);
+    } else {
+        println!("Migrations (from disk + database):");
+        println!("{:<30} {:<22} {:<12}", "Name", "Last Applied At", "Status");
+        println!("{:-<30} {:-<22} {:-<12}", "", "", "");
+
+        for migration in &migration_files {
+            match latest_by_name.get(migration) {
+                Some((applied_at, dir)) if dir == "up" => {
+                    println!("{:<30} {:<22} {:<12}", migration, applied_at, "Applied");
+                }
+                Some((applied_at, dir)) if dir == "down" => {
+                    println!("{:<30} {:<22} {:<12}", migration, applied_at, "Rolled back");
+                }
+                _ => {
+                    println!("{:<30} {:<22} {:<12}", migration, "", "Pending");
+                }
             }
         }
-    }
 
-    // Show records in the DB that no longer exist on disk (useful for debugging)
-    let mut orphaned = Vec::new();
-    for (name, applied_at, dir) in &applied_migrations {
-        if !migration_files.iter().any(|m| m == name) {
-            orphaned.push((name.clone(), applied_at.clone(), dir.clone()));
+        // Show records in the DB that no longer exist on disk (useful for debugging)
+        let mut orphaned = Vec::new();
+        for (name, applied_at, dir) in &applied_migrations {
+            if !migration_files.iter().any(|m| m == name) {
+                orphaned.push((name.clone(), applied_at.clone(), dir.clone()));
+            }
         }
-    }
-    if !orphaned.is_empty() {
-        println!("\nNote: The database contains migration records that are missing on disk:");
-        for (name, applied_at, dir) in orphaned {
-            println!("  {name} ({dir}) at {applied_at}");
+        if !orphaned.is_empty() {
+            println!("\nNote: The database contains migration records that are missing on disk:");
+            for (name, applied_at, dir) in orphaned {
+                println!("  {name} ({dir}) at {applied_at}");
+            }
         }
     }
 

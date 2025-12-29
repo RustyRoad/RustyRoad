@@ -129,24 +129,49 @@ impl Database {
                     .port(self.port);
                 let pool = MySqlPool::connect_with(options)
                     .await
-                    .unwrap_or_else(|_| panic!("Failed to create connection pool."));
+                    .unwrap_or_else(|e| panic!(
+                        "Failed to create MySQL connection pool.\n\n\
+                        Config: rustyroad.toml [database] section\n\
+                        Host: {}:{}\n\
+                        Database: {}\n\
+                        User: {}\n\n\
+                        Check that MySQL is running and credentials are correct.\n\n\
+                        Original error: {}",
+                        self.host, self.port, self.name, self.username, e
+                    ));
                 Ok(DatabaseConnection::MySql(Arc::new(pool)))
             }
             DatabaseType::Sqlite => {
                 let pool = SqlitePool::connect(&format!("{}.db", self.name))
                     .await
-                    .unwrap_or_else(|_| panic!("Could not connect to the SQLite database."));
+                    .unwrap_or_else(|e| panic!(
+                        "Could not connect to SQLite database at '{}.db'.\n\n\
+                        Ensure the file exists and is readable, or check permissions.\n\n\
+                        Original error: {}",
+                        self.name, e
+                    ));
                 Ok(DatabaseConnection::Sqlite(Arc::new(pool)))
             }
             DatabaseType::Postgres => {
                 let database: Database = Database::get_database_from_rustyroad_toml().unwrap();
+                let name = database.name.clone();
+                let username = database.username.clone();
+                let host = database.host.clone();
+                let port = database.port;
                 let admin_database_url = format!(
                     "postgres://{}:{}@{}:{}/postgres",
-                    database.username, database.password, database.host, database.port,
+                    username, database.password, host, port,
                 );
                 create_database_if_not_exists(admin_database_url.as_str(), database)
                     .await
-                    .unwrap_or_else(|_| panic!("Failed to create database"));
+                    .unwrap_or_else(|e| panic!(
+                        "Failed to create PostgreSQL database '{}'.\n\n\
+                        Admin URL: postgres://{}:***@{}:{}/postgres\n\
+                        Config: rustyroad.toml\n\n\
+                        Ensure PostgreSQL is running and the admin credentials can create databases.\n\n\
+                        Original error: {}",
+                        name, username, host, port, e
+                    ));
 
                 let options = PgConnectOptions::new()
                     .username(&self.username)
@@ -156,7 +181,12 @@ impl Database {
                     .port(self.port);
                 let pool = PgPool::connect_with(options)
                     .await
-                    .unwrap_or_else(|_| panic!("Failed to create connection pool."));
+                    .unwrap_or_else(|e| panic!(
+                        "Failed to create PostgreSQL connection pool for '{}' at {}:{}.\n\n\
+                        Config file: rustyroad.toml\n\n\
+                        Original error: {}",
+                        self.name, self.host, self.port, e
+                    ));
 
                 Ok(DatabaseConnection::Pg(Arc::new(pool)))
             }
