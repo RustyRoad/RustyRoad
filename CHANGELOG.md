@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.24] - 2025-12-29
+
+### Added
+- **LLM/AI Agent Enhancements**: Comprehensive CLI improvements for AI agent usability
+  - Added `long_about()` documentation to 10 commands (query, db schema, migration subcommands, generate controller/model) with ENVIRONMENT variable guidance, prerequisites, examples, and warnings
+  - Enhanced error messages to include config file path, current working directory, database connection details, and actionable how-to-fix suggestions
+  - Added `--format` flag supporting JSON output for query, db schema, migration list, and config commands
+  - Added config file echo to all database commands for transparency about which rustyroad.toml variant is being used
+  - All JSON outputs include `config_file` field for agent awareness
+
 ## [1.0.23] - 2025-12-14
 
 ### Added

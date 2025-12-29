@@ -1,6 +1,6 @@
 [package]
 name = "rustyroad"
-version = "1.0.23"
+version = "1.0.24"
 edition = "2021"
 license = "MIT"
 description = "Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust."
