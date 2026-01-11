@@ -11,6 +11,19 @@ use toml::Value;
 
 use super::databasetype::DatabaseType;
 
+/// Get the current environment, checking both ENV and ENVIRONMENT variables.
+/// Returns "dev" if neither is set.
+/// 
+/// This allows users to use either:
+/// - `ENV=prod rustyroad ...`
+/// - `ENVIRONMENT=prod rustyroad ...`
+pub fn get_environment() -> String {
+    // Check ENV first (shorter, more common), then ENVIRONMENT
+    std::env::var("ENV")
+        .or_else(|_| std::env::var("ENVIRONMENT"))
+        .unwrap_or_else(|_| "dev".to_string())
+}
+
 #[derive(Debug, Clone)]
 pub struct Database {
     pub name: String,

@@ -1011,6 +1011,45 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                                 "Example:\n  rustyroad migration list\n",
                             ),
                     )
+                    .subcommand(
+                        Command::new("convert")
+                            .alias("fix")
+                            .alias("import")
+                            .about("Convert rogue SQL migrations to RustyRoad format")
+                            .long_about(
+                                "Detects SQL migration files created in non-standard locations (like ./migrations/)\n\
+                                and converts them to RustyRoad's expected format.\n\n\
+                                AI agents and developers often create migrations in the wrong location.\n\
+                                This command automatically:\n\
+                                 1. Scans for SQL files in common incorrect locations\n\
+                                 2. Parses the SQL to understand the operations\n\
+                                 3. Generates proper up.sql and down.sql files\n\
+                                 4. Places them in ./config/database/migrations/<timestamp>-<name>/\n\n\
+                                DETECTED LOCATIONS:\n\
+                                 - ./migrations/\n\
+                                 - ./migration/\n\
+                                 - ./db/migrations/\n\
+                                 - ./sql/\n\
+                                 - *.sql files in project root\n\n\
+                                EXAMPLE:\n\
+                                 rustyroad migration convert\n\
+                                 rustyroad migration convert --remove-source\n"
+                            )
+                            .arg(
+                                Arg::new("remove-source")
+                                    .long("remove-source")
+                                    .short('r')
+                                    .help("Remove the source files after successful conversion")
+                                    .action(clap::ArgAction::SetTrue)
+                            )
+                            .arg(
+                                Arg::new("dry-run")
+                                    .long("dry-run")
+                                    .short('d')
+                                    .help("Show what would be converted without making changes")
+                                    .action(clap::ArgAction::SetTrue)
+                            ),
+                    )
                     .subcommand_help_heading("SUBCOMMANDS:")
                     // if no subcommand is provided, print help
                     .subcommand_required(true)
@@ -1404,7 +1443,14 @@ Example:\n\
                 }
             },
             // Migration Case - Can generate migrations, run migrations, and rollback migrations
-            Some(("migration", matches)) => match matches.subcommand() {
+            Some(("migration", matches)) => {
+                // Check for rogue migrations at the start of any migration command
+                // (except for 'convert' which handles this itself)
+                if matches.subcommand_name() != Some("convert") {
+                    warn_about_rogue_migrations();
+                }
+                
+                match matches.subcommand() {
                 Some(("generate", matches)) => {
                     let name = matches.get_one::<String>("name").unwrap().to_string();
                     // Get the column definitions provided via CLI
@@ -1513,9 +1559,65 @@ Example:\n\
                     Self::print_config_info();
                     list_migrations(format).await.expect("Error listing migrations");
                 }
+                Some(("convert", matches)) => {
+                    let remove_source = matches.get_flag("remove-source");
+                    let dry_run = matches.get_flag("dry-run");
+
+                    if dry_run {
+                        // Just detect and report, don't convert
+                        let detected = detect_rogue_migrations();
+                        if detected.is_empty() {
+                            println!("No rogue migrations detected.");
+                        } else {
+                            println!("Found {} rogue migration(s) that would be converted:\n", detected.len());
+                            for (i, migration) in detected.iter().enumerate() {
+                                println!(
+                                    "  {}. {} (from {:?})",
+                                    i + 1,
+                                    migration.name,
+                                    migration.source_path
+                                );
+                                println!("     Operations:");
+                                for op in &migration.operations {
+                                    match op {
+                                        SqlOperation::CreateTable { table_name, .. } => {
+                                            println!("       - CREATE TABLE {}", table_name);
+                                        }
+                                        SqlOperation::DropTable { table_name } => {
+                                            println!("       - DROP TABLE {}", table_name);
+                                        }
+                                        SqlOperation::AlterTableAddColumn { table_name, columns, .. } => {
+                                            println!("       - ALTER TABLE {} ADD COLUMN {}", table_name, columns.join(", "));
+                                        }
+                                        SqlOperation::AlterTableDropColumn { table_name, columns, .. } => {
+                                            println!("       - ALTER TABLE {} DROP COLUMN {}", table_name, columns.join(", "));
+                                        }
+                                        SqlOperation::CreateIndex { index_name, table_name, .. } => {
+                                            println!("       - CREATE INDEX {} ON {}", index_name, table_name);
+                                        }
+                                        SqlOperation::DropIndex { index_name } => {
+                                            println!("       - DROP INDEX {}", index_name);
+                                        }
+                                        SqlOperation::RawSql { .. } => {
+                                            println!("       - [Raw SQL statement]");
+                                        }
+                                    }
+                                }
+                                println!();
+                            }
+                            println!("Run without --dry-run to convert these migrations.");
+                        }
+                    } else {
+                        let count = detect_and_convert_rogue_migrations(true, remove_source);
+                        if count == 0 {
+                            println!("No rogue migrations found to convert.");
+                        }
+                    }
+                }
                 _ => {
                     println!("Invalid migration choice");
                 }
+            }
             },
             // Add Feature Case
             Some(("feature", matches)) => match matches.subcommand() {
