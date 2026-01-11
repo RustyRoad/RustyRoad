@@ -132,7 +132,7 @@ enum MigrationType {
 
 /// Parse migration name to determine the type of operation
 fn parse_migration_name(name: &str, columns: &[String]) -> MigrationType {
-    // Check for "add_*_to_*" pattern
+    // Check for "add_*_to_*" pattern (e.g., "add_email_to_users")
     let add_pattern = Regex::new(r"^add_(.+)_to_(.+)$").unwrap();
 
     if let Some(captures) = add_pattern.captures(name) {
@@ -154,7 +154,16 @@ fn parse_migration_name(name: &str, columns: &[String]) -> MigrationType {
         };
     }
 
-    // Default to CREATE TABLE operation
+    // Check for "create_*" pattern (e.g., "create_users", "create_video_sequences")
+    // Also handles "create_*_table" pattern
+    let create_pattern = Regex::new(r"^create_(.+?)(?:_table)?$").unwrap();
+
+    if let Some(captures) = create_pattern.captures(name) {
+        let table_name = captures.get(1).unwrap().as_str().to_string();
+        return MigrationType::CreateTable(table_name);
+    }
+
+    // Default to using the migration name as the table name
     MigrationType::CreateTable(name.to_string())
 }
 
@@ -445,7 +454,24 @@ mod tests {
 
         match result {
             MigrationType::CreateTable(table_name) => {
-                assert_eq!(table_name, "create_users_table");
+                // "create_users_table" should extract "users" as the table name
+                assert_eq!(table_name, "users");
+            }
+            _ => panic!("Expected CreateTable migration type"),
+        }
+    }
+
+    #[test]
+    fn test_parse_migration_name_create_without_table_suffix() {
+        let name = "create_video_sequences";
+        let columns = vec![];
+
+        let result = parse_migration_name(name, &columns);
+
+        match result {
+            MigrationType::CreateTable(table_name) => {
+                // "create_video_sequences" should extract "video_sequences" as the table name
+                assert_eq!(table_name, "video_sequences");
             }
             _ => panic!("Expected CreateTable migration type"),
         }
