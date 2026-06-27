@@ -125,6 +125,7 @@ List migrations:
 
 ```bash
 rustyroad migration list
+ENV=test rustyroad migration list
 ```
 
 Run all migrations (up) in order:
