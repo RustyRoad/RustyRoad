@@ -56,7 +56,7 @@ pub fn config_file_name_for_environment(environment: &str) -> String {
     }
 }
 
-/// Returns the RustyRoad config filename selected by environment variables.
+/// Returns the RustyRoad config filename selected by `ENVIRONMENT`.
 ///
 /// # Examples
 ///
@@ -65,9 +65,7 @@ pub fn config_file_name_for_environment(environment: &str) -> String {
 /// assert!(file_name.ends_with(".toml"));
 /// ```
 pub fn get_config_file_name() -> String {
-    let environment = std::env::var("ENVIRONMENT")
-        .or_else(|_| std::env::var("ENV"))
-        .unwrap_or_else(|_| "dev".to_string());
+    let environment = std::env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
     config_file_name_for_environment(&environment)
 }
 
