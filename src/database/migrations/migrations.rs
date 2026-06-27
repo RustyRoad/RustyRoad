@@ -40,6 +40,35 @@ struct MigrationsOutput {
 const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 const MIGRATIONS_DIR: &str = "./config/database/migrations";
 
+/// Returns the RustyRoad config filename for the active environment.
+///
+/// # Examples
+///
+/// ```
+/// let file_name = rustyroad::database::migrations::config_file_name_for_environment("test");
+/// assert_eq!(file_name, "rustyroad.test.toml");
+/// ```
+pub fn config_file_name_for_environment(environment: &str) -> String {
+    if environment == "dev" {
+        "rustyroad.toml".to_string()
+    } else {
+        format!("rustyroad.{}.toml", environment)
+    }
+}
+
+/// Returns the RustyRoad config filename selected by `ENVIRONMENT`.
+///
+/// # Examples
+///
+/// ```
+/// let file_name = rustyroad::database::migrations::get_config_file_name();
+/// assert!(file_name.ends_with(".toml"));
+/// ```
+pub fn get_config_file_name() -> String {
+    let environment = std::env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
+    config_file_name_for_environment(&environment)
+}
+
 /// Parsed column with constraints
 struct ParsedColumn {
     name: String,
@@ -1169,12 +1198,7 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
     // get the database
     let database: Database = Database::get_database_from_rustyroad_toml().expect("Couldn't parse the rustyroad.toml file. Please check the documentation for a proper implementation.");
 
-    let environment = std::env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
-    let config_file = if environment == "dev" {
-        "rustyroad.toml".to_string()
-    } else {
-        format!("rustyroad.{}.toml", environment)
-    };
+    let config_file = get_config_file_name();
 
     // create the connection pool
     let connection = Database::create_database_connection(&database)
@@ -1250,7 +1274,7 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
     let applied_migrations = match connection {
         DatabaseConnection::Pg(conn) => {
             match sqlx::query_as::<_, (String, String, String)>(
-                "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at",
+                "SELECT name, applied_at::text, direction FROM _rustyroad_migrations ORDER BY applied_at",
             )
             .fetch_all(&*conn)
             .await
@@ -1260,7 +1284,7 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
             }
         }
         DatabaseConnection::MySql(conn) => match sqlx::query_as::<_, (String, String, String)>(
-            "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at",
+            "SELECT name, CAST(applied_at AS CHAR), direction FROM _rustyroad_migrations ORDER BY applied_at",
         )
         .fetch_all(&*conn)
         .await
@@ -1269,7 +1293,7 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
             Err(e) => return Err(CustomMigrationError::SqlxError(e)),
         },
         DatabaseConnection::Sqlite(conn) => match sqlx::query_as::<_, (String, String, String)>(
-            "SELECT name, applied_at, direction FROM _rustyroad_migrations ORDER BY applied_at",
+            "SELECT name, CAST(applied_at AS TEXT), direction FROM _rustyroad_migrations ORDER BY applied_at",
         )
         .fetch_all(&*conn)
         .await
