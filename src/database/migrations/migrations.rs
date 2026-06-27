@@ -12,7 +12,7 @@ use std::{
     io::{self, ErrorKind},
 };
 
-use crate::database::{get_config_file_name, Database, DatabaseConnection};
+use crate::database::{Database, DatabaseConnection};
 use rustyline::DefaultEditor;
 use serde::de::StdError;
 use serde_derive::{Deserialize, Serialize};
@@ -39,6 +39,37 @@ struct MigrationsOutput {
 
 const CONSTRAINTS: &[&str] = &["PRIMARY KEY", "NOT NULL", "FOREIGN KEY"];
 const MIGRATIONS_DIR: &str = "./config/database/migrations";
+
+/// Returns the RustyRoad config filename for the active environment.
+///
+/// # Examples
+///
+/// ```
+/// let file_name = rustyroad::database::migrations::config_file_name_for_environment("test");
+/// assert_eq!(file_name, "rustyroad.test.toml");
+/// ```
+pub fn config_file_name_for_environment(environment: &str) -> String {
+    if environment == "dev" {
+        "rustyroad.toml".to_string()
+    } else {
+        format!("rustyroad.{}.toml", environment)
+    }
+}
+
+/// Returns the RustyRoad config filename selected by environment variables.
+///
+/// # Examples
+///
+/// ```
+/// let file_name = rustyroad::database::migrations::get_config_file_name();
+/// assert!(file_name.ends_with(".toml"));
+/// ```
+pub fn get_config_file_name() -> String {
+    let environment = std::env::var("ENVIRONMENT")
+        .or_else(|_| std::env::var("ENV"))
+        .unwrap_or_else(|_| "dev".to_string());
+    config_file_name_for_environment(&environment)
+}
 
 /// Parsed column with constraints
 struct ParsedColumn {
