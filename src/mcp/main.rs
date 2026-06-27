@@ -961,9 +961,9 @@ impl McpServer {
                 let path = entry.path();
                 if path.is_dir() {
                     collect_rs_files(&path, files)?;
-                } else if path.extension().map_or(false, |ext| ext == "rs") {
+                } else if path.extension().is_some_and(|ext| ext == "rs") {
                     // Skip mod.rs files as they typically don't contain routes
-                    if path.file_name().map_or(false, |n| n != "mod.rs") {
+                    if path.file_name().is_some_and(|n| n != "mod.rs") {
                         files.push(path);
                     }
                 }
@@ -979,7 +979,7 @@ impl McpServer {
             let filter_name = filter.trim_end_matches(".rs");
             rs_files.retain(|path| {
                 path.file_stem()
-                    .map_or(false, |stem| stem.to_string_lossy().contains(filter_name))
+                    .is_some_and(|stem| stem.to_string_lossy().contains(filter_name))
             });
         }
 
@@ -1268,7 +1268,7 @@ impl McpServer {
             let path = entry.path();
 
             // Skip non-.rs files and mod.rs
-            if path.extension().map_or(true, |ext| ext != "rs") {
+            if path.extension().is_none_or(|ext| ext != "rs") {
                 continue;
             }
 
