@@ -60,7 +60,12 @@ pub async fn run_all_migrations(direction: MigrationDirection) -> Result<(), Cus
 
         let (_, migration_name) = dir_name
             .split_once('-')
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid migration directory name format. Expected: <timestamp>-<name>"))
+            .ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Invalid migration directory name format. Expected: <timestamp>-<name>",
+                )
+            })
             .map_err(CustomMigrationError::IoError)?;
 
         let migration_name = migration_name.to_string();
