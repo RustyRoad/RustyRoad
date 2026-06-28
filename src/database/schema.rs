@@ -164,7 +164,12 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
         for table in &all_tables {
             println!("Table: {}", table.name);
             for col in &table.columns {
-                println!("  - {}: {}{}", col.name, col.r#type, if col.nullable { "" } else { " NOT NULL" });
+                println!(
+                    "  - {}: {}{}",
+                    col.name,
+                    col.r#type,
+                    if col.nullable { "" } else { " NOT NULL" }
+                );
             }
             println!("{:-<30}", "");
         }
@@ -367,7 +372,8 @@ async fn execute_query_json(
             let mut rows_data: Vec<serde_json::Map<String, serde_json::Value>> = Vec::new();
 
             for row in rows {
-                let mut row_map: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+                let mut row_map: serde_json::Map<String, serde_json::Value> =
+                    serde_json::Map::new();
                 let columns = row.columns();
                 for column in columns {
                     let col_name = column.name().to_string();
@@ -402,7 +408,8 @@ async fn execute_query_json(
             let mut rows_data: Vec<serde_json::Map<String, serde_json::Value>> = Vec::new();
 
             for row in rows {
-                let mut row_map: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+                let mut row_map: serde_json::Map<String, serde_json::Value> =
+                    serde_json::Map::new();
                 let columns = row.columns();
                 for column in columns {
                     let col_name = column.name().to_string();
@@ -437,7 +444,8 @@ async fn execute_query_json(
             let mut rows_data: Vec<serde_json::Map<String, serde_json::Value>> = Vec::new();
 
             for row in rows {
-                let mut row_map: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+                let mut row_map: serde_json::Map<String, serde_json::Value> =
+                    serde_json::Map::new();
                 let columns = row.columns();
                 for column in columns {
                     let col_name = column.name().to_string();

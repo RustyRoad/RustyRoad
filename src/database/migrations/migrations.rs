@@ -758,8 +758,10 @@ pub async fn run_migration(
 
     let migrations_dir_path = MIGRATIONS_DIR.to_string();
     // find the folder that has the name of the migration in the migrations directory with the latest timestamp
-    let migration_dir_selected = find_migration_dir(migrations_dir_path.clone(), migration_name.clone())
-        .map_err(|e| CustomMigrationError::IoError(io::Error::new(io::ErrorKind::NotFound, e.to_string())))?;
+    let migration_dir_selected =
+        find_migration_dir(migrations_dir_path.clone(), migration_name.clone()).map_err(|e| {
+            CustomMigrationError::IoError(io::Error::new(io::ErrorKind::NotFound, e.to_string()))
+        })?;
     // Generate the path to the migrations directory at runtime
     let migration_dir = &migration_dir_selected;
     // Get migration files from the specified directory

@@ -393,13 +393,11 @@ impl McpServer {
         let _guard = self.change_to_project_dir()?;
 
         match direction {
-            "status" => {
-                Ok(json!({
-                    "success": true,
-                    "message": "Use 'rustyroad migration list' to see migration status",
-                    "hint": "Migration status checking via MCP coming soon"
-                }))
-            }
+            "status" => Ok(json!({
+                "success": true,
+                "message": "Use 'rustyroad migration list' to see migration status",
+                "hint": "Migration status checking via MCP coming soon"
+            })),
             "up" => {
                 if let Some(migration_name) = name {
                     rustyroad::database::run_migration(
@@ -446,7 +444,10 @@ impl McpServer {
                     Err("Rolling back all migrations requires specifying a migration name for safety. Use 'rustyroad migration reset' CLI for full reset.".to_string())
                 }
             }
-            _ => Err(format!("Invalid direction: {}. Use 'up', 'down', or 'status'", direction)),
+            _ => Err(format!(
+                "Invalid direction: {}. Use 'up', 'down', or 'status'",
+                direction
+            )),
         }
     }
 
@@ -628,7 +629,8 @@ impl McpServer {
 
                             // Extract span information (file:line:col)
                             let mut spans: Vec<Value> = Vec::new();
-                            if let Some(spans_arr) = message.get("spans").and_then(|v| v.as_array()) {
+                            if let Some(spans_arr) = message.get("spans").and_then(|v| v.as_array())
+                            {
                                 for span in spans_arr {
                                     let file = span
                                         .get("file_name")
@@ -638,10 +640,8 @@ impl McpServer {
                                         .get("line_start")
                                         .and_then(|v| v.as_u64())
                                         .unwrap_or(0);
-                                    let line_end = span
-                                        .get("line_end")
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(0);
+                                    let line_end =
+                                        span.get("line_end").and_then(|v| v.as_u64()).unwrap_or(0);
                                     let col_start = span
                                         .get("column_start")
                                         .and_then(|v| v.as_u64())
@@ -764,23 +764,21 @@ impl McpServer {
         }
 
         match fs::read_to_string(&toml_path) {
-            Ok(content) => {
-                match toml::from_str::<toml::Value>(&content) {
-                    Ok(parsed) => json!({
-                        "exists": true,
-                        "content": parsed
-                    }),
-                    Err(e) => json!({
-                        "exists": true,
-                        "raw": content,
-                        "parse_error": e.to_string()
-                    })
-                }
-            }
+            Ok(content) => match toml::from_str::<toml::Value>(&content) {
+                Ok(parsed) => json!({
+                    "exists": true,
+                    "content": parsed
+                }),
+                Err(e) => json!({
+                    "exists": true,
+                    "raw": content,
+                    "parse_error": e.to_string()
+                }),
+            },
             Err(e) => json!({
                 "exists": true,
                 "error": format!("Failed to read: {}", e)
-            })
+            }),
         }
     }
 
@@ -875,7 +873,10 @@ impl McpServer {
         for dir_name in key_dirs {
             let dir_path = src_path.join(dir_name);
             if dir_path.exists() {
-                structure.insert(dir_name.to_string(), self.get_subdirectory_structure(&dir_path));
+                structure.insert(
+                    dir_name.to_string(),
+                    self.get_subdirectory_structure(&dir_path),
+                );
             }
         }
 
@@ -985,12 +986,15 @@ impl McpServer {
 
         // Regex patterns for Actix route attributes
         // Matches: #[get("/path")], #[post("/path")], etc.
-        let attr_route_re = Regex::new(r#"#\[(get|post|put|delete|patch|head|options)\("([^"]+)"\)\]"#)
-            .map_err(|e| format!("Regex error: {}", e))?;
+        let attr_route_re =
+            Regex::new(r#"#\[(get|post|put|delete|patch|head|options)\("([^"]+)"\)\]"#)
+                .map_err(|e| format!("Regex error: {}", e))?;
 
         // Matches: .route("/path", web::get().to(...))
-        let route_method_re = Regex::new(r#"\.route\(\s*"([^"]+)"\s*,\s*web::(get|post|put|delete|patch|head|options)\(\)"#)
-            .map_err(|e| format!("Regex error: {}", e))?;
+        let route_method_re = Regex::new(
+            r#"\.route\(\s*"([^"]+)"\s*,\s*web::(get|post|put|delete|patch|head|options)\(\)"#,
+        )
+        .map_err(|e| format!("Regex error: {}", e))?;
 
         // Matches: web::resource("/path").route(web::get().to(...))
         let resource_re = Regex::new(r#"web::resource\(\s*"([^"]+)"\s*\)"#)
@@ -1096,7 +1100,8 @@ impl McpServer {
     }
 
     fn change_to_project_dir(&self) -> Result<DirGuard, String> {
-        let original = env::current_dir().map_err(|e| format!("Failed to get current dir: {}", e))?;
+        let original =
+            env::current_dir().map_err(|e| format!("Failed to get current dir: {}", e))?;
         env::set_current_dir(&self.project_dir)
             .map_err(|e| format!("Failed to change to project dir: {}", e))?;
         Ok(DirGuard { original })
@@ -1136,8 +1141,9 @@ impl McpServer {
 
         // Regex patterns for parsing cargo test output
         // Match summary line: "test result: ok. X passed; Y failed; Z ignored"
-        let summary_re = Regex::new(r"test result: \w+\. (\d+) passed; (\d+) failed; (\d+) ignored")
-            .map_err(|e| format!("Failed to compile regex: {}", e))?;
+        let summary_re =
+            Regex::new(r"test result: \w+\. (\d+) passed; (\d+) failed; (\d+) ignored")
+                .map_err(|e| format!("Failed to compile regex: {}", e))?;
 
         // Match failed test names: "---- test_name stdout ----" followed by error
         let failed_test_re = Regex::new(r"---- ([^\s]+) stdout ----")
@@ -1176,7 +1182,11 @@ impl McpServer {
             }
 
             // Check for end of failure block
-            if in_failure_block && (line.starts_with("---- ") || line.starts_with("failures:") || line.starts_with("test result:")) {
+            if in_failure_block
+                && (line.starts_with("---- ")
+                    || line.starts_with("failures:")
+                    || line.starts_with("test result:"))
+            {
                 if let Some(test_name) = current_failed_test.take() {
                     failed_tests.push(json!({
                         "name": test_name,
@@ -1352,10 +1362,7 @@ impl McpServer {
     }
 
     async fn handle_recent_changes(&self, args: Value) -> Result<Value, String> {
-        let limit = args
-            .get("limit")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(10) as usize;
+        let limit = args.get("limit").and_then(|v| v.as_i64()).unwrap_or(10) as usize;
 
         let _guard = self.change_to_project_dir()?;
 
@@ -1459,18 +1466,16 @@ impl McpServer {
         let id = request.id.clone().unwrap_or(Value::Null);
 
         let result = match request.method.as_str() {
-            "initialize" => {
-                Ok(json!({
-                    "protocolVersion": PROTOCOL_VERSION,
-                    "serverInfo": {
-                        "name": SERVER_NAME,
-                        "version": SERVER_VERSION
-                    },
-                    "capabilities": {
-                        "tools": {}
-                    }
-                }))
-            }
+            "initialize" => Ok(json!({
+                "protocolVersion": PROTOCOL_VERSION,
+                "serverInfo": {
+                    "name": SERVER_NAME,
+                    "version": SERVER_VERSION
+                },
+                "capabilities": {
+                    "tools": {}
+                }
+            })),
             "initialized" => Ok(json!({})),
             "tools/list" => {
                 let tools = self.get_tools();
@@ -1692,8 +1697,7 @@ fn register_with_opencode() -> Result<(), String> {
     let mut config: Value = if config_path.exists() {
         let content = fs::read_to_string(&config_path)
             .map_err(|e| format!("Failed to read config: {}", e))?;
-        serde_json::from_str(&content)
-            .map_err(|e| format!("Failed to parse config: {}", e))?
+        serde_json::from_str(&content).map_err(|e| format!("Failed to parse config: {}", e))?
     } else {
         json!({
             "$schema": "https://opencode.ai/config.json"
@@ -1701,8 +1705,8 @@ fn register_with_opencode() -> Result<(), String> {
     };
 
     // Get the path to the rustyroad-mcp binary
-    let binary_path = env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?;
+    let binary_path =
+        env::current_exe().map_err(|e| format!("Failed to get executable path: {}", e))?;
 
     // Add/update MCP server config
     let mcp = config
@@ -1711,9 +1715,7 @@ fn register_with_opencode() -> Result<(), String> {
         .entry("mcp")
         .or_insert(json!({}));
 
-    let mcp_obj = mcp
-        .as_object_mut()
-        .ok_or("MCP config is not an object")?;
+    let mcp_obj = mcp.as_object_mut().ok_or("MCP config is not an object")?;
 
     mcp_obj.insert(
         "rustyroad".to_string(),
@@ -1733,8 +1735,7 @@ fn register_with_opencode() -> Result<(), String> {
     // Write config back
     let content = serde_json::to_string_pretty(&config)
         .map_err(|e| format!("Failed to serialize config: {}", e))?;
-    fs::write(&config_path, content)
-        .map_err(|e| format!("Failed to write config: {}", e))?;
+    fs::write(&config_path, content).map_err(|e| format!("Failed to write config: {}", e))?;
 
     println!("Registered RustyRoad MCP server with OpenCode!");
     println!("Config file: {}", config_path.display());
@@ -1819,7 +1820,11 @@ fn main() {
                         data: None,
                     }),
                 };
-                let _ = writeln!(stdout, "{}", serde_json::to_string(&error_response).unwrap());
+                let _ = writeln!(
+                    stdout,
+                    "{}",
+                    serde_json::to_string(&error_response).unwrap()
+                );
                 let _ = stdout.flush();
                 continue;
             }

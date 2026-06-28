@@ -140,19 +140,17 @@ To access the page builder, go to the /page/{pageId} URL. For example, if you ar
 /// let result = write_to_page_model();
 /// ```
 pub async fn write_to_page_model() -> Result<(), Error> {
-    fs::read_to_string("./rustyroad.toml")
-        .unwrap_or_else(|_| {
-            let current_dir_path = std::env::current_dir()
-                .unwrap_or_else(|_| ".".into());
-            let current_dir = current_dir_path.display();
-            panic!(
-                "Error: This is not a RustyRoad project.\n\n\
+    fs::read_to_string("./rustyroad.toml").unwrap_or_else(|_| {
+        let current_dir_path = std::env::current_dir().unwrap_or_else(|_| ".".into());
+        let current_dir = current_dir_path.display();
+        panic!(
+            "Error: This is not a RustyRoad project.\n\n\
                 Current directory: {}\n\
                 Could not find rustyroad.toml.\n\n\
                 Please run `rustyroad new` to create a new project.",
-                current_dir
-            )
-        });
+            current_dir
+        )
+    });
     let page_model_file_location = "src/models/page.rs";
 
     // create the file

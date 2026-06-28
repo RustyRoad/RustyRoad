@@ -127,10 +127,7 @@ pub fn detect_rogue_migrations() -> Vec<DetectedMigration> {
                 if let Some(ext) = path.extension() {
                     if ext == "sql" {
                         // Check if it looks like a migration file
-                        let filename = path
-                            .file_stem()
-                            .and_then(|s| s.to_str())
-                            .unwrap_or("");
+                        let filename = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
                         if looks_like_migration_name(filename) {
                             if let Ok(migration) = parse_sql_file(&path) {
                                 detected.push(migration);
@@ -326,7 +323,10 @@ fn normalize_sql(sql: &str) -> String {
 
     // Normalize whitespace
     let extra_whitespace = Regex::new(r"\s+").unwrap();
-    extra_whitespace.replace_all(&result, " ").trim().to_string()
+    extra_whitespace
+        .replace_all(&result, " ")
+        .trim()
+        .to_string()
 }
 
 /// Parse a single SQL statement into an operation
@@ -408,11 +408,7 @@ fn parse_alter_table(stmt: &str) -> Option<SqlOperation> {
 
     // Pattern: ALTER TABLE table_name ADD [COLUMN] column_name ...
     let table_pattern = Regex::new(r#"(?i)ALTER\s+TABLE\s+[`"\[]?(\w+)[`"\]]?"#).unwrap();
-    let table_name = table_pattern
-        .captures(stmt)?
-        .get(1)?
-        .as_str()
-        .to_string();
+    let table_name = table_pattern.captures(stmt)?.get(1)?.as_str().to_string();
 
     if stmt_upper.contains("ADD COLUMN") || stmt_upper.contains("ADD ") {
         // Extract added columns
@@ -574,10 +570,7 @@ pub fn generate_down_sql(operations: &[SqlOperation]) -> String {
                     ));
                 }
             }
-            SqlOperation::CreateIndex {
-                index_name,
-                ..
-            } => {
+            SqlOperation::CreateIndex { index_name, .. } => {
                 down_statements.push(format!("DROP INDEX IF EXISTS {};", index_name));
             }
             SqlOperation::DropIndex { index_name } => {
@@ -624,7 +617,10 @@ pub fn convert_migrations(
 }
 
 /// Convert a single migration to RustyRoad format
-fn convert_single_migration(migration: &DetectedMigration, remove_source: bool) -> ConversionResult {
+fn convert_single_migration(
+    migration: &DetectedMigration,
+    remove_source: bool,
+) -> ConversionResult {
     let timestamp = Local::now().format("%Y%m%d%H%M%S");
     let folder_name = format!("{}-{}", timestamp, migration.name);
     let destination_path = PathBuf::from(MIGRATIONS_DIR).join(&folder_name);
@@ -651,7 +647,10 @@ fn convert_single_migration(migration: &DetectedMigration, remove_source: bool) 
             message: format!("Failed to create up.sql: {}", e),
         };
     }
-    if let Err(e) = write_to_file(up_sql_path.to_str().unwrap(), migration.sql_content.as_bytes()) {
+    if let Err(e) = write_to_file(
+        up_sql_path.to_str().unwrap(),
+        migration.sql_content.as_bytes(),
+    ) {
         return ConversionResult {
             source_path: migration.source_path.clone(),
             destination_path,
@@ -713,14 +712,14 @@ fn convert_single_migration(migration: &DetectedMigration, remove_source: bool) 
 }
 
 /// Main entry point: detect and convert rogue migrations
-/// 
+///
 /// This function is designed to be called at the start of migration commands
 /// to automatically fix agent-created migrations.
-/// 
+///
 /// # Arguments
 /// * `auto_convert` - If true, automatically converts without prompting
 /// * `remove_source` - If true, removes the source files after conversion
-/// 
+///
 /// # Returns
 /// Number of migrations converted
 pub fn detect_and_convert_rogue_migrations(auto_convert: bool, remove_source: bool) -> usize {
@@ -731,7 +730,10 @@ pub fn detect_and_convert_rogue_migrations(auto_convert: bool, remove_source: bo
     }
 
     println!("\n=== RustyRoad Migration Converter ===");
-    println!("Detected {} rogue migration(s) that need conversion:\n", detected.len());
+    println!(
+        "Detected {} rogue migration(s) that need conversion:\n",
+        detected.len()
+    );
 
     for (i, migration) in detected.iter().enumerate() {
         println!(
@@ -827,14 +829,17 @@ pub fn detect_and_convert_rogue_migrations(auto_convert: bool, remove_source: bo
 }
 
 /// Check for rogue migrations and print a warning if found
-/// 
+///
 /// This is a lightweight check that can be called at the start of any
 /// migration command to warn users about improperly placed migrations.
 pub fn warn_about_rogue_migrations() {
     let detected = detect_rogue_migrations();
 
     if !detected.is_empty() {
-        eprintln!("\n*** WARNING: Detected {} SQL migration(s) in non-standard locations! ***", detected.len());
+        eprintln!(
+            "\n*** WARNING: Detected {} SQL migration(s) in non-standard locations! ***",
+            detected.len()
+        );
         eprintln!("RustyRoad expects migrations in: {}/", MIGRATIONS_DIR);
         eprintln!("\nDetected files:");
         for migration in &detected {
@@ -853,7 +858,10 @@ pub fn cleanup_empty_rogue_dirs() {
             if let Ok(mut entries) = fs::read_dir(path) {
                 if entries.next().is_none() {
                     if let Err(e) = fs::remove_dir(path) {
-                        eprintln!("Warning: Could not remove empty directory {:?}: {}", path, e);
+                        eprintln!(
+                            "Warning: Could not remove empty directory {:?}: {}",
+                            path, e
+                        );
                     } else {
                         println!("Removed empty directory: {}", dir);
                     }
@@ -869,22 +877,13 @@ mod tests {
 
     #[test]
     fn test_extract_migration_name() {
-        assert_eq!(
-            extract_migration_name("20231224150552_user"),
-            "user"
-        );
+        assert_eq!(extract_migration_name("20231224150552_user"), "user");
         assert_eq!(
             extract_migration_name("20231224150552-create_users"),
             "create_users"
         );
-        assert_eq!(
-            extract_migration_name("001_create_users"),
-            "create_users"
-        );
-        assert_eq!(
-            extract_migration_name("V1__create_users"),
-            "create_users"
-        );
+        assert_eq!(extract_migration_name("001_create_users"), "create_users");
+        assert_eq!(extract_migration_name("V1__create_users"), "create_users");
         assert_eq!(
             extract_migration_name("create_users_table"),
             "create_users_table"
@@ -906,10 +905,14 @@ mod tests {
     fn test_parse_create_table() {
         let sql = "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL)";
         let ops = parse_sql_operations(sql);
-        
+
         assert_eq!(ops.len(), 1);
         match &ops[0] {
-            SqlOperation::CreateTable { table_name, columns, .. } => {
+            SqlOperation::CreateTable {
+                table_name,
+                columns,
+                ..
+            } => {
                 assert_eq!(table_name, "users");
                 assert_eq!(columns.len(), 2);
             }
@@ -921,7 +924,7 @@ mod tests {
     fn test_parse_create_table_if_not_exists() {
         let sql = "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY)";
         let ops = parse_sql_operations(sql);
-        
+
         assert_eq!(ops.len(), 1);
         match &ops[0] {
             SqlOperation::CreateTable { table_name, .. } => {
@@ -935,10 +938,14 @@ mod tests {
     fn test_parse_alter_table_add_column() {
         let sql = "ALTER TABLE users ADD COLUMN email VARCHAR(255)";
         let ops = parse_sql_operations(sql);
-        
+
         assert_eq!(ops.len(), 1);
         match &ops[0] {
-            SqlOperation::AlterTableAddColumn { table_name, columns, .. } => {
+            SqlOperation::AlterTableAddColumn {
+                table_name,
+                columns,
+                ..
+            } => {
                 assert_eq!(table_name, "users");
                 assert!(columns.contains(&"email".to_string()));
             }
@@ -950,7 +957,7 @@ mod tests {
     fn test_parse_drop_table() {
         let sql = "DROP TABLE IF EXISTS users";
         let ops = parse_sql_operations(sql);
-        
+
         assert_eq!(ops.len(), 1);
         match &ops[0] {
             SqlOperation::DropTable { table_name } => {
@@ -964,10 +971,14 @@ mod tests {
     fn test_parse_create_index() {
         let sql = "CREATE INDEX idx_users_email ON users (email)";
         let ops = parse_sql_operations(sql);
-        
+
         assert_eq!(ops.len(), 1);
         match &ops[0] {
-            SqlOperation::CreateIndex { index_name, table_name, .. } => {
+            SqlOperation::CreateIndex {
+                index_name,
+                table_name,
+                ..
+            } => {
                 assert_eq!(index_name, "idx_users_email");
                 assert_eq!(table_name, "users");
             }
@@ -1007,7 +1018,7 @@ mod tests {
             CREATE TABLE posts (id SERIAL PRIMARY KEY, user_id INTEGER);
             CREATE INDEX idx_posts_user ON posts (user_id);
         "#;
-        
+
         let ops = parse_sql_operations(sql);
         assert_eq!(ops.len(), 3);
     }
@@ -1023,7 +1034,7 @@ mod tests {
                comment */
             CREATE TABLE posts (id INTEGER);
         "#;
-        
+
         let normalized = normalize_sql(sql);
         assert!(!normalized.contains("--"));
         assert!(!normalized.contains("/*"));

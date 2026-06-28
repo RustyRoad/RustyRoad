@@ -1449,71 +1449,72 @@ Example:\n\
                 if matches.subcommand_name() != Some("convert") {
                     warn_about_rogue_migrations();
                 }
-                
+
                 match matches.subcommand() {
-                Some(("generate", matches)) => {
-                    let name = matches.get_one::<String>("name").unwrap().to_string();
-                    // Get the column definitions provided via CLI
-                    let columns: Vec<String> = matches
-                        .get_many::<String>("columns")
-                        .map(|vals| vals.map(|s| s.to_string()).collect())
-                        .unwrap_or_else(Vec::new);
+                    Some(("generate", matches)) => {
+                        let name = matches.get_one::<String>("name").unwrap().to_string();
+                        // Get the column definitions provided via CLI
+                        let columns: Vec<String> = matches
+                            .get_many::<String>("columns")
+                            .map(|vals| vals.map(|s| s.to_string()).collect())
+                            .unwrap_or_else(Vec::new);
 
-                    println!("Generating migration: {}", name);
-                    // Pass the captured columns vector to the updated create_migration function
-                    create_migration(&name, columns)
-                        .await
-                        .expect("Error creating migration");
-                }
-                Some(("all", _)) => {
-                    Self::print_config_info();
-                    get_project_name_from_rustyroad_toml()
-                        .unwrap_or_else(|why| panic!("This is not a Rusty Road project: {why}"));
-
-                    run_all_migrations(MigrationDirection::Up)
-                        .await
-                        .expect("Error running migrations");
-                }
-                Some(("run", matches)) => {
-                    Self::print_config_info();
-                    let name = matches.get_one::<String>("name").unwrap().to_string();
-
-                    run_migration(name.clone(), MigrationDirection::Up)
-                        .await
-                        .expect("Error running migration");
-                    println!("'{}' migration completed successfully!", name.clone());
-                }
-                Some(("rollback", matches)) => {
-                    Self::print_config_info();
-                    let name = matches.get_one::<String>("name").unwrap().to_string();
-                    // Create a confirmation prompt
-                    let confirmation = Confirm::new()
-                        .with_prompt(format!(
-                            "Are you sure you want to rollback the '{}' migration?",
-                            name
-                        ))
-                        .interact()
-                        .map_err(|err| io::Error::other(err))
-                        .expect("Error rolling back migration: ");
-
-                    if confirmation {
-                        println!("Rolling back the '{}' migration...", name.clone());
-                        run_migration(name.clone(), MigrationDirection::Down)
+                        println!("Generating migration: {}", name);
+                        // Pass the captured columns vector to the updated create_migration function
+                        create_migration(&name, columns)
                             .await
-                            .expect("Error rolling back migration");
-                        println!(
-                            "'{}' migration rollback completed successfully!",
-                            name.clone()
-                        );
-                    } else {
-                        println!("'{}' migration rollback canceled by user.", name);
+                            .expect("Error creating migration");
                     }
-                }
-                Some(("redo", matches)) => {
-                    Self::print_config_info();
-                    let name = matches.get_one::<String>("name").unwrap().to_string();
+                    Some(("all", _)) => {
+                        Self::print_config_info();
+                        get_project_name_from_rustyroad_toml().unwrap_or_else(|why| {
+                            panic!("This is not a Rusty Road project: {why}")
+                        });
 
-                    let confirmation = Confirm::new()
+                        run_all_migrations(MigrationDirection::Up)
+                            .await
+                            .expect("Error running migrations");
+                    }
+                    Some(("run", matches)) => {
+                        Self::print_config_info();
+                        let name = matches.get_one::<String>("name").unwrap().to_string();
+
+                        run_migration(name.clone(), MigrationDirection::Up)
+                            .await
+                            .expect("Error running migration");
+                        println!("'{}' migration completed successfully!", name.clone());
+                    }
+                    Some(("rollback", matches)) => {
+                        Self::print_config_info();
+                        let name = matches.get_one::<String>("name").unwrap().to_string();
+                        // Create a confirmation prompt
+                        let confirmation = Confirm::new()
+                            .with_prompt(format!(
+                                "Are you sure you want to rollback the '{}' migration?",
+                                name
+                            ))
+                            .interact()
+                            .map_err(|err| io::Error::other(err))
+                            .expect("Error rolling back migration: ");
+
+                        if confirmation {
+                            println!("Rolling back the '{}' migration...", name.clone());
+                            run_migration(name.clone(), MigrationDirection::Down)
+                                .await
+                                .expect("Error rolling back migration");
+                            println!(
+                                "'{}' migration rollback completed successfully!",
+                                name.clone()
+                            );
+                        } else {
+                            println!("'{}' migration rollback canceled by user.", name);
+                        }
+                    }
+                    Some(("redo", matches)) => {
+                        Self::print_config_info();
+                        let name = matches.get_one::<String>("name").unwrap().to_string();
+
+                        let confirmation = Confirm::new()
                         .with_prompt(format!(
                             "Redo will rollback (down) then re-apply (up) the '{}' migration. Continue?",
                             name
@@ -1522,23 +1523,23 @@ Example:\n\
                         .map_err(|err| io::Error::other(err))
                         .expect("Error confirming redo migration: ");
 
-                    if confirmation {
-                        println!("Rolling back '{}'...", name);
-                        run_migration(name.clone(), MigrationDirection::Down)
-                            .await
-                            .expect("Error rolling back migration");
-                        println!("Re-applying '{}'...", name);
-                        run_migration(name.clone(), MigrationDirection::Up)
-                            .await
-                            .expect("Error running migration");
-                        println!("'{}' migration redo completed successfully!", name);
-                    } else {
-                        println!("'{}' migration redo canceled by user.", name);
+                        if confirmation {
+                            println!("Rolling back '{}'...", name);
+                            run_migration(name.clone(), MigrationDirection::Down)
+                                .await
+                                .expect("Error rolling back migration");
+                            println!("Re-applying '{}'...", name);
+                            run_migration(name.clone(), MigrationDirection::Up)
+                                .await
+                                .expect("Error running migration");
+                            println!("'{}' migration redo completed successfully!", name);
+                        } else {
+                            println!("'{}' migration redo canceled by user.", name);
+                        }
                     }
-                }
-                Some(("reset", _)) => {
-                    Self::print_config_info();
-                    let confirmation = Confirm::new()
+                    Some(("reset", _)) => {
+                        Self::print_config_info();
+                        let confirmation = Confirm::new()
                         .with_prompt(
                             "Reset will rollback ALL migrations (down) in reverse order. This is destructive. Continue?",
                         )
@@ -1546,79 +1547,107 @@ Example:\n\
                         .map_err(|err| io::Error::other(err))
                         .expect("Error confirming reset migrations: ");
 
-                    if confirmation {
-                        run_all_migrations(MigrationDirection::Down)
-                            .await
-                            .expect("Error rolling back migrations");
-                        println!("All migrations rolled back successfully.");
-                    } else {
-                        println!("Migration reset canceled by user.");
-                    }
-                }
-                Some(("list", _)) => {
-                    Self::print_config_info();
-                    list_migrations(format).await.expect("Error listing migrations");
-                }
-                Some(("convert", matches)) => {
-                    let remove_source = matches.get_flag("remove-source");
-                    let dry_run = matches.get_flag("dry-run");
-
-                    if dry_run {
-                        // Just detect and report, don't convert
-                        let detected = detect_rogue_migrations();
-                        if detected.is_empty() {
-                            println!("No rogue migrations detected.");
+                        if confirmation {
+                            run_all_migrations(MigrationDirection::Down)
+                                .await
+                                .expect("Error rolling back migrations");
+                            println!("All migrations rolled back successfully.");
                         } else {
-                            println!("Found {} rogue migration(s) that would be converted:\n", detected.len());
-                            for (i, migration) in detected.iter().enumerate() {
+                            println!("Migration reset canceled by user.");
+                        }
+                    }
+                    Some(("list", _)) => {
+                        Self::print_config_info();
+                        list_migrations(format)
+                            .await
+                            .expect("Error listing migrations");
+                    }
+                    Some(("convert", matches)) => {
+                        let remove_source = matches.get_flag("remove-source");
+                        let dry_run = matches.get_flag("dry-run");
+
+                        if dry_run {
+                            // Just detect and report, don't convert
+                            let detected = detect_rogue_migrations();
+                            if detected.is_empty() {
+                                println!("No rogue migrations detected.");
+                            } else {
                                 println!(
-                                    "  {}. {} (from {:?})",
-                                    i + 1,
-                                    migration.name,
-                                    migration.source_path
+                                    "Found {} rogue migration(s) that would be converted:\n",
+                                    detected.len()
                                 );
-                                println!("     Operations:");
-                                for op in &migration.operations {
-                                    match op {
-                                        SqlOperation::CreateTable { table_name, .. } => {
-                                            println!("       - CREATE TABLE {}", table_name);
-                                        }
-                                        SqlOperation::DropTable { table_name } => {
-                                            println!("       - DROP TABLE {}", table_name);
-                                        }
-                                        SqlOperation::AlterTableAddColumn { table_name, columns, .. } => {
-                                            println!("       - ALTER TABLE {} ADD COLUMN {}", table_name, columns.join(", "));
-                                        }
-                                        SqlOperation::AlterTableDropColumn { table_name, columns, .. } => {
-                                            println!("       - ALTER TABLE {} DROP COLUMN {}", table_name, columns.join(", "));
-                                        }
-                                        SqlOperation::CreateIndex { index_name, table_name, .. } => {
-                                            println!("       - CREATE INDEX {} ON {}", index_name, table_name);
-                                        }
-                                        SqlOperation::DropIndex { index_name } => {
-                                            println!("       - DROP INDEX {}", index_name);
-                                        }
-                                        SqlOperation::RawSql { .. } => {
-                                            println!("       - [Raw SQL statement]");
+                                for (i, migration) in detected.iter().enumerate() {
+                                    println!(
+                                        "  {}. {} (from {:?})",
+                                        i + 1,
+                                        migration.name,
+                                        migration.source_path
+                                    );
+                                    println!("     Operations:");
+                                    for op in &migration.operations {
+                                        match op {
+                                            SqlOperation::CreateTable { table_name, .. } => {
+                                                println!("       - CREATE TABLE {}", table_name);
+                                            }
+                                            SqlOperation::DropTable { table_name } => {
+                                                println!("       - DROP TABLE {}", table_name);
+                                            }
+                                            SqlOperation::AlterTableAddColumn {
+                                                table_name,
+                                                columns,
+                                                ..
+                                            } => {
+                                                println!(
+                                                    "       - ALTER TABLE {} ADD COLUMN {}",
+                                                    table_name,
+                                                    columns.join(", ")
+                                                );
+                                            }
+                                            SqlOperation::AlterTableDropColumn {
+                                                table_name,
+                                                columns,
+                                                ..
+                                            } => {
+                                                println!(
+                                                    "       - ALTER TABLE {} DROP COLUMN {}",
+                                                    table_name,
+                                                    columns.join(", ")
+                                                );
+                                            }
+                                            SqlOperation::CreateIndex {
+                                                index_name,
+                                                table_name,
+                                                ..
+                                            } => {
+                                                println!(
+                                                    "       - CREATE INDEX {} ON {}",
+                                                    index_name, table_name
+                                                );
+                                            }
+                                            SqlOperation::DropIndex { index_name } => {
+                                                println!("       - DROP INDEX {}", index_name);
+                                            }
+                                            SqlOperation::RawSql { .. } => {
+                                                println!("       - [Raw SQL statement]");
+                                            }
                                         }
                                     }
+                                    println!();
                                 }
-                                println!();
+                                println!("Run without --dry-run to convert these migrations.");
                             }
-                            println!("Run without --dry-run to convert these migrations.");
-                        }
-                    } else {
-                        let count = detect_and_convert_rogue_migrations(true, remove_source);
-                        if count == 0 {
-                            println!("No rogue migrations found to convert.");
+                        } else {
+                            let count = detect_and_convert_rogue_migrations(true, remove_source);
+                            if count == 0 {
+                                println!("No rogue migrations found to convert.");
+                            }
                         }
                     }
-                }
-                _ => {
-                    println!("Invalid migration choice");
+                    _ => {
+                        println!("Invalid migration choice");
+                    }
                 }
             }
-            },
             // Add Feature Case
             Some(("feature", matches)) => match matches.subcommand() {
                 Some(("add", matches)) => match matches.subcommand() {
@@ -1726,7 +1755,11 @@ Example:\n\
                 let project_name = std::fs::read_to_string("rustyroad.toml")
                     .ok()
                     .and_then(|contents| toml::from_str::<toml::Value>(&contents).ok())
-                    .and_then(|v| v.get("rustyroad_project").and_then(|t| t.as_table()).cloned())
+                    .and_then(|v| {
+                        v.get("rustyroad_project")
+                            .and_then(|t| t.as_table())
+                            .cloned()
+                    })
                     .and_then(|t| {
                         t.get("name")
                             .and_then(|name| name.as_str())
@@ -1753,7 +1786,10 @@ Example:\n\
                     println!("Database config file: {}", file_name);
 
                     println!("Database:");
-                    println!("  type: {}", db.database_type.to_string().to_ascii_lowercase());
+                    println!(
+                        "  type: {}",
+                        db.database_type.to_string().to_ascii_lowercase()
+                    );
                     println!("  host: {}", db.host);
                     println!("  port: {}", db.port);
                     println!("  name: {}", db.name);

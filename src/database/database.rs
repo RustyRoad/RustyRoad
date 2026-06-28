@@ -13,7 +13,7 @@ use super::databasetype::DatabaseType;
 
 /// Get the current environment, checking both ENV and ENVIRONMENT variables.
 /// Returns "dev" if neither is set.
-/// 
+///
 /// This allows users to use either:
 /// - `ENV=prod rustyroad ...`
 /// - `ENVIRONMENT=prod rustyroad ...`
@@ -140,9 +140,8 @@ impl Database {
                     .database(&self.name)
                     .host(&self.host)
                     .port(self.port);
-                let pool = MySqlPool::connect_with(options)
-                    .await
-                    .unwrap_or_else(|e| panic!(
+                let pool = MySqlPool::connect_with(options).await.unwrap_or_else(|e| {
+                    panic!(
                         "Failed to create MySQL connection pool.\n\n\
                         Config: rustyroad.toml [database] section\n\
                         Host: {}:{}\n\
@@ -151,18 +150,21 @@ impl Database {
                         Check that MySQL is running and credentials are correct.\n\n\
                         Original error: {}",
                         self.host, self.port, self.name, self.username, e
-                    ));
+                    )
+                });
                 Ok(DatabaseConnection::MySql(Arc::new(pool)))
             }
             DatabaseType::Sqlite => {
                 let pool = SqlitePool::connect(&format!("{}.db", self.name))
                     .await
-                    .unwrap_or_else(|e| panic!(
-                        "Could not connect to SQLite database at '{}.db'.\n\n\
+                    .unwrap_or_else(|e| {
+                        panic!(
+                            "Could not connect to SQLite database at '{}.db'.\n\n\
                         Ensure the file exists and is readable, or check permissions.\n\n\
                         Original error: {}",
-                        self.name, e
-                    ));
+                            self.name, e
+                        )
+                    });
                 Ok(DatabaseConnection::Sqlite(Arc::new(pool)))
             }
             DatabaseType::Postgres => {
@@ -192,14 +194,14 @@ impl Database {
                     .database(&self.name)
                     .host(&self.host)
                     .port(self.port);
-                let pool = PgPool::connect_with(options)
-                    .await
-                    .unwrap_or_else(|e| panic!(
+                let pool = PgPool::connect_with(options).await.unwrap_or_else(|e| {
+                    panic!(
                         "Failed to create PostgreSQL connection pool for '{}' at {}:{}.\n\n\
                         Config file: rustyroad.toml\n\n\
                         Original error: {}",
                         self.name, self.host, self.port, e
-                    ));
+                    )
+                });
 
                 Ok(DatabaseConnection::Pg(Arc::new(pool)))
             }
