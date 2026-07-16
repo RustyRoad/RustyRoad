@@ -11,17 +11,28 @@ use toml::Value;
 
 use super::databasetype::DatabaseType;
 
-/// Get the current environment, checking both ENV and ENVIRONMENT variables.
+/// Get the current environment, checking both ENVIRONMENT and ENV variables.
 /// Returns "dev" if neither is set.
 ///
 /// This allows users to use either:
-/// - `ENV=prod rustyroad ...`
 /// - `ENVIRONMENT=prod rustyroad ...`
+/// - `ENV=prod rustyroad ...`
+///
+/// If both are set, ENVIRONMENT wins because it is the explicit form.
 pub fn get_environment() -> String {
-    // Check ENV first (shorter, more common), then ENVIRONMENT
-    std::env::var("ENV")
-        .or_else(|_| std::env::var("ENVIRONMENT"))
+    std::env::var("ENVIRONMENT")
+        .or_else(|_| std::env::var("ENV"))
         .unwrap_or_else(|_| "dev".to_string())
+}
+
+/// Get the RustyRoad config filename for the active environment.
+pub fn get_config_file_name() -> String {
+    let environment = get_environment();
+    if environment == "dev" {
+        "rustyroad.toml".to_string()
+    } else {
+        format!("rustyroad.{}.toml", environment)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -220,12 +231,7 @@ impl Database {
     /// let database = Database::get_database_from_rustyroad_toml().unwrap();
     /// ```
     pub fn get_database_from_rustyroad_toml() -> Result<Database, std::io::Error> {
-        let environment = std::env::var("ENVIRONMENT").unwrap_or("dev".to_string());
-        let file_name = if environment == "dev" {
-            "rustyroad.toml".to_string()
-        } else {
-            format!("rustyroad.{}.toml", environment)
-        };
+        let file_name = get_config_file_name();
 
         let file = fs::read_to_string(&file_name).map_err(|e| {
             io::Error::new(
@@ -353,4 +359,87 @@ pub enum PoolConnection {
     Pg(sqlx::PgPool),
     MySql(sqlx::MySqlPool),
     Sqlite(sqlx::SqlitePool),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{get_config_file_name, get_environment};
+    use std::sync::{Mutex, OnceLock};
+
+    struct EnvGuard {
+        env: Option<String>,
+        environment: Option<String>,
+    }
+
+    impl EnvGuard {
+        fn capture() -> Self {
+            Self {
+                env: std::env::var("ENV").ok(),
+                environment: std::env::var("ENVIRONMENT").ok(),
+            }
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            restore_var("ENV", self.env.as_deref());
+            restore_var("ENVIRONMENT", self.environment.as_deref());
+        }
+    }
+
+    fn restore_var(key: &str, value: Option<&str>) {
+        unsafe {
+            match value {
+                Some(value) => std::env::set_var(key, value),
+                None => std::env::remove_var(key),
+            }
+        }
+    }
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    #[test]
+    fn defaults_to_dev_when_no_environment_is_set() {
+        let _lock = env_lock().lock().unwrap();
+        let _guard = EnvGuard::capture();
+
+        unsafe {
+            std::env::remove_var("ENV");
+            std::env::remove_var("ENVIRONMENT");
+        }
+
+        assert_eq!(get_environment(), "dev");
+        assert_eq!(get_config_file_name(), "rustyroad.toml");
+    }
+
+    #[test]
+    fn falls_back_to_env_shorthand_when_environment_is_absent() {
+        let _lock = env_lock().lock().unwrap();
+        let _guard = EnvGuard::capture();
+
+        unsafe {
+            std::env::set_var("ENV", "prod");
+            std::env::remove_var("ENVIRONMENT");
+        }
+
+        assert_eq!(get_environment(), "prod");
+        assert_eq!(get_config_file_name(), "rustyroad.prod.toml");
+    }
+
+    #[test]
+    fn prefers_explicit_environment_over_env_shorthand() {
+        let _lock = env_lock().lock().unwrap();
+        let _guard = EnvGuard::capture();
+
+        unsafe {
+            std::env::set_var("ENV", "dev");
+            std::env::set_var("ENVIRONMENT", "prod");
+        }
+
+        assert_eq!(get_environment(), "prod");
+        assert_eq!(get_config_file_name(), "rustyroad.prod.toml");
+    }
 }

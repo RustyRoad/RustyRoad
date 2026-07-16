@@ -16,7 +16,7 @@
 //! RUSTYROAD_PROJECT_DIR=/path/to/project rustyroad-mcp
 //!
 //! # With specific environment
-//! ENV=prod rustyroad-mcp
+//! ENVIRONMENT=prod rustyroad-mcp
 //! ```
 //!
 //! ## Auto-registration
@@ -27,7 +27,7 @@
 //! ```
 
 use regex::Regex;
-use rustyroad::database::{Database, DatabaseConnection};
+use rustyroad::database::{get_environment, Database, DatabaseConnection};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqlx::{Column, Row};
@@ -93,9 +93,7 @@ impl McpServer {
             .map(PathBuf::from)
             .unwrap_or_else(|_| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
 
-        let environment = env::var("ENV")
-            .or_else(|_| env::var("ENVIRONMENT"))
-            .unwrap_or_else(|_| "dev".to_string());
+        let environment = get_environment();
 
         Self {
             project_dir,
@@ -1809,10 +1807,10 @@ fn main() {
         let request: JsonRpcRequest = match serde_json::from_str(&line) {
             Ok(r) => r,
             Err(e) => {
-                eprintln!("Error parsing JSON: {}", e);
+                eprintln!("Error parsing JSON: {} - Line: {}", e, line);
                 let error_response = JsonRpcResponse {
                     jsonrpc: "2.0".to_string(),
-                    id: Value::Null,
+                    id: Value::String("parse-error".to_string()),
                     result: None,
                     error: Some(JsonRpcError {
                         code: -32700,
@@ -1829,6 +1827,12 @@ fn main() {
                 continue;
             }
         };
+
+        if request.id.is_none() {
+            // It's a notification, don't send a response
+            let _ = server.handle_request(request);
+            continue;
+        }
 
         let response = server.handle_request(request);
         let response_str = serde_json::to_string(&response).unwrap();

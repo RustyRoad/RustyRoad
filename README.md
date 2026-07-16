@@ -100,7 +100,7 @@ Examples:
 
 There is **no** special `rustyroad.dev.toml`—dev is the plain `rustyroad.toml` file.
 
-**Tip:** You can also use `ENV=prod` as a shorthand for `ENVIRONMENT=prod`.
+**Tip:** You can also use `ENV=prod` as a shorthand for `ENVIRONMENT=prod`. If both are set, `ENVIRONMENT` wins.
 
 If you're unsure what RustyRoad is going to read on your machine, run:
 
@@ -125,7 +125,7 @@ List migrations:
 
 ```bash
 rustyroad migration list
-ENVIRONMENT=test rustyroad migration list
+ENV=test rustyroad migration list
 ```
 
 Run all migrations (up) in order:
@@ -133,6 +133,14 @@ Run all migrations (up) in order:
 ```bash
 rustyroad migration all
 ```
+
+Validate the complete migration chain without modifying a persistent database:
+
+```bash
+ENVIRONMENT=test rustyroad migration validate
+```
+
+Validation is deliberately restricted to `ENVIRONMENT=test` (or `ENV=test`). It reads server credentials and the database backend from `rustyroad.test.toml`, but it never connects to the configured shared test database. Instead, it creates a randomly named disposable database on that PostgreSQL/MySQL server (or an OS-managed temporary file for SQLite), runs every `up.sql` in timestamp order through a generated login scoped to that disposable database, and removes the disposable database and login after success or failure. The configured administrative test user must be allowed to create and drop databases and temporary roles/users.
 
 Run a single migration by name (the name is the part after the timestamp in the folder name):
 

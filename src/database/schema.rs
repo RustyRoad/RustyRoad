@@ -1,5 +1,5 @@
 use crate::database::migrations::CustomMigrationError;
-use crate::database::{Database, DatabaseConnection};
+use crate::database::{get_config_file_name, Database, DatabaseConnection};
 use serde_json::json;
 use sqlx::{Column, Row, ValueRef};
 
@@ -28,12 +28,7 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
     let database = Database::get_database_from_rustyroad_toml()
         .expect("Couldn't parse the rustyroad.toml file");
 
-    let environment = std::env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
-    let config_file = if environment == "dev" {
-        "rustyroad.toml".to_string()
-    } else {
-        format!("rustyroad.{}.toml", environment)
-    };
+    let config_file = get_config_file_name();
 
     let connection = Database::create_database_connection(&database)
         .await
@@ -183,12 +178,7 @@ pub async fn execute_query(query: &str, format: &str) -> Result<(), CustomMigrat
     let database = Database::get_database_from_rustyroad_toml()
         .expect("Couldn't parse the rustyroad.toml file");
 
-    let environment = std::env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
-    let config_file = if environment == "dev" {
-        "rustyroad.toml".to_string()
-    } else {
-        format!("rustyroad.{}.toml", environment)
-    };
+    let config_file = get_config_file_name();
 
     let connection = Database::create_database_connection(&database)
         .await
