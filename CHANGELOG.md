@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.28] - 2026-07-16
+
+### Added
+- Added `rustyroad migration validate` to execute the complete `up.sql` chain against disposable database resources.
+- Added strict `ENVIRONMENT=test` / `ENV=test` enforcement and generated, scoped PostgreSQL/MySQL validation credentials.
+- Added fail-closed migration discovery, cleanup reporting, and SQLite isolation tests.
+
+### Changed
+- Centralized environment and config-file resolution, with `ENVIRONMENT` taking precedence over `ENV`.
+- Extracted migration CLI construction and dispatch into focused modules with bounded file sizes.
+- Validation never connects to or modifies the configured shared test database.
+
 ## [1.0.24] - 2025-12-29
 
 ### Added
