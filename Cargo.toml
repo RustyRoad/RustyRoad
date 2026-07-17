@@ -63,3 +63,6 @@ path = "src/mcp/main.rs"
 
 [build-dependencies]
 pkg-config = "0.3"
+
+[lints.clippy]
+useless_borrows_in_formatting = "allow"
