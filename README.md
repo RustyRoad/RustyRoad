@@ -138,9 +138,12 @@ Validate the complete migration chain without modifying a persistent database:
 
 ```bash
 ENVIRONMENT=test rustyroad migration validate
+ENVIRONMENT=prod rustyroad migration validate
 ```
 
-Validation is deliberately restricted to `ENVIRONMENT=test` (or `ENV=test`). It reads server credentials and the database backend from `rustyroad.test.toml`, but it never connects to the configured shared test database. Instead, it creates a randomly named disposable database on that PostgreSQL/MySQL server (or an OS-managed temporary file for SQLite), runs every `up.sql` in timestamp order through a generated login scoped to that disposable database, and removes the disposable database and login after success or failure. The configured administrative test user must be allowed to create and drop databases and temporary roles/users.
+Validation reads the active environment configuration: `rustyroad.toml` for dev or `rustyroad.<environment>.toml` for environments such as test, staging, and prod. It never connects to the configured `database_name`. Instead, it creates a randomly named disposable database on the configured PostgreSQL/MySQL server (or an OS-managed temporary file for SQLite), runs every `up.sql` in timestamp order through a generated login scoped to that disposable database, and removes the disposable database and login after success or failure.
+
+When validating with `ENVIRONMENT=prod`, disposable resources are created on the server from `rustyroad.prod.toml`, but the configured production database is not opened or modified. The configured administrative user must be allowed to create and drop databases and temporary roles/users.
 
 Run a single migration by name (the name is the part after the timestamp in the folder name):
 

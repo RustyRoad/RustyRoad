@@ -1,19 +1,18 @@
 use super::backend;
 use super::discovery::discover;
-use super::environment::require_test;
 use super::error::MigrationValidationError;
 use super::identity::Identity;
 use super::model::MigrationValidationReport;
-use crate::database::{get_environment, Database};
+use crate::database::{get_config_file_name, Database};
 use std::path::Path;
 
 const MIGRATIONS_DIR: &str = "./config/database/migrations";
 
 pub async fn validate_migrations() -> Result<MigrationValidationReport, MigrationValidationError> {
-    require_test(&get_environment())?;
+    let config_file = get_config_file_name();
     let database = Database::get_database_from_rustyroad_toml().map_err(|error| {
         MigrationValidationError::new(format!(
-            "Could not load test database configuration from 'rustyroad.test.toml': {error}"
+            "Could not load database configuration from '{config_file}': {error}"
         ))
     })?;
     validate_with_database(&database, Path::new(MIGRATIONS_DIR)).await

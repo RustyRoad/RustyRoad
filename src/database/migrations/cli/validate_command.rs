@@ -6,12 +6,12 @@ pub(super) fn build() -> Command {
         .long_about(
             "Validates every up.sql migration in timestamp order against a disposable database.\n\n\
              SAFETY:\n\
-              - Requires ENVIRONMENT=test (or ENV=test)\n\
-              - Reads server credentials only from ./rustyroad.test.toml\n\
-              - Never connects to or modifies the configured shared test database\n\
+              - Reads the active rustyroad.toml environment configuration\n\
+              - Never connects to or modifies the configured database\n\
               - Creates a random database and scoped login on PostgreSQL/MySQL, or a temporary file for SQLite\n\
               - Removes disposable database credentials and storage after success or failure\n\n\
-             EXAMPLE:\n\
-              ENVIRONMENT=test rustyroad migration validate\n",
+             EXAMPLES:\n\
+              rustyroad migration validate\n\
+              ENVIRONMENT=prod rustyroad migration validate\n",
         )
 }

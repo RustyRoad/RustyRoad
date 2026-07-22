@@ -2,7 +2,6 @@ mod api;
 mod backend;
 mod cleanup;
 mod discovery;
-mod environment;
 mod error;
 mod execute_mysql;
 mod execute_postgres;
