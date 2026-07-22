@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.29] - 2026-07-17
+
+### Fixed
+- Allowed `rustyroad migration validate` to use dev, test, staging, prod, or any other configured environment.
+- Dev validation reads `rustyroad.toml`; named environments read `rustyroad.<environment>.toml`.
+- Validation still never connects to the configured `database_name`; all migration SQL runs against disposable resources.
+- Added real CLI coverage proving default/dev and prod validation leave configured SQLite database files untouched.
+
 ## [1.0.28] - 2026-07-16
 
 ### Added
