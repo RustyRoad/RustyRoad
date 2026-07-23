@@ -1,3 +1,4 @@
+pub mod breaking_change;
 pub(crate) mod cli;
 pub mod column_loop;
 pub mod column_loop_test;
@@ -6,6 +7,7 @@ pub mod run_all_migrations;
 pub mod sql_migration_converter;
 pub mod validate_migrations;
 
+pub use breaking_change::*;
 pub use column_loop::*;
 pub use column_loop_test::*;
 pub use migrations::*;

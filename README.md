@@ -145,6 +145,24 @@ Validation reads the active environment configuration: `rustyroad.toml` for dev 
 
 When validating with `ENVIRONMENT=prod`, disposable resources are created on the server from `rustyroad.prod.toml`, but the configured production database is not opened or modified. The configured administrative user must be allowed to create and drop databases and temporary roles/users.
 
+### Breaking migration warnings
+
+RustyRoad scans generated migrations and every `up.sql` before `migration run` or `migration all` opens a database connection. It warns about operations that can destroy data or break foreign-key compatibility, including:
+
+- PostgreSQL `ALTER COLUMN ... TYPE` and `USING` conversions
+- Explicit casts such as `CAST(...)` and `::type`
+- MySQL `MODIFY COLUMN` and `CHANGE COLUMN`
+- Dropped constraints or foreign keys
+
+Interactive apply commands require confirmation when findings exist. Non-interactive commands stop with exit code 2. After reviewing both sides of every foreign key, validating against a disposable database, and backing up the target database, automation can acknowledge the risk explicitly:
+
+```bash
+rustyroad migration run change_customer_id_type --allow-breaking
+rustyroad migration all --allow-breaking
+```
+
+The preflight is intentionally conservative: it identifies risky SQL but cannot prove that a cast preserves every value or that application code remains compatible.
+
 Run a single migration by name (the name is the part after the timestamp in the folder name):
 
 ```bash

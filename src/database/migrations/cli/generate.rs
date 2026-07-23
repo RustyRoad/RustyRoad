@@ -10,4 +10,5 @@ pub(super) async fn run(matches: &ArgMatches) {
     super::super::create_migration(&name, columns)
         .await
         .expect("Error creating migration");
+    super::breaking_change::generated(&name);
 }

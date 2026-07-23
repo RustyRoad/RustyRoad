@@ -873,7 +873,7 @@ static/styles.css
                     .subcommand_required(true),
             )
             .subcommand(
-                Command::new("migration")
+                database::migrations::cli::migration_command()
                     .about("Database schema migrations")
                     .long_about(
                         "Database migrations manage schema changes over time.\n\nWhere migrations live:\n  ./config/database/migrations/<timestamp>-<name>/{up.sql,down.sql}\n\nDo NOT create a plain ./migrations/ folder — RustyRoad will not read it.\n\nTypical flow:\n  1) Generate a migration (creates folder + up.sql + down.sql)\n  2) Edit up.sql / down.sql if needed\n  3) Run migrations\n",
