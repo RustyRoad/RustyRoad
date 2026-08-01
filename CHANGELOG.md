@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.32] - 2026-07-22
+
+### Fixed
+- Restricted breaking-change scanning to migrations that are not already applied. The scanner ran before the ledger check, so `migration all` and `migration run` were blocked by warnings about migrations that would have been skipped as no-ops, forcing an unnecessary `--allow-breaking`.
+- Matched named migrations by both bare name and full `<timestamp>-<name>` directory name when scanning.
+
+### Changed
+- Freshly generated migrations are still scanned directly from disk, since a new migration cannot already be applied.
+- When the ledger cannot be reached, every migration is scanned as before, so an unreachable database makes the scanner more cautious rather than less.
+
 ## [1.0.31] - 2026-07-22
 
 ### Fixed

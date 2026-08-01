@@ -6,7 +6,7 @@ pub(super) async fn all(matches: &ArgMatches) {
     super::print_config();
     get_project_name_from_rustyroad_toml()
         .unwrap_or_else(|error| panic!("This is not a Rusty Road project: {error}"));
-    enforce(super::breaking_change::approve_all(matches));
+    enforce(super::breaking_change::approve_all(matches).await);
     run_all_migrations(MigrationDirection::Up)
         .await
         .expect("Error running migrations");
@@ -15,7 +15,7 @@ pub(super) async fn all(matches: &ArgMatches) {
 pub(super) async fn one(matches: &ArgMatches) {
     super::print_config();
     let name = matches.get_one::<String>("name").unwrap().to_string();
-    enforce(super::breaking_change::approve_named(&name, matches));
+    enforce(super::breaking_change::approve_named(&name, matches).await);
     run_migration(name.clone(), MigrationDirection::Up)
         .await
         .expect("Error running migration");

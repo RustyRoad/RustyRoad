@@ -24,7 +24,7 @@ pub fn scan_all_up_migrations(root: &Path) -> Result<Vec<BreakingChangeFinding>,
     Ok(findings)
 }
 
-fn migration_directories(root: &Path) -> Result<Vec<PathBuf>, io::Error> {
+pub fn migration_directories(root: &Path) -> Result<Vec<PathBuf>, io::Error> {
     fs::read_dir(root)?
         .filter_map(|entry| match entry {
             Ok(entry) if entry.path().is_dir() => Some(Ok(entry.path())),
