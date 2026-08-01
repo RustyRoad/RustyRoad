@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.31] - 2026-07-22
+
+### Fixed
+- Made `rustyroad migration all` idempotent: migrations already recorded as applied are now skipped instead of being re-executed on every run.
+- Recorded migrations by their full `<timestamp>-<name>` directory name so ledger ordering is reconstructable and migrations sharing a bare name cannot collide.
+- Read the ledger by row presence rather than insertion order, so a rolled-back migration is correctly reported as unapplied and can be applied again.
+- Resolved exact `<timestamp>-<name>` migration directories directly, so `migration all` no longer prompts interactively (and panics without a TTY) when two migrations share a bare name.
+- Replaced string-interpolated ledger inserts with bound parameters.
+
+### Changed
+- Added `UNIQUE (name, direction)` to `_rustyroad_migrations` and switched recording to an upsert, so the table is an authoritative ledger rather than an append-only audit trail. Pre-existing tables are upgraded on a best-effort basis; duplicate rows are reported and left for the operator to remove.
+- Existing ledgers that stored bare migration names are still honoured, so upgrading does not replay previously applied migrations.
+- Extracted ledger handling into `src/database/migrations/ledger/`, removing a duplicated `_rustyroad_migrations` table definition.
+
 ## [1.0.30] - 2026-07-22
 
 ### Added

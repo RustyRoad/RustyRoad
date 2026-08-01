@@ -58,7 +58,8 @@ pub async fn run_all_migrations(direction: MigrationDirection) -> Result<(), Cus
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid directory name"))
             .map_err(CustomMigrationError::IoError)?;
 
-        let (_, migration_name) = dir_name
+        // Validate the `<timestamp>-<name>` shape before running.
+        dir_name
             .split_once('-')
             .ok_or_else(|| {
                 io::Error::new(
@@ -68,10 +69,11 @@ pub async fn run_all_migrations(direction: MigrationDirection) -> Result<(), Cus
             })
             .map_err(CustomMigrationError::IoError)?;
 
-        let migration_name = migration_name.to_string();
-
-        println!("Running migration: {}", migration_name);
-        run_migration(migration_name, direction).await?;
+        // Pass the full directory name rather than the bare name. Two migrations can
+        // share a bare name, and resolving one would otherwise prompt interactively,
+        // which cannot work in CI.
+        println!("Running migration: {}", dir_name);
+        run_migration(dir_name.to_string(), direction).await?;
     }
 
     Ok(())

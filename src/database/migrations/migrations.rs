@@ -23,6 +23,7 @@ use crate::writers::write_to_file;
 use crate::Project;
 
 use super::column_loop::column_loop;
+use super::ledger;
 
 #[derive(Serialize)]
 struct MigrationEntry {
@@ -760,88 +761,33 @@ pub async fn run_migration(
         .await
         .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why));
 
-    // Create migrations table if it doesn't exist
-    match connection.clone() {
-        DatabaseConnection::Pg(conn) => {
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    direction VARCHAR(10) NOT NULL
-                )",
-            )
-            .await
-            .map_err(CustomMigrationError::from)?;
-        }
-        DatabaseConnection::MySql(conn) => {
-            match conn
-                .execute(
-                    "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    direction VARCHAR(10) NOT NULL
-                )",
-                )
-                .await
-            {
-                Ok(_) => (),
-                Err(e) => return Err(CustomMigrationError::SqlxError(e)),
+    // Create the ledger table (and its uniqueness constraint) if absent.
+    ledger::ensure_table(&connection).await?;
+
+    // The ledger records the full directory name (`<timestamp>-<name>`) so that
+    // ordering is reconstructable and two migrations cannot collide on bare name.
+    let ledger_id = ledger::ledger_id_for_dir(migration_dir).unwrap_or(&migration_name);
+
+    // Consult the ledger before executing so repeated runs are idempotent.
+    // Without this gate, `migration all` replays every migration on disk, which
+    // fails on any long-lived database where later migrations supersede earlier ones.
+    if ledger::should_skip(&connection, ledger_id, direction).await? {
+        match direction {
+            MigrationDirection::Up => {
+                println!("Skipping migration '{ledger_id}': already applied")
+            }
+            MigrationDirection::Down => {
+                println!("Skipping migration '{ledger_id}': not currently applied")
             }
         }
-        DatabaseConnection::Sqlite(conn) => {
-            match conn
-                .execute(
-                    "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    direction TEXT NOT NULL
-                )",
-                )
-                .await
-            {
-                Ok(_) => (),
-                Err(e) => return Err(CustomMigrationError::SqlxError(e)),
-            }
-        }
+        return Ok(());
     }
 
     // Execute the migration and handle potential errors
     match execute_migration_with_connection(connection.clone(), migration_files, direction).await {
         Ok(_) => {
             // Record the migration in the tracking table
-            let direction_str = match direction {
-                MigrationDirection::Up => "up",
-                MigrationDirection::Down => "down",
-            };
-            match connection {
-                DatabaseConnection::Pg(conn) => {
-                    conn.execute(
-                        format!(
-                            "INSERT INTO _rustyroad_migrations (name, direction) VALUES ('{}', '{}')",
-                            migration_name, direction_str
-                        ).as_str()
-                    ).await.map_err(CustomMigrationError::from)?;
-                }
-                DatabaseConnection::MySql(conn) => {
-                    conn.execute(
-                        format!(
-                            "INSERT INTO _rustyroad_migrations (name, direction) VALUES ('{}', '{}')",
-                            migration_name, direction_str
-                        ).as_str()
-                    ).await.map_err(CustomMigrationError::from)?;
-                }
-                DatabaseConnection::Sqlite(conn) => {
-                    conn.execute(
-                        format!(
-                            "INSERT INTO _rustyroad_migrations (name, direction) VALUES ('{}', '{}')",
-                            migration_name, direction_str
-                        ).as_str()
-                    ).await.map_err(CustomMigrationError::from)?;
-                }
-            }
+            ledger::record(&connection, ledger_id, direction).await?;
 
             // Only print success message if execution was successful
             match direction {
@@ -989,6 +935,17 @@ pub fn find_migration_dir(
             .expect("Failed to get file name")
             .to_str()
             .ok_or("Failed to convert OsStr to str")?;
+
+        // An exact `<timestamp>-<name>` match identifies a single migration
+        // unambiguously, so resolve it immediately. `run_all_migrations` relies on
+        // this to stay non-interactive when two migrations share a bare name.
+        if migration_dir_name == migration_name {
+            return Ok(migration_dir
+                .to_str()
+                .ok_or("Failed to convert PathBuf to str")?
+                .to_string());
+        }
+
         // Extract the name part after the timestamp and hyphen
         if let Some(name_part) = migration_dir_name.split_once('-').map(|(_, name)| name) {
             if name_part == migration_name {
@@ -1179,44 +1136,7 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
         .unwrap_or_else(|why| panic!("Couldn't create database connection: {}", why));
 
     // Ensure the migrations tracking table exists (list/status should work even before first run)
-    match connection.clone() {
-        DatabaseConnection::Pg(conn) => {
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    direction VARCHAR(10) NOT NULL
-                )",
-            )
-            .await
-            .map_err(CustomMigrationError::from)?;
-        }
-        DatabaseConnection::MySql(conn) => {
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    direction VARCHAR(10) NOT NULL
-                )",
-            )
-            .await
-            .map_err(CustomMigrationError::from)?;
-        }
-        DatabaseConnection::Sqlite(conn) => {
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS _rustyroad_migrations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    direction TEXT NOT NULL
-                )",
-            )
-            .await
-            .map_err(CustomMigrationError::from)?;
-        }
-    }
+    ledger::ensure_table(&connection).await?;
 
     // Get all migration files from the migrations directory
     let migrations_dir = Path::new(MIGRATIONS_DIR);
