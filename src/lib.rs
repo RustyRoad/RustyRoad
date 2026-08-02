@@ -1616,9 +1616,12 @@ Example:\n\
                     return;
                 }
 
-                execute_query(&query, format)
-                    .await
-                    .unwrap_or_else(|e| println!("Error executing query: {}", e));
+                if let Err(error) = execute_query(&query, format).await {
+                    // Exit nonzero so a failed query is not mistaken for success by
+                    // CI or any other caller inspecting the exit code.
+                    eprintln!("Error executing query: {}", error);
+                    std::process::exit(1);
+                }
             }
             _ => {
                 println!("Invalid choice");

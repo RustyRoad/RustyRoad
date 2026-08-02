@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.33] - 2026-07-22
+
+### Fixed
+- `rustyroad query` now exits with status 1 when a query fails. It previously printed the error and exited 0, so callers and CI could not distinguish a failed query from a successful one.
+- Supported multi-statement SQL in `rustyroad query`. Scripts were sent through the prepared-statement protocol, which accepts a single command, so Postgres rejected them with "cannot insert multiple commands into a prepared statement". Scripts now use the unprepared path, in both text and JSON output modes.
+
+### Changed
+- Statement counting ignores semicolons inside string literals, quoted identifiers, and `--` or `/* */` comments, so a single statement containing a semicolon is not treated as a script.
+
 ## [1.0.32] - 2026-07-22
 
 ### Fixed

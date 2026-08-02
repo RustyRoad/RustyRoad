@@ -1,4 +1,5 @@
 use crate::database::migrations::CustomMigrationError;
+use crate::database::statement::is_multi_statement;
 use crate::database::{get_config_file_name, Database, DatabaseConnection};
 use serde_json::json;
 use sqlx::{Column, Row, ValueRef};
@@ -174,6 +175,25 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
 }
 
 /// Executes a SQL query and prints the results
+/// Runs a multi-statement script using the unprepared protocol.
+///
+/// Row output is not available here, so this reports statement completion instead.
+async fn execute_script(
+    query: &str,
+    connection: DatabaseConnection,
+) -> Result<(), CustomMigrationError> {
+    use sqlx::Executor;
+
+    match connection {
+        DatabaseConnection::Pg(conn) => conn.execute(query).await.map(|_| ())?,
+        DatabaseConnection::MySql(conn) => conn.execute(query).await.map(|_| ())?,
+        DatabaseConnection::Sqlite(conn) => conn.execute(query).await.map(|_| ())?,
+    }
+
+    println!("Script executed successfully.");
+    Ok(())
+}
+
 pub async fn execute_query(query: &str, format: &str) -> Result<(), CustomMigrationError> {
     let database = Database::get_database_from_rustyroad_toml()
         .expect("Couldn't parse the rustyroad.toml file");
@@ -190,6 +210,13 @@ pub async fn execute_query(query: &str, format: &str) -> Result<(), CustomMigrat
 
     println!("Executing query: {}", query);
     println!("{:-<50}", "");
+
+    // `sqlx::query` prepares the statement, and a prepared statement may hold only
+    // one command. Route scripts through the unprepared path instead of failing with
+    // "cannot insert multiple commands into a prepared statement".
+    if is_multi_statement(query) {
+        return execute_script(query, connection).await;
+    }
 
     match connection {
         DatabaseConnection::Pg(conn) => {
@@ -356,6 +383,21 @@ async fn execute_query_json(
     config_file: &str,
     connection: DatabaseConnection,
 ) -> Result<(), CustomMigrationError> {
+    // A prepared statement holds one command, so scripts must use the unprepared
+    // path. Row output is unavailable there, so report completion instead.
+    if is_multi_statement(query) {
+        execute_script(query, connection).await?;
+        let output = json!({
+            "database_type": database.database_type.to_string().to_ascii_lowercase(),
+            "config_file": config_file,
+            "query": query,
+            "multi_statement": true,
+            "rows": [],
+        });
+        println!("{}", serde_json::to_string_pretty(&output)?);
+        return Ok(());
+    }
+
     let rows_json = match connection {
         DatabaseConnection::Pg(conn) => {
             let rows = sqlx::query(query).fetch_all(&*conn).await?;
