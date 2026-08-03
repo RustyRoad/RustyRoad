@@ -3,12 +3,15 @@
 use super::folder::folder_for;
 use std::fs;
 
-/// Creates a unique scratch directory under the target folder.
+/// Creates a unique scratch directory.
+///
+/// Rooted in the OS temp directory rather than `target/`, which is not guaranteed
+/// to exist relative to the test process's working directory.
 fn scratch(label: &str) -> String {
-    let path = format!(
-        "target/folder-test-{label}-{}",
-        std::process::id()
-    );
+    let path = std::env::temp_dir()
+        .join(format!("rustyroad-folder-test-{label}-{}", std::process::id()))
+        .display()
+        .to_string();
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("failed to create scratch directory");
     path
