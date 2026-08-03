@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-08-03
+
+Unifies the generated API surface on oRPC, so migrations, `pull`, and client
+generation compose into one workflow rather than three.
+
+### Added
+- `rustyroad pull` now generates `db/router.ts`: oRPC procedures over the typed repositories, each declaring `.route({ method, path })`, `.input()`, and `.output()` with the Zod schemas derived from the Drizzle tables. One definition serves an RPC call, a REST request, and the OpenAPI document oRPC generates from it.
+- Added `db/server.ts`, a Fastify adapter mounting both the RPC and OpenAPI handlers, so requests under `<prefix>/rpc` are handled as RPC and everything else is routed by the declared paths.
+- Added `db/openapi.ts`, a script writing the OpenAPI document from the router. Because oRPC derives it from the procedures' own schemas, the document cannot describe an endpoint the server does not serve.
+- A missing row raises an `ORPCError` with code `NOT_FOUND`, which stays typed for RPC callers and maps to a 404 over REST.
+- Rewrote `example/db-generation/README.md` around the migration -> pull -> client loop, documenting how the three features compose and what each guarantees.
+
+### Changed
+- Replaced the hand-written Fastify route plugins with the oRPC router. A column was previously described in the Drizzle table, the Zod schemas, and the route definitions; it is now described once.
+
+### Notes
+- Verified live against PostgreSQL 16, 18/18 runtime checks: the typed RPC client, the same procedures over REST with `z.coerce` on path parameters, and OpenAPI generation, all from one router. `@hey-api/openapi-ts` then generated a client from that document, converting an `operationId` of `users.list` into `usersList`.
+- The documented loop was itself verified: a nullable column added by `migration generate` and applied by `migration all` became reachable over RPC and REST after a single `pull`, with no hand-editing. Renaming that column in Postgres and re-running `pull` made `tsc` fail at every stale call site rather than failing at runtime.
+- `server.ts` disables Fastify's body parsers on its route, because the oRPC handlers need the raw request.
+
 ## [1.4.0] - 2026-08-03
 
 ### Added

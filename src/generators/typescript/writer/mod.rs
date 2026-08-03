@@ -9,15 +9,11 @@ use crate::database::introspection::Schema;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
+pub use files::ROUTE_PREFIX;
 pub use outputs::Outputs;
 
 /// Subfolder holding the OpenAPI document and Hey API config.
 const CLIENT_DIR: &str = "openapi";
-
-/// Path prefix the generated routes are mounted under.
-///
-/// The OpenAPI document's URLs must match the server, so both derive from this.
-pub const ROUTE_PREFIX: &str = "/api";
 
 /// Writes the selected artifacts into `out`, creating it when absent.
 ///
@@ -39,13 +35,28 @@ pub fn write(
     }
 
     if outputs.sdk {
-        let directory = out.join(CLIENT_DIR);
-        fs::create_dir_all(&directory)?;
-        for file in heyapi::render(model, casing, ROUTE_PREFIX) {
-            written.push(write_file(&directory, file.name, &file.contents)?);
-        }
+        written.extend(client_files(out, model, casing)?);
     }
 
+    Ok(written)
+}
+
+/// Writes the OpenAPI document and Hey API config.
+///
+/// The document is also generated at runtime by `openapi.ts` from the router; this
+/// static copy exists so a client can be generated without running TypeScript.
+fn client_files(
+    out: &Path,
+    model: &Schema,
+    casing: Casing,
+) -> io::Result<Vec<PathBuf>> {
+    let directory = out.join(CLIENT_DIR);
+    fs::create_dir_all(&directory)?;
+
+    let mut written = Vec::new();
+    for file in heyapi::render(model, casing, ROUTE_PREFIX) {
+        written.push(write_file(&directory, file.name, &file.contents)?);
+    }
     Ok(written)
 }
 

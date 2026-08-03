@@ -6,20 +6,24 @@
 //! - `schema.ts`   — Drizzle table definitions, constraints, and indexes
 //! - `relations.ts`— one/many relations derived from foreign keys
 //! - `zod.ts`      — Zod schemas derived from those tables via `drizzle-zod`
-//! - `client.ts`   — a typed repository per table, typed from the Zod schemas
-//! - `routes.ts`   — Fastify plugins using `fastify-type-provider-zod`
+//! - `client.ts`   — a typed repository per table
+//! - `router.ts`   — oRPC procedures over those repositories
+//! - `server.ts`   — Fastify adapter serving the router over RPC and REST
+//! - `openapi.ts`  — script writing the OpenAPI document from the router
+//! - `openapi/`    — a static OpenAPI document plus a Hey API config
 //!
-//! Zod is the single source of validation: the same schemas validate requests,
-//! serialize responses, and produce the OpenAPI document that client generators
-//! such as Hey API consume. Generation reads only the introspection model.
+//! Everything traces back to one definition. A column change flows into the Zod
+//! schemas, then into procedure validation, the OpenAPI document, and any client
+//! generated from it. oRPC is the single API surface: each procedure declares its
+//! method and path, so an RPC call and a REST request hit the same handler.
 
 pub mod casing;
 pub mod client;
 mod columns;
 mod constraints;
-pub mod fastify;
 pub mod heyapi;
 mod ordering;
+pub mod orpc;
 pub mod relations;
 pub mod schema;
 pub mod types;
