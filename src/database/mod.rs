@@ -6,10 +6,13 @@ pub mod introspection;
 pub mod migrations;
 pub mod schema;
 pub mod statement;
+pub mod values;
 pub mod versions;
 
 #[cfg(test)]
 mod statement_test;
+#[cfg(test)]
+mod values_test;
 
 pub use connect::*;
 pub use database::*;

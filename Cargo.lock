@@ -204,6 +204,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bigdecimal"
+version = "0.4.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d6867f1565b3aad85681f1015055b087fcfd840d6aeee6eee7f2da317603695"
+dependencies = [
+ "autocfg",
+ "libm",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "bindgen"
 version = "0.72.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1846,7 +1859,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57349d5a326b437989b6ee4dc8f2f34b0cc131202748414712a8e7d98952fc8c"
 dependencies = [
  "base64 0.21.7",
- "bigdecimal",
+ "bigdecimal 0.3.1",
  "bindgen",
  "bitflags 2.10.0",
  "bitvec",
@@ -2782,7 +2795,7 @@ dependencies = [
 
 [[package]]
 name = "rustyroad"
-version = "1.6.0"
+version = "1.6.1"
 dependencies = [
  "bcrypt",
  "chrono",
@@ -3143,6 +3156,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee6798b1838b6a0f69c007c133b8df5866302197e404e8b6ee8ed3e3a5e68dc6"
 dependencies = [
  "base64 0.22.1",
+ "bigdecimal 0.4.10",
  "bytes",
  "chrono",
  "crc",
@@ -3219,6 +3233,7 @@ checksum = "aa003f0038df784eb8fecbbac13affe3da23b45194bd57dba231c8f48199c526"
 dependencies = [
  "atoi",
  "base64 0.22.1",
+ "bigdecimal 0.4.10",
  "bitflags 2.10.0",
  "byteorder",
  "bytes",
@@ -3264,6 +3279,7 @@ checksum = "db58fcd5a53cf07c184b154801ff91347e4c30d17a3562a635ff028ad5deda46"
 dependencies = [
  "atoi",
  "base64 0.22.1",
+ "bigdecimal 0.4.10",
  "bitflags 2.10.0",
  "byteorder",
  "chrono",
@@ -3281,6 +3297,7 @@ dependencies = [
  "log",
  "md-5",
  "memchr",
+ "num-bigint",
  "once_cell",
  "rand 0.8.5",
  "serde",

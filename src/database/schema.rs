@@ -245,26 +245,8 @@ pub async fn execute_query(query: &str, format: &str) -> Result<(), CustomMigrat
                     if i > 0 {
                         print!(" | ");
                     }
-                    let value = match row.try_get_raw(column.name()) {
-                        Ok(value) => {
-                            if value.is_null() {
-                                "NULL".to_string()
-                            } else {
-                                if let Ok(s) = row.try_get::<String, _>(column.name()) {
-                                    s
-                                } else if let Ok(i) = row.try_get::<i32, _>(column.name()) {
-                                    i.to_string()
-                                } else if let Ok(i) = row.try_get::<i64, _>(column.name()) {
-                                    i.to_string()
-                                } else if let Ok(b) = row.try_get::<bool, _>(column.name()) {
-                                    b.to_string()
-                                } else {
-                                    "<unprintable>".to_string()
-                                }
-                            }
-                        }
-                        Err(_) => "<error>".to_string(),
-                    };
+                    let value =
+                        crate::database::values::postgres::pg_display(&row, column.name());
                     print!("{:<15}", value);
                 }
                 println!();
@@ -401,39 +383,7 @@ async fn execute_query_json(
     let rows_json = match connection {
         DatabaseConnection::Pg(conn) => {
             let rows = sqlx::query(query).fetch_all(&*conn).await?;
-            let mut rows_data: Vec<serde_json::Map<String, serde_json::Value>> = Vec::new();
-
-            for row in rows {
-                let mut row_map: serde_json::Map<String, serde_json::Value> =
-                    serde_json::Map::new();
-                let columns = row.columns();
-                for column in columns {
-                    let col_name = column.name().to_string();
-                    let value = match row.try_get_raw(column.name()) {
-                        Ok(value) => {
-                            if value.is_null() {
-                                serde_json::Value::Null
-                            } else {
-                                if let Ok(s) = row.try_get::<String, _>(column.name()) {
-                                    serde_json::Value::String(s)
-                                } else if let Ok(i) = row.try_get::<i32, _>(column.name()) {
-                                    serde_json::json!(i)
-                                } else if let Ok(i) = row.try_get::<i64, _>(column.name()) {
-                                    serde_json::json!(i)
-                                } else if let Ok(b) = row.try_get::<bool, _>(column.name()) {
-                                    serde_json::json!(b)
-                                } else {
-                                    serde_json::Value::String("<unprintable>".to_string())
-                                }
-                            }
-                        }
-                        Err(_) => serde_json::Value::String("<error>".to_string()),
-                    };
-                    row_map.insert(col_name, value);
-                }
-                rows_data.push(row_map);
-            }
-            rows_data
+            rows.iter().map(crate::database::values::pg_row).collect()
         }
         DatabaseConnection::MySql(conn) => {
             let rows = sqlx::query(query).fetch_all(&*conn).await?;

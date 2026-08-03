@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-08-03
+
+### Fixed
+- `query` no longer renders most Postgres types as `<unprintable>`. The decoder attempted only `String`, `i32`, `i64`, and `bool`, so `smallint`, `jsonb`, `numeric`, `uuid`, timestamps, dates, times, enums, and arrays all fell through, forcing callers to cast in SQL just to read their own data. A 16-column table went from 3 readable columns to 14.
+- Integer widths are now tried narrowest first, so a `smallint` is not silently widened.
+- `numeric` decodes through `BigDecimal` and renders as a string, preserving the precision the type exists for; routing it through `f64` would lose it.
+- `json` and `jsonb` render as real JSON rather than a quoted string.
+- Both the table renderer and the JSON output now share one decoder, so the two formats cannot disagree about a type. The decoding logic existed in five near-identical copies.
+- A value sqlx cannot decode now reports its SQL type and size — `<INTERVAL, 16 bytes>` — instead of a bare `<unprintable>`, so the caller knows what it is and can cast to text.
+
+### Changed
+- Enabled sqlx's `bigdecimal` feature, required to decode `numeric` exactly.
+
+### Notes
+- Verified live against PostgreSQL 16 across 16 column types. Evidence in `.codetether-agent/evidence/live-values.md`.
+- Only the Postgres paths were rewritten. The MySQL and SQLite renderers still carry the original four-type block and will show `<unprintable>` for the same types.
+
 ## [1.6.0] - 2026-08-03
 
 ### Added
