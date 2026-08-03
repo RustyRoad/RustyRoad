@@ -1,6 +1,7 @@
 //! Shared fixture for versioned schema tests.
 
 use crate::database::versions::history;
+use crate::database::versions::ops::model::{Migration, Operation, RawSql};
 use crate::database::DatabaseConnection;
 use std::sync::Arc;
 
@@ -25,4 +26,23 @@ pub(super) async fn history_rows(connection: &DatabaseConnection) -> i64 {
         .fetch_one(pool.as_ref())
         .await
         .expect("failed to count history rows")
+}
+
+/// A migration with no operations.
+pub(super) fn empty_migration() -> Migration {
+    Migration {
+        name: String::new(),
+        operations: Vec::new(),
+    }
+}
+
+/// A migration applying one raw SQL statement.
+pub(super) fn sql_migration(sql: &str) -> Migration {
+    Migration {
+        name: String::new(),
+        operations: vec![Operation::Sql(RawSql {
+            up: sql.to_string(),
+            down: None,
+        })],
+    }
 }

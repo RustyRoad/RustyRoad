@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-22
+
+### Added
+- Added declarative migrations. A migration may be authored as `migration.json` declaring `operations` instead of raw `up.sql`, which lets the runner apply a breaking column change without breaking clients still running the old code.
+- Added the `alter_column` operation: retype, rename, or change nullability by creating a shadow physical column, installing triggers so a write through either schema version populates both, backfilling existing rows, then promoting the shadow at completion.
+- Added `add_column`, `drop_column`, and `sql` operations. `add_column` backfills existing rows from its `up` expression and defers `NOT NULL` until the backfill has run; `drop_column` keeps the column populated for old readers via `down` until completion.
+- Added backfill triggers that compare `search_path` against the version being served, so a write arriving through the old schema is rewritten into the new column and vice versa, without the application knowing a migration is in progress.
+- Added a batched backfill using keyset pagination over the primary key with `FOR NO KEY UPDATE`, so cost stays flat as it progresses and concurrent writers to other rows are not blocked.
+- Added completion plan persistence, so `complete` finishes the physical changes `start` deliberately deferred even though it runs in a separate invocation.
+- Added `example/migrations/declarative/` documenting the operations and the start/complete rollout.
+
+### Changed
+- `migration start` now accepts either a declarative `migration.json` or raw `up.sql`; raw SQL is wrapped as a single operation so both authoring styles share one execution path.
+- `migration rollback-version` now also drops the shadow columns, triggers, and backfill marker that `start` created.
+
+### Notes
+- Backfilled tables require a primary key, since the backfill paginates over it rather than locking the whole table.
+- Declarative operations are Postgres-only, as they depend on versioned schemas.
+
 ## [1.1.0] - 2026-07-22
 
 ### Added

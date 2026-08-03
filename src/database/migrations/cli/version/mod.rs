@@ -26,10 +26,10 @@ pub(super) async fn start(matches: &ArgMatches) {
         .get_one::<String>("name")
         .map(String::to_string)
         .unwrap_or_default();
-    let sql = context::up_sql(&version);
+    let migration = context::migration(&version);
     let connection = context::connect().await;
 
-    match lifecycle::start(&connection, SCHEMA, &version, &sql).await {
+    match lifecycle::start(&connection, SCHEMA, &version, &migration).await {
         Ok(started) => report::started(&started, lifecycle::supports_versions(&connection)),
         Err(error) => report::fail(&error.to_string()),
     }

@@ -6,6 +6,7 @@
 //! a started-but-incomplete migration, which is instant because the previous
 //! version was never removed.
 
+mod apply;
 mod finish;
 mod publish;
 mod start;

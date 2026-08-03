@@ -1,6 +1,6 @@
 //! History forms a linear parent chain.
 
-use super::support::sqlite;
+use super::support::{empty_migration, sqlite};
 use crate::database::versions::{lifecycle, query};
 
 #[tokio::test]
@@ -8,7 +8,7 @@ async fn history_is_a_linear_parent_chain() {
     let connection = sqlite().await;
 
     for version in ["01_first", "02_second", "03_third"] {
-        lifecycle::start(&connection, "main", version, &[])
+        lifecycle::start(&connection, "main", version, &empty_migration())
             .await
             .unwrap();
         lifecycle::complete(&connection, "main").await.unwrap();

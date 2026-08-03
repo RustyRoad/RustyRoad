@@ -1,13 +1,13 @@
 //! Start and complete: the two-phase transition.
 
-use super::support::sqlite;
+use super::support::{empty_migration, sqlite};
 use crate::database::versions::{lifecycle, query};
 
 #[tokio::test]
 async fn start_leaves_migration_active_until_completed() {
     let connection = sqlite().await;
 
-    lifecycle::start(&connection, "main", "01_add_users", &[])
+    lifecycle::start(&connection, "main", "01_add_users", &empty_migration())
         .await
         .unwrap();
 
@@ -23,7 +23,7 @@ async fn start_leaves_migration_active_until_completed() {
 async fn complete_finalizes_the_active_migration() {
     let connection = sqlite().await;
 
-    lifecycle::start(&connection, "main", "01_add_users", &[])
+    lifecycle::start(&connection, "main", "01_add_users", &empty_migration())
         .await
         .unwrap();
     let completed = lifecycle::complete(&connection, "main").await.unwrap();
@@ -40,12 +40,12 @@ async fn complete_finalizes_the_active_migration() {
 async fn only_one_migration_may_be_active() {
     let connection = sqlite().await;
 
-    lifecycle::start(&connection, "main", "01_first", &[])
+    lifecycle::start(&connection, "main", "01_first", &empty_migration())
         .await
         .unwrap();
 
     // Starting a second migration must fail rather than fork history.
-    let error = lifecycle::start(&connection, "main", "02_second", &[])
+    let error = lifecycle::start(&connection, "main", "02_second", &empty_migration())
         .await
         .expect_err("second concurrent start should be rejected");
     assert!(error.to_string().contains("already in progress"));

@@ -1,0 +1,16 @@
+{
+  "name": "02_rename_zone_id",
+  "operations": [
+    {
+      "alter_column": {
+        "table": "platform_trash_zone_mappings",
+        "column": "zone_id",
+        "name": "trash_zone_id",
+        "type": "uuid",
+        "nullable": false,
+        "up": "NEW.zone_id::text::uuid",
+        "down": "NEW.trash_zone_id::text::int4"
+      }
+    }
+  ]
+}

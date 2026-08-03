@@ -1,4 +1,4 @@
-//! Reads a migration's up/down SQL from disk.
+//! Reading raw SQL migration files.
 
 use crate::database::migrations::CustomMigrationError;
 use crate::database::statement::is_multi_statement;
@@ -33,8 +33,8 @@ fn read(version: &str, file: &str) -> Result<Vec<String>, CustomMigrationError> 
 
 /// Splits a script into statements, preserving single statements verbatim.
 ///
-/// Statements are applied individually so that a versioned schema is published
-/// only after every statement has succeeded.
+/// Statements are applied individually so a versioned schema is published only
+/// after every statement has succeeded.
 pub fn split(sql: &str) -> Vec<String> {
     if !is_multi_statement(sql) {
         let trimmed = sql.trim().trim_end_matches(';').trim();

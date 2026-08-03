@@ -15,10 +15,10 @@ pub(super) async fn connect() -> DatabaseConnection {
     }
 }
 
-/// Reads a migration's up.sql, or reports the failure and exits.
-pub(super) fn up_sql(version: &str) -> Vec<String> {
-    match source::up(version) {
-        Ok(sql) => sql,
+/// Loads a migration definition, or reports the failure and exits.
+pub(super) fn migration(version: &str) -> crate::database::versions::ops::model::Migration {
+    match source::load(version) {
+        Ok(migration) => migration,
         Err(error) => {
             super::report::fail(&error.to_string());
             unreachable!("fail exits the process")

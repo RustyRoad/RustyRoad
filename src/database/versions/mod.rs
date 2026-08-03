@@ -17,10 +17,12 @@ pub mod introspect;
 pub mod lifecycle;
 pub mod model;
 pub mod naming;
+pub mod ops;
 pub mod query;
 pub mod quote;
 pub mod record;
 pub mod source;
+pub mod stored_plan;
 pub mod view;
 
 #[cfg(test)]

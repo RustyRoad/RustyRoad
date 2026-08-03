@@ -1,8 +1,9 @@
-//! Starting a migration: apply DDL, then publish a new schema version.
+//! Starting a migration: apply operations, backfill, then publish a version.
 
-use super::publish;
+use super::apply;
 use crate::database::migrations::CustomMigrationError;
-use crate::database::versions::{exec, history, naming, query, record};
+use crate::database::versions::ops::{model::Migration, plan};
+use crate::database::versions::{history, naming, query, record};
 use crate::database::DatabaseConnection;
 
 /// Outcome of starting a migration.
@@ -12,9 +13,11 @@ pub struct Started {
     pub version: String,
     /// Schema name clients set on `search_path` to select it.
     pub schema: String,
+    /// Tables backfilled during the start phase.
+    pub backfilled: Vec<String>,
 }
 
-/// Applies `sql`, then publishes `version` as a new schema serving the result.
+/// Applies `migration`, then publishes `version` as a new schema serving the result.
 ///
 /// Fails when a migration is already in progress: only one may be active, so the
 /// version chain cannot fork.
@@ -22,7 +25,7 @@ pub async fn start(
     connection: &DatabaseConnection,
     schema: &str,
     version: &str,
-    sql: &[String],
+    migration: &Migration,
 ) -> Result<Started, CustomMigrationError> {
     history::ensure_table(connection).await?;
 
@@ -32,34 +35,21 @@ pub async fn start(
         )));
     }
 
+    let version_schema = naming::versioned_schema(schema, version);
+    let plan = plan(migration, &version_schema);
+
     record::start(connection, version).await?;
-    apply(connection, schema, version, sql).await?;
 
-    Ok(Started {
-        version: version.to_string(),
-        schema: naming::versioned_schema(schema, version),
-    })
-}
-
-/// Applies the migration DDL and publishes its views, withdrawing the history row
-/// if anything fails so the next migration is not blocked by a dangling record.
-async fn apply(
-    connection: &DatabaseConnection,
-    schema: &str,
-    version: &str,
-    sql: &[String],
-) -> Result<(), CustomMigrationError> {
-    for statement in sql {
-        if let Err(error) = exec::run(connection, statement, &[]).await {
+    match apply::apply(connection, schema, version, &plan).await {
+        Ok(backfilled) => Ok(Started {
+            version: version.to_string(),
+            schema: version_schema,
+            backfilled,
+        }),
+        Err(error) => {
+            // Withdraw the history row so a failed start does not block the next one.
             record::discard(connection, version).await?;
-            return Err(error);
+            Err(error)
         }
     }
-
-    if let Err(error) = publish::publish(connection, schema, version).await {
-        record::discard(connection, version).await?;
-        return Err(error);
-    }
-
-    Ok(())
 }
