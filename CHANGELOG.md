@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-08-03
+
+### Added
+- `rustyroad pull` now also writes `db/openapi/openapi.json`, an OpenAPI 3.1 document describing the generated Fastify routes, and `db/openapi/openapi-ts.config.ts`, a `@hey-api/openapi-ts` config preset to the flat SDK style (`@hey-api/sdk` with `asClass: false`).
+- Generating the document rather than scraping it from a running server removes the bootstrap problem: a browser client can be generated in CI without booting the API. Once deployed, Hey API can be pointed at the live document instead, and call sites do not change.
+- The document declares the same `operationId`s the routes carry, so generated SDK function names (`listUsers`, `createUsers`, `getUsers`, `updateUsers`, `deleteUsers`) are stable across re-runs.
+- Component schemas carry a select, insert, and patch variant per table plus a shared error shape, with generated keys absent from input schemas, defaulted columns optional, nullable columns as type unions, and `format` declared for uuid, date, time, and timestamp columns.
+
+### Notes
+- `@hey-api/openapi-ts` 0.87.x requires TypeScript 5; under TypeScript 7 it fails with `Cannot read properties of undefined (reading 'LineFeed')`. The generated config states this, and `example/db-generation/README.md` documents the pin.
+- Verified live against PostgreSQL 16: `pull` wrote the document, `@hey-api/openapi-ts` 0.87.5 generated a client from it (exit 0), `tsc --noEmit` passed under strict, and the generated client drove the generated Fastify server through 12/12 checks including a typed 404 for a missing row.
+
 ## [1.3.0] - 2026-08-03
 
 ### Added

@@ -1,14 +1,23 @@
 //! Writing generated TypeScript into the output folder.
 
+mod files;
 mod outputs;
 
 use super::casing::Casing;
-use super::{client, fastify, relations, schema, zod};
+use super::heyapi;
 use crate::database::introspection::Schema;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 pub use outputs::Outputs;
+
+/// Subfolder holding the OpenAPI document and Hey API config.
+const CLIENT_DIR: &str = "openapi";
+
+/// Path prefix the generated routes are mounted under.
+///
+/// The OpenAPI document's URLs must match the server, so both derive from this.
+pub const ROUTE_PREFIX: &str = "/api";
 
 /// Writes the selected artifacts into `out`, creating it when absent.
 ///
@@ -21,28 +30,28 @@ pub fn write(
     outputs: Outputs,
 ) -> io::Result<Vec<PathBuf>> {
     fs::create_dir_all(out)?;
-
-    let files = [
-        (outputs.schema, "schema.ts", schema::render(model, casing)),
-        (
-            outputs.relations,
-            "relations.ts",
-            relations::render(model, casing),
-        ),
-        (outputs.client, "client.ts", client::render(model, casing)),
-        (outputs.api, "zod.ts", zod::render(model, casing)),
-        (outputs.api, "routes.ts", fastify::render(model, casing)),
-    ];
-
     let mut written = Vec::new();
-    for (enabled, name, contents) in files {
-        if !enabled {
-            continue;
+
+    for (enabled, name, contents) in files::server(model, casing, outputs) {
+        if enabled {
+            written.push(write_file(out, name, &contents)?);
         }
-        let path = out.join(name);
-        fs::write(&path, contents)?;
-        written.push(path);
+    }
+
+    if outputs.sdk {
+        let directory = out.join(CLIENT_DIR);
+        fs::create_dir_all(&directory)?;
+        for file in heyapi::render(model, casing, ROUTE_PREFIX) {
+            written.push(write_file(&directory, file.name, &file.contents)?);
+        }
     }
 
     Ok(written)
+}
+
+/// Writes one file and returns its path.
+fn write_file(directory: &Path, name: &str, contents: &str) -> io::Result<PathBuf> {
+    let path = directory.join(name);
+    fs::write(&path, contents)?;
+    Ok(path)
 }

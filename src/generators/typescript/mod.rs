@@ -18,6 +18,7 @@ pub mod client;
 mod columns;
 mod constraints;
 pub mod fastify;
+pub mod heyapi;
 mod ordering;
 pub mod relations;
 pub mod schema;

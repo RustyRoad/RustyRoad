@@ -18,22 +18,68 @@ rustyroad pull --schema-only                # schema.ts + relations.ts only
 | `zod.ts` | Zod schemas derived from the tables via `drizzle-zod` |
 | `client.ts` | A typed repository per table |
 | `routes.ts` | Fastify plugins using `fastify-type-provider-zod` |
+| `openapi/openapi.json` | OpenAPI 3.1 document describing those routes |
+| `openapi/openapi-ts.config.ts` | Hey API config, pre-set to the flat SDK style |
 
 ## Why Zod is the centre
 
 The Zod schemas are not a second description of the database. `drizzle-zod`
 derives them from the Drizzle tables, and those tables are generated from the
-live schema. So one definition drives four things:
+live schema. So one definition drives five things:
 
 ```
 Postgres ──► schema.ts ──► zod.ts ──► request validation
                               ├──────► response serialization
-                              └──────► OpenAPI ──► Hey API client
+                              ├──────► openapi.json ──► Hey API client
+                              └──────► client.ts row types
 ```
 
 Change a column, re-run `pull`, and validation, serialization, the OpenAPI
 document, and the generated client all move together. There is no hand-written
 validator to fall out of step.
+
+## Generating the browser client
+
+`pull` writes the OpenAPI document directly rather than requiring a running
+server, so a client can be generated in CI without booting the API:
+
+```sh
+cd db/openapi
+npx @hey-api/openapi-ts        # reads openapi.json, writes ./generated
+```
+
+The config selects `@hey-api/sdk` with `asClass: false`, which produces flat
+functions:
+
+```ts
+import { client } from "./db/openapi/generated/client.gen";
+import { listUsers, createUsers, getUsers } from "./db/openapi/generated/sdk.gen";
+
+client.setConfig({ baseUrl: "https://api.example.com" });
+
+const users = await listUsers();
+const created = await createUsers({ body: { emailAddress: "a@b.com" } });
+const one = await getUsers({ path: { id: created.data!.id } });
+```
+
+Function names come from the `operationId`s the routes declare, so they are
+stable across re-runs.
+
+Once the server is deployed you can point Hey API at the live document instead,
+and nothing at the call sites changes:
+
+```sh
+npx @hey-api/openapi-ts --input https://api.example.com/documentation/json
+```
+
+### TypeScript version
+
+`@hey-api/openapi-ts` 0.87.x fails under TypeScript 7 with
+`Cannot read properties of undefined (reading 'LineFeed')`. Pin TypeScript 5:
+
+```sh
+npm install -D typescript@5.8.2
+```
 
 ## Dependencies
 

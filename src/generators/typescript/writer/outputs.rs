@@ -8,6 +8,8 @@ pub struct Outputs {
     pub client: bool,
     /// Zod schemas plus Fastify routes; the API surface.
     pub api: bool,
+    /// OpenAPI document plus Hey API config, written to an `openapi/` subfolder.
+    pub sdk: bool,
 }
 
 impl Outputs {
@@ -18,6 +20,7 @@ impl Outputs {
             relations: true,
             client: true,
             api: true,
+            sdk: true,
         }
     }
 
@@ -28,6 +31,7 @@ impl Outputs {
             relations: true,
             client: false,
             api: false,
+            sdk: false,
         }
     }
 }
