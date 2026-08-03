@@ -1,4 +1,3 @@
-use chrono::Local;
 use regex::Regex;
 use sqlx::Executor;
 use std::collections::HashMap;
@@ -311,11 +310,7 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
                 column_definitions_sql.join(",\n    ")
             );
             let down_sql = format!("DROP TABLE IF EXISTS {};", table_name);
-            let folder_name = format!(
-                "config/database/migrations/{}-{}",
-                Local::now().format("%Y%m%d%H%M%S"),
-                table_name
-            );
+            let folder_name = super::folder::folder_for(MIGRATIONS_DIR, &table_name);
 
             (up_sql, down_sql, folder_name)
         }
@@ -401,11 +396,7 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
                     .join(",\n")
             );
 
-            let folder_name = format!(
-                "config/database/migrations/{}-{}",
-                Local::now().format("%Y%m%d%H%M%S"),
-                name // Use original migration name for folder
-            );
+            let folder_name = super::folder::folder_for(MIGRATIONS_DIR, name);
 
             (up_sql, down_sql, folder_name)
         }
@@ -522,6 +513,12 @@ fn map_common_type_to_sql(common_type: &str) -> String {
     }
 }
 
+/// Creates a migration folder with its `up.sql` and `down.sql`.
+///
+/// The folder name carries a timestamp, so a genuine collision is only possible
+/// when the same migration is generated twice within one second. Any other
+/// failure — most often a missing `config/database/migrations` parent — is
+/// reported as itself rather than as a collision.
 pub fn create_migration_files(
     folder_name: &str,
     up_sql_contents: &str,
@@ -530,13 +527,22 @@ pub fn create_migration_files(
     let up_file = format!("{}/up.sql", folder_name);
     let down_file = format!("{}/down.sql", folder_name);
 
-    match std::fs::create_dir(folder_name) {
-        Ok(_) => {}
-        Err(_) => {
-            println!("Migration already exists");
-            return Err(io::Error::other("Migration already exists"));
-        }
+    if Path::new(folder_name).exists() {
+        println!("Migration already exists at '{folder_name}'");
+        return Err(io::Error::new(
+            ErrorKind::AlreadyExists,
+            format!("Migration already exists at '{folder_name}'"),
+        ));
     }
+
+    // create_dir_all builds the parent chain, so a fresh project or a renamed
+    // migrations directory does not surface as a phantom collision.
+    create_dir_all(folder_name).map_err(|error| {
+        io::Error::new(
+            error.kind(),
+            format!("Could not create migration folder '{folder_name}': {error}"),
+        )
+    })?;
 
     create_file(&up_file)?;
     create_file(&down_file)?;

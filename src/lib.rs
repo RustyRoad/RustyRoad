@@ -1164,6 +1164,7 @@ Example:\n\
                     .subcommand_required(true)
                     .arg_required_else_help(true)
             )
+            .subcommand(database::introspection::cli::pull_command())
             .subcommand(
                 Command::new("query")
                     .about("Execute SQL query")
@@ -1596,6 +1597,9 @@ Example:\n\
                     println!("Invalid db command");
                 }
             },
+            Some(("pull", matches)) => {
+                database::introspection::cli::run(matches).await;
+            }
             Some(("query", matches)) => {
                 use std::io::IsTerminal;
                 let query = if let Some(q) = matches.get_one::<String>("QUERY") {

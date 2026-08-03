@@ -5,6 +5,9 @@ pub mod breaking_change;
 pub(crate) mod cli;
 pub mod column_loop;
 pub mod column_loop_test;
+pub mod folder;
+#[cfg(test)]
+mod folder_test;
 pub mod ledger;
 #[cfg(test)]
 mod ledger_test;

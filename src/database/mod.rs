@@ -2,6 +2,7 @@ pub mod connect;
 pub mod database;
 pub mod databasetype;
 pub mod datatype;
+pub mod introspection;
 pub mod migrations;
 pub mod schema;
 pub mod statement;

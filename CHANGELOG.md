@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-08-03
+
+### Added
+- Added `rustyroad pull`, which introspects a live Postgres database and writes a folder of TypeScript, in the spirit of `drizzle-kit pull` but carrying the API layer as well.
+- Added rich Postgres introspection reading tables, columns with types and defaults, primary keys, foreign keys with referential actions, unique constraints, and indexes. Types come from `format_type`, so modifiers such as `varchar(255)` and `numeric(12,2)` survive.
+- Added `schema.ts` generation: Drizzle table definitions with inline single-column primary keys, table-level composite keys, foreign keys, uniques, and indexes. Tables are emitted in dependency order, because a `const` is not hoisted and a foreign key referencing a later binding would fail at module evaluation.
+- Added `relations.ts` generation deriving `one`/`many` relations from foreign keys.
+- Added `zod.ts` generation deriving Zod schemas from the Drizzle tables via `drizzle-zod`, so validation cannot drift from the database.
+- Added `client.ts` generation with a typed CRUD repository per table.
+- Added `routes.ts` generation: one Fastify plugin per table using `fastify-type-provider-zod`, so the same Zod schemas validate requests, serialize responses, and produce the OpenAPI document that client generators such as Hey API consume. Routes declare stable `operationId`s.
+- Added `example/db-generation/` documenting the wiring and carrying a script that boots the generated routes against a real database.
+
+### Fixed
+- `migration generate` no longer fails with "Migration already exists" when two migrations are generated within the same second. The folder prefix has second resolution, so a retry collided; a numeric suffix is now appended. The check also reported every folder-creation failure as a collision, including a missing parent directory, and now creates the parent chain and reports the real error.
+
+### Notes
+- Introspection and generation are Postgres-only.
+- Tables with a composite primary key get a schema, relations, and Zod schemas, but no routes, since there is no single `/:id` form.
+- `numeric` is carried as a string, matching Drizzle, so decimal precision is not lost through a float.
+- `jsonb` columns are annotated `.$type<Record<string, unknown>>()`, because Drizzle would otherwise infer `unknown` while `drizzle-zod` infers a recursive `Json` union, and the two are not assignable.
+
 ## [1.2.1] - 2026-08-03
 
 Five bugs found by running the versioned lifecycle against a real PostgreSQL 16

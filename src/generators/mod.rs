@@ -1,5 +1,6 @@
 pub mod directory;
 pub mod file;
+pub mod typescript;
 
 pub use directory::*;
 pub use file::*;
