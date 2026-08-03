@@ -1,10 +1,15 @@
+//! Migration subcommand definitions and dispatch.
+
 mod apply;
+mod baseline;
 mod breaking_change;
 mod convert;
 mod generate;
 mod inspect;
 mod rollback;
+mod route;
 mod validate_command;
+mod version;
 
 use clap::ArgMatches;
 
@@ -16,21 +21,24 @@ pub(crate) fn migration_command() -> clap::Command {
     clap::Command::new("migration").arg(breaking_change::allow_breaking_arg())
 }
 
+/// Returns the versioned lifecycle and baseline subcommands.
+pub(crate) fn lifecycle_commands() -> Vec<clap::Command> {
+    vec![
+        version::start_command(),
+        version::complete_command(),
+        version::rollback_command(),
+        version::status_command(),
+        baseline::baseline_command(),
+    ]
+}
+
 pub async fn dispatch(matches: &ArgMatches, format: &str) {
     if matches.subcommand_name() != Some("convert") {
         super::warn_about_rogue_migrations();
     }
     match matches.subcommand() {
-        Some(("generate", args)) => generate::run(args).await,
-        Some(("all", args)) => apply::all(args).await,
-        Some(("run", args)) => apply::one(args).await,
-        Some(("rollback", args)) => rollback::one(args).await,
-        Some(("redo", args)) => rollback::redo(args).await,
-        Some(("reset", _)) => rollback::reset().await,
-        Some(("validate", _)) => inspect::validate().await,
-        Some(("list", _)) => inspect::list(format).await,
-        Some(("convert", args)) => convert::run(args),
-        _ => println!("Invalid migration choice"),
+        Some((name, args)) => route::run(name, args, format).await,
+        None => println!("Invalid migration choice"),
     }
 }
 

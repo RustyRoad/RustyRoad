@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-22
+
+### Added
+- Added versioned schema support, modelled on pgroll. Each schema version is published as a Postgres schema `<schema>_<version>` containing one view per table, so old and new schemas are served simultaneously from the same physical tables. Clients select a version with `SET search_path`.
+- Added a two-phase migration lifecycle. `rustyroad migration start <version>` applies a migration's SQL and publishes a new version while leaving the previous one in place; `rustyroad migration complete` finalizes it and retires the previous version.
+- Added `rustyroad migration rollback-version` to undo a started-but-incomplete migration instantly, because the previous version was never removed.
+- Added `rustyroad migration version-status` reporting the version being served, any migration in progress, and the most recent baseline.
+- Added `rustyroad migration baseline` to record every migration on disk as applied without executing it, for databases whose schema is already current but whose ledger does not say so.
+- Added a migration history table with a linear parent chain, a `done` flag separating started from completed migrations, and a `migration_type` marking baselines. Unique indexes enforce at most one migration in progress, a single root, and no forks.
+- Added Postgres schema introspection that maps in-flight physical columns back to their logical names and hides columns pending deletion, so a version's views expose a stable client-facing shape.
+
+### Changed
+- Views restate column defaults explicitly, since a view does not inherit them from its underlying table, and use `security_invoker` on Postgres 15 and later so row-level security on the underlying table is respected.
+- A failed `start` withdraws its history row, so a failed migration does not block the next one.
+- Every schema, view, table, and column identifier in generated DDL is quoted.
+
+### Notes
+- Versioned schemas are Postgres-only. On MySQL and SQLite, migrations are applied without version publishing.
+
 ## [1.0.33] - 2026-07-22
 
 ### Fixed

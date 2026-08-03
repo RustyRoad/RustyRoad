@@ -1,3 +1,6 @@
+pub mod baseline;
+#[cfg(test)]
+mod baseline_test;
 pub mod breaking_change;
 pub(crate) mod cli;
 pub mod column_loop;

@@ -5,6 +5,7 @@ pub mod datatype;
 pub mod migrations;
 pub mod schema;
 pub mod statement;
+pub mod versions;
 
 #[cfg(test)]
 mod statement_test;

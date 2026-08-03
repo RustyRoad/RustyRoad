@@ -991,6 +991,7 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                             ),
                     )
                     .subcommand(database::migrations::cli::validate_command())
+                    .subcommands(database::migrations::cli::lifecycle_commands())
                     .subcommand(
                         Command::new("list")
                             .alias("status")
