@@ -10,6 +10,7 @@ pub(super) fn up_trigger() -> Trigger<'static> {
         direction: Direction::Up,
         expression: "NEW.zone_id::text::uuid",
         latest_schema: "public_02_rename",
+        rewrite: None,
     }
 }
 

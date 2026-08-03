@@ -36,6 +36,7 @@ fn drop_column(op: &DropColumn, latest_schema: &str) -> Plan {
                 direction: Direction::Down,
                 expression: down,
                 latest_schema,
+                rewrite: None,
             }
             .install(),
         );

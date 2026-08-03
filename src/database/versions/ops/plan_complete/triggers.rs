@@ -16,6 +16,7 @@ impl Plan {
                         direction: Direction::Up,
                         expression: "NULL",
                         latest_schema: "",
+                        rewrite: None,
                     }
                     .remove(),
                 );

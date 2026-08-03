@@ -13,16 +13,20 @@ pub fn supports_versions(connection: &DatabaseConnection) -> bool {
 }
 
 /// Creates the versioned schema and its views from the current physical schema.
+///
+/// `renames` let the new version expose a renamed column straight away, while the
+/// physical column still carries its original name until completion.
 pub(super) async fn publish(
     connection: &DatabaseConnection,
     schema: &str,
     version: &str,
+    renames: &[(String, String, String)],
 ) -> Result<(), CustomMigrationError> {
     if !supports_versions(connection) {
         return Ok(());
     }
 
-    let snapshot = introspect::read_schema(connection, schema).await?;
+    let snapshot = introspect::read_schema(connection, schema, renames).await?;
     if snapshot.tables.is_empty() {
         // Nothing to project yet.
         return Ok(());

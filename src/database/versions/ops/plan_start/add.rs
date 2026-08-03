@@ -34,6 +34,7 @@ pub(super) fn plan(op: &AddColumn, latest_schema: &str) -> Plan {
                 direction: Direction::Up,
                 expression: up,
                 latest_schema,
+                rewrite: None,
             }
             .install(),
         );

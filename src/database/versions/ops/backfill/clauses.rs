@@ -43,3 +43,15 @@ pub(super) fn returning(table: &str, primary_key: &[String]) -> String {
         .collect::<Vec<_>>()
         .join(", ")
 }
+
+/// Returns the cursor projection, casting each key to text.
+///
+/// The cursor is carried between batches as a string, so keys are cast in SQL
+/// rather than relying on the client to coerce an integer column into text.
+pub(super) fn cursor_projection(primary_key: &[String]) -> String {
+    primary_key
+        .iter()
+        .map(|key| format!("{}::text", quote_ident(key)))
+        .collect::<Vec<_>>()
+        .join(", ")
+}

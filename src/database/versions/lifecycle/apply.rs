@@ -24,7 +24,7 @@ pub(super) async fn apply(
         backfilled.push(table.clone());
     }
 
-    publish::publish(connection, schema, version).await?;
+    publish::publish(connection, schema, version, &plan.renames).await?;
 
     // `complete` runs in a later invocation and needs this plan.
     stored_plan::save(connection, version, plan).await?;

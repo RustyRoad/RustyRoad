@@ -4,6 +4,7 @@
 //! are mapped back to their logical names and columns pending deletion are hidden.
 
 mod build;
+mod rules;
 
 use super::model::Schema;
 use crate::database::migrations::CustomMigrationError;
@@ -20,11 +21,15 @@ const COLUMNS_SQL: &str = "SELECT c.table_name, c.column_name, c.column_default 
 
 /// Reads the current schema, returning the logical view of each table.
 ///
+/// `renames` are applied to logical column names so the new version's views expose
+/// the renamed column immediately, rather than only after completion.
+///
 /// Only Postgres exposes versioned schemas; other backends return an empty
 /// snapshot rather than failing, so callers can degrade cleanly.
 pub async fn read_schema(
     connection: &DatabaseConnection,
     schema: &str,
+    renames: &[(String, String, String)],
 ) -> Result<Schema, CustomMigrationError> {
     let DatabaseConnection::Pg(pool) = connection else {
         return Ok(Schema::default());
@@ -45,7 +50,7 @@ pub async fn read_schema(
         })
         .collect();
 
-    Ok(build::build(parsed))
+    Ok(build::build(parsed, renames))
 }
 
 /// Returns the server's major version, defaulting to 14 when unavailable.

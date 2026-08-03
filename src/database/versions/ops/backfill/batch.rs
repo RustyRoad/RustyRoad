@@ -42,8 +42,9 @@ pub fn batch(
         "WITH batch AS ({selection}), \
          updated AS (UPDATE {quoted} SET {first} = {quoted}.{first} FROM batch \
          WHERE {} RETURNING {}) \
-         SELECT {keys} FROM updated ORDER BY {keys} DESC LIMIT 1",
+         SELECT {} FROM updated ORDER BY {keys} DESC LIMIT 1",
         clauses::join(table, primary_key),
-        clauses::returning(table, primary_key)
+        clauses::returning(table, primary_key),
+        clauses::cursor_projection(primary_key)
     )
 }

@@ -60,7 +60,9 @@ fn composite_keys_are_compared_as_tuples() {
 fn update_returns_the_next_cursor() {
     let sql = batch_sql("users", &id_key(), 1000, None);
 
-    // The last row of the batch becomes the next batch's lower bound.
+    // The last row of the batch becomes the next batch's lower bound. Keys are cast
+    // in SQL because the cursor is carried between batches as text; reading an int4
+    // column as text client-side fails.
     assert!(sql.contains("RETURNING"));
-    assert!(sql.ends_with(r#"SELECT "id" FROM updated ORDER BY "id" DESC LIMIT 1"#));
+    assert!(sql.ends_with(r#"SELECT "id"::text FROM updated ORDER BY "id" DESC LIMIT 1"#));
 }

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-08-03
+
+Five bugs found by running the versioned lifecycle against a real PostgreSQL 16
+server. Each one passed the SQL-shape unit tests and still failed live.
+
+### Fixed
+- Backfill cursor keys are now cast to text in SQL. Reading an `int4` primary key as text client-side failed with "invalid input syntax for type integer", so every backfill over an integer key aborted.
+- Trigger functions now normalize `current_setting('search_path')` before comparing it. PostgreSQL returns the value quoted when the schema name requires it, so the literal comparison never matched and the reverse trigger silently never fired.
+- A `down` expression is now rewritten from the new logical column name to the physical shadow column. `NEW` exposes physical columns only, so an expression referencing the renamed column failed with `record "new" has no field ...`.
+- A `nullable: false` declaration on `alter_column` now survives promotion. The constraint was dropped during shadow promotion and targeted the pre-rename name, so the completed column came back nullable.
+- Version views no longer expose RustyRoad's own history table or the internal backfill marker column to clients.
+
+### Notes
+- Verified live: 2500-row table, `zone_id int4` renamed to `trash_zone_id uuid` with `nullable: false`. Backfill converged; a write through the old schema was readable through the new and vice versa; after `complete` the column was `uuid NOT NULL` with all 2502 rows populated and no triggers, functions, shadow, or marker left behind; `rollback-version` restored the original table exactly.
+
 ## [1.2.0] - 2026-07-22
 
 ### Added

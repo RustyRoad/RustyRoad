@@ -1,7 +1,8 @@
 //! Builds the logical schema model from raw Postgres column rows.
 
 use super::super::model::{Column, Schema, Table};
-use super::super::naming::{is_internal, logical_name, DELETION_PREFIX};
+use super::super::naming::{is_internal, logical_name};
+use super::rules::{self, Renames};
 
 /// One raw column row read from `information_schema`.
 pub(super) struct Row {
@@ -11,19 +12,16 @@ pub(super) struct Row {
 }
 
 /// Assembles rows into the logical view of each table.
-pub(super) fn build(rows: Vec<Row>) -> Schema {
+pub(super) fn build(rows: Vec<Row>, renames: &Renames) -> Schema {
     let mut tables: Vec<Table> = Vec::new();
 
     for row in rows {
-        if row.table.is_empty() || row.column.is_empty() {
-            continue;
-        }
-        // A column pending removal is absent from the current version.
-        if row.column.starts_with(DELETION_PREFIX) {
+        if !rules::is_visible(&row) {
             continue;
         }
 
-        let mut column = Column::new(logical_name(&row.column)).backed_by(&row.column);
+        let logical = rules::renamed(&row.table, logical_name(&row.column), renames);
+        let mut column = Column::new(logical).backed_by(&row.column);
         if let Some(default) = row.default {
             column = column.with_default(default);
         }
