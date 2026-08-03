@@ -8,6 +8,14 @@ mod constraints;
 
 pub use constraints::{ForeignKey, Index, Unique};
 
+/// A user-defined enum type.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Enum {
+    pub name: String,
+    /// Allowed values, in declaration order.
+    pub values: Vec<String>,
+}
+
 /// A column as it exists in the database.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Column {
@@ -48,11 +56,18 @@ impl Table {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Schema {
     pub tables: Vec<Table>,
+    /// Enum types the columns may reference.
+    pub enums: Vec<Enum>,
 }
 
 impl Schema {
     /// Returns the table with `name`, if present.
     pub fn table(&self, name: &str) -> Option<&Table> {
         self.tables.iter().find(|table| table.name == name)
+    }
+
+    /// Returns the enum type with `name`, if present.
+    pub fn enum_type(&self, name: &str) -> Option<&Enum> {
+        self.enums.iter().find(|item| item.name == name)
     }
 }

@@ -5,6 +5,22 @@ use super::rows::{action, text};
 use sqlx::postgres::PgRow;
 use std::collections::BTreeMap;
 
+/// Groups enum rows into their types, preserving declaration order.
+pub(super) fn enums(rows: Vec<PgRow>) -> Vec<crate::database::introspection::Enum> {
+    let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for row in rows {
+        grouped
+            .entry(text(&row, "name"))
+            .or_default()
+            .push(text(&row, "value"));
+    }
+
+    grouped
+        .into_iter()
+        .map(|(name, values)| crate::database::introspection::Enum { name, values })
+        .collect()
+}
+
 /// Groups constraint rows by name, preserving column order.
 pub(super) fn constraints(rows: Vec<PgRow>) -> Grouped {
     let mut grouped: Grouped = BTreeMap::new();

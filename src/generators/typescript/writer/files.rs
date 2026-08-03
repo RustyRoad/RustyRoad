@@ -1,6 +1,7 @@
 //! The server-side files `pull` emits.
 
 use super::outputs::Outputs;
+use super::ownership::Ownership;
 use crate::database::introspection::Schema;
 use crate::generators::typescript::casing::Casing;
 use crate::generators::typescript::{client, orpc, relations, schema, zod};
@@ -11,27 +12,50 @@ use crate::generators::typescript::{client, orpc, relations, schema, zod};
 /// this, so they cannot disagree.
 pub const ROUTE_PREFIX: &str = "/api";
 
-/// Returns each server-side file with whether it is enabled.
-pub(super) fn server(
-    model: &Schema,
-    casing: Casing,
-    outputs: Outputs,
-) -> [(bool, &'static str, String); 7] {
-    [
-        (outputs.schema, "schema.ts", schema::render(model, casing)),
-        (
+/// One file to emit: whether it is enabled, its name, ownership, and contents.
+pub(super) struct Emit {
+    pub enabled: bool,
+    pub name: &'static str,
+    pub ownership: Ownership,
+    pub contents: String,
+}
+
+/// Returns every server-side file.
+///
+/// `api.ts` is the only scaffold: it is the composition point where generated
+/// procedures meet hand-written ones, so it must survive regeneration.
+pub(super) fn server(model: &Schema, casing: Casing, outputs: Outputs) -> Vec<Emit> {
+    vec![
+        generated(outputs.schema, "schema.ts", schema::render(model, casing)),
+        generated(
             outputs.relations,
             "relations.ts",
             relations::render(model, casing),
         ),
-        (outputs.client, "client.ts", client::render(model, casing)),
-        (outputs.api, "zod.ts", zod::render(model, casing)),
-        (
+        generated(outputs.client, "client.ts", client::render(model, casing)),
+        generated(outputs.api, "zod.ts", zod::render(model, casing)),
+        generated(
             outputs.api,
             "router.ts",
             orpc::render(model, casing, ROUTE_PREFIX),
         ),
-        (outputs.api, "server.ts", orpc::server()),
-        (outputs.api, "openapi.ts", orpc::openapi_script()),
+        Emit {
+            enabled: outputs.api,
+            name: "api.ts",
+            ownership: Ownership::Scaffold,
+            contents: orpc::composition(model, casing),
+        },
+        generated(outputs.api, "server.ts", orpc::server()),
+        generated(outputs.api, "openapi.ts", orpc::openapi_script()),
     ]
+}
+
+/// Builds an entry for a file derived from the database.
+fn generated(enabled: bool, name: &'static str, contents: String) -> Emit {
+    Emit {
+        enabled,
+        name,
+        ownership: Ownership::Generated,
+        contents,
+    }
 }

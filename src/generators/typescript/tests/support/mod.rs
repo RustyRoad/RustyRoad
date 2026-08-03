@@ -4,7 +4,7 @@ mod tables;
 
 pub(super) use tables::{posts, users};
 
-use crate::database::introspection::{Column, Schema};
+use crate::database::introspection::{Column, Enum, Schema, Table};
 
 /// Builds a nullable column with no default.
 pub(super) fn column(name: &str, sql_type: &str) -> Column {
@@ -27,9 +27,28 @@ pub(super) fn serial_key(name: &str) -> Column {
     }
 }
 
+/// Wraps tables in a schema with no enum types.
+pub(super) fn from_tables(tables: Vec<Table>) -> Schema {
+    Schema {
+        tables,
+        enums: Vec::new(),
+    }
+}
+
+/// Wraps tables and enum types in a schema.
+pub(super) fn with_enums(tables: Vec<Table>, enums: Vec<Enum>) -> Schema {
+    Schema { tables, enums }
+}
+
+/// Builds an enum type.
+pub(super) fn enum_type(name: &str, values: &[&str]) -> Enum {
+    Enum {
+        name: name.to_string(),
+        values: values.iter().map(|value| value.to_string()).collect(),
+    }
+}
+
 /// A schema containing both fixture tables.
 pub(super) fn schema() -> Schema {
-    Schema {
-        tables: vec![users(), posts()],
-    }
+    from_tables(vec![users(), posts()])
 }

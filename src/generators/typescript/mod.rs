@@ -21,6 +21,7 @@ pub mod casing;
 pub mod client;
 mod columns;
 mod constraints;
+mod enums;
 pub mod heyapi;
 mod ordering;
 pub mod orpc;

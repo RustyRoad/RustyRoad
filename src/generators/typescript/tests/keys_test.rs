@@ -1,7 +1,7 @@
 //! Primary key typing in the generated repository.
 
-use super::support::{column, schema};
-use crate::database::introspection::{Schema, Table};
+use super::support::{column, from_tables, schema};
+use crate::database::introspection::Table;
 use crate::generators::typescript::client::render;
 use crate::generators::typescript::Casing;
 
@@ -24,7 +24,7 @@ fn uuid_keys_are_typed_as_strings() {
         indexes: Vec::new(),
     };
 
-    let ts = render(&Schema { tables: vec![table] }, Casing::Camel);
+    let ts = render(&from_tables(vec![table]), Casing::Camel);
     assert!(ts.contains("find(db: Database, id: string)"));
 }
 
@@ -39,7 +39,7 @@ fn tables_without_a_primary_key_get_no_repository() {
         indexes: Vec::new(),
     };
 
-    let ts = render(&Schema { tables: vec![table] }, Casing::Camel);
+    let ts = render(&from_tables(vec![table]), Casing::Camel);
 
     // Row types are still exported; CRUD by id is not expressible.
     assert!(ts.contains("AuditLogRow"));

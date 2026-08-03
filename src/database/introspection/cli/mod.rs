@@ -5,6 +5,8 @@
 //! routes, which Drizzle leaves to the application.
 
 mod command;
+mod help;
+mod notices;
 mod report;
 
 use crate::database::introspection;
@@ -49,8 +51,8 @@ pub async fn run(matches: &ArgMatches) {
         return report::empty(schema_name);
     }
 
-    match typescript::write(&out, &schema, casing, outputs) {
-        Ok(written) => report::written(&schema, &written),
+    match typescript::write(&out, &schema, casing, outputs, matches.get_flag("force")) {
+        Ok(report_data) => report::written(&schema, &report_data),
         Err(error) => report::fail(&error.to_string()),
     }
 }

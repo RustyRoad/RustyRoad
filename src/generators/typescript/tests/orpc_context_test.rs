@@ -1,7 +1,7 @@
 //! Context, error handling, and key coercion in the generated router.
 
-use super::support::{column, schema};
-use crate::database::introspection::{Schema, Table};
+use super::support::{column, from_tables, schema};
+use crate::database::introspection::Table;
 use crate::generators::typescript::orpc::render;
 use crate::generators::typescript::Casing;
 
@@ -44,7 +44,7 @@ fn string_keys_are_not_coerced() {
         indexes: Vec::new(),
     };
 
-    let ts = render(&Schema { tables: vec![table] }, Casing::Camel, "/api");
+    let ts = render(&from_tables(vec![table]), Casing::Camel, "/api");
     assert!(ts.contains("z.object({ id: z.string() })"));
     assert!(!ts.contains("z.coerce"));
 }
@@ -60,7 +60,7 @@ fn composite_keys_are_skipped() {
         indexes: Vec::new(),
     };
 
-    let ts = render(&Schema { tables: vec![table] }, Casing::Camel, "/api");
+    let ts = render(&from_tables(vec![table]), Casing::Camel, "/api");
 
     // A composite key has no single `{id}` form, so no procedures are invented.
     assert!(ts.contains("No tables with a single-column primary key"));

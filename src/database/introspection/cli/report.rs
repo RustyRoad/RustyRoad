@@ -1,23 +1,42 @@
 //! Output for `rustyroad pull`.
 
+use super::notices;
 use crate::database::introspection::Schema;
+use crate::generators::typescript::writer::{Outcome, Report};
 use std::path::Path;
 
-/// Reports what was written.
-pub(super) fn written(schema: &Schema, files: &[std::path::PathBuf]) {
+/// Reports what was written, what was kept, and anything left unreachable.
+pub(super) fn written(schema: &Schema, report: &Report) {
+    summary(schema);
+
+    for outcome in &report.outcomes {
+        let label = if outcome.is_preserved() { "kept " } else { "wrote" };
+        println!("  {label} {}", display(outcome.path()));
+    }
+
+    if report.outcomes.iter().any(Outcome::is_preserved) {
+        notices::preserved();
+    }
+
+    notices::unwired(&report.unwired);
+    notices::next_steps();
+}
+
+/// Prints what was found in the database.
+fn summary(schema: &Schema) {
     let columns: usize = schema.tables.iter().map(|t| t.columns.len()).sum();
     let keys: usize = schema.tables.iter().map(|t| t.foreign_keys.len()).sum();
 
+    let enums = if schema.enums.is_empty() {
+        String::new()
+    } else {
+        format!(", {} enum type(s)", schema.enums.len())
+    };
+
     println!(
-        "Introspected {} table(s), {columns} column(s), {keys} foreign key(s).\n",
+        "Introspected {} table(s), {columns} column(s), {keys} foreign key(s){enums}.\n",
         schema.tables.len()
     );
-
-    for file in files {
-        println!("  wrote {}", display(file));
-    }
-
-    println!("\nNext:\n  npm install drizzle-orm pg\n  npm install -D drizzle-kit");
 }
 
 /// Reports an empty schema, which is usually a wrong schema name.

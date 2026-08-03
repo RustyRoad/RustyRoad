@@ -21,8 +21,10 @@ pub async fn read(
     let pool = pool.as_ref();
 
     let columns = fetch(pool, queries::COLUMNS, schema_name).await?;
+    let enums = fetch(pool, queries::ENUMS, schema_name).await?;
     let mut schema = Schema {
         tables: assemble::tables(columns.iter().map(rows::column).collect()),
+        enums: group::enums(enums),
     };
 
     let keys = fetch(pool, queries::PRIMARY_KEYS, schema_name).await?;

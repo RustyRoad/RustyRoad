@@ -49,11 +49,12 @@ fn delete_returns_an_object_literal() {
 }
 
 #[test]
-fn root_router_exposes_every_table() {
+fn generated_namespace_exposes_every_table() {
     let ts = router();
 
-    assert!(ts.contains("export const router = {"));
+    // Named `generated` because the root router lives in the developer-owned
+    // api.ts, which composes this with hand-written procedures.
+    assert!(ts.contains("export const generated = {"));
     assert!(ts.contains("users: usersRouter,"));
     assert!(ts.contains("posts: postsRouter,"));
-    assert!(ts.contains("export type AppRouter = typeof router;"));
 }

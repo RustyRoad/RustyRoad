@@ -1,42 +1,27 @@
 //! Column declaration rendering for `schema.ts`.
 
+mod builder;
 mod defaults;
 
-use super::casing::{db_name_argument, identifier, Casing};
-use super::types::{self, Builder};
-use crate::database::introspection::{Column, Table};
+use super::casing::{identifier, Casing};
+use crate::database::introspection::{Column, Schema, Table};
 
 /// Renders one column line, including its modifier chain.
-pub(super) fn render(table: &Table, column: &Column, casing: Casing) -> String {
-    let builder = types::map(&column.sql_type, column.auto_increment);
-    let name = db_name_argument(&column.name, casing);
-
-    let arguments = match (&builder.options, name.is_empty()) {
-        (Some(options), true) => options.clone(),
-        (Some(options), false) => format!("{name}, {options}"),
-        (None, true) => String::new(),
-        (None, false) => name,
-    };
-
+///
+/// `schema` is needed to recognize an enum column, which arrives as a bare type
+/// name and must reference its `pgEnum` declaration rather than degrade to text.
+pub(super) fn render(
+    schema: &Schema,
+    table: &Table,
+    column: &Column,
+    casing: Casing,
+) -> String {
     format!(
-        "\t{}: {}({arguments}){}{}",
+        "\t{}: {}{}",
         identifier(&column.name, casing),
-        builder.import,
-        type_annotation(&builder),
+        builder::call(schema, column, casing),
         chain(table, column)
     )
-}
-
-/// Renders an explicit `$type` annotation for builders that need one.
-///
-/// `json`/`jsonb` default to `unknown`, which does not match the recursive `Json`
-/// union `drizzle-zod` infers. Stating the type keeps the Drizzle row type and the
-/// Zod schema assignable to each other.
-fn type_annotation(builder: &Builder) -> &'static str {
-    match builder.import {
-        "json" | "jsonb" => ".$type<Record<string, unknown>>()",
-        _ => "",
-    }
 }
 
 /// Renders the modifier chain applied to a column builder.

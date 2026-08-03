@@ -17,7 +17,7 @@ pub fn openapi_script() -> String {
         "import { writeFile } from \"node:fs/promises\";\n\
          import { OpenAPIGenerator } from \"@orpc/openapi\";\n\
          import { ZodToJsonSchemaConverter } from \"@orpc/zod/zod4\";\n\
-         import { router } from \"./router.js\";\n\n\
+         import { router } from \"./api.js\";\n\n\
          /**\n\
           * Writes the OpenAPI document for the generated router.\n\
           *\n\

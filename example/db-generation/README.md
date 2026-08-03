@@ -84,23 +84,98 @@ before `migration complete` retires the old version.
 
 ## Generated files
 
-| File | Contents |
-|---|---|
-| `schema.ts` | Drizzle tables, columns, defaults, constraints, indexes |
-| `relations.ts` | `one`/`many` relations derived from foreign keys |
-| `zod.ts` | Zod schemas derived from the tables via `drizzle-zod` |
-| `client.ts` | A typed repository per table |
-| `router.ts` | oRPC procedures over those repositories |
-| `server.ts` | Fastify adapter serving the router over RPC and REST |
-| `openapi.ts` | Script writing the OpenAPI document from the router |
-| `openapi/openapi.json` | A static document, so a client can be built offline |
-| `openapi/openapi-ts.config.ts` | Hey API config, preset to the flat SDK style |
+| File | Owner | Contents |
+|---|---|---|
+| `schema.ts` | generated | Drizzle tables, enums, constraints, indexes |
+| `relations.ts` | generated | `one`/`many` relations from foreign keys |
+| `zod.ts` | generated | Zod schemas derived via `drizzle-zod` |
+| `client.ts` | generated | A typed repository per table |
+| `router.ts` | generated | oRPC procedures, exported as `generated` |
+| `api.ts` | **yours** | Root router: generated plus hand-written |
+| `server.ts` | generated | Fastify adapter serving RPC and REST |
+| `openapi.ts` | generated | Script writing the OpenAPI document |
+| `openapi/openapi.json` | generated | Static document, for offline client builds |
+| `openapi/openapi-ts.config.ts` | **yours** | Hey API config |
 
 ```sh
 rustyroad pull                              # -> ./db
 rustyroad pull --out ./src/db --casing preserve
 rustyroad pull --schema-only                # schema.ts + relations.ts only
+rustyroad pull --force                      # also overwrite the files you own
 ```
+
+## Adding your own procedures
+
+`pull` rewrites the generated files every run but never touches `api.ts`, so that
+is where hand-written procedures go:
+
+```ts
+// db/billing.ts — yours, pull never reads or writes it
+import { os } from "@orpc/server";
+import { z } from "zod";
+import type { RouterContext } from "./router";
+
+const base = os.$context<RouterContext>();
+
+export const billingRouter = {
+  quote: base
+    .route({ method: "POST", path: "/api/billing/quote" })
+    .input(z.object({ plan: z.enum(["basic", "pro"]) }))
+    .output(z.object({ cents: z.number().int() }))
+    .handler(async ({ input }) => ({ cents: input.plan === "pro" ? 9900 : 1900 })),
+};
+```
+
+```ts
+// db/api.ts — written once, then yours
+import { generated } from "./router";
+import { billingRouter } from "./billing";
+
+export const router = {
+  users: generated.users,
+  billing: billingRouter,   // survives every subsequent pull
+};
+
+export type AppRouter = typeof router;
+```
+
+Both kinds of procedure are then served over RPC and REST, and both appear in the
+OpenAPI document and any client generated from it.
+
+`pull` prints `kept` for files it left alone. Because `api.ts` is preserved, a
+table added *later* is not wired up automatically — `pull` warns and prints the
+line to add:
+
+```
+Warning: 1 table(s) are generated but not served, because db/api.ts does not
+reference them:
+  invoices
+Add them to the router in db/api.ts, for example:
+  invoices: generated.invoices,
+```
+
+Spreading (`...generated`) wires every table including future ones, at the cost
+of losing the compile error when a table disappears.
+
+## Enums
+
+A Postgres enum becomes a `pgEnum` declaration, so its values survive into the
+types, the validation, and the OpenAPI document:
+
+```sql
+CREATE TYPE order_status AS ENUM ('pending', 'shipped', 'delivered');
+```
+
+```ts
+export const orderStatus = pgEnum("order_status", ["pending", "shipped", "delivered"]);
+
+export const orders = pgTable("orders", {
+  status: orderStatus("status").notNull(),
+});
+```
+
+An invalid value is rejected by Zod as a validation error rather than reaching
+Postgres and raising `22P02`.
 
 ## Dependencies
 
@@ -212,7 +287,9 @@ npm install -D typescript@5.8.2
   `Json` union, and the two are not assignable.
 - **`server.ts` disables Fastify's body parsers** for its route, because the oRPC
   handlers need the raw request.
-- **Re-running overwrites these files.** Keep hand-written code elsewhere.
+- **Re-running rewrites the generated files** but preserves `api.ts` and the Hey
+  API config. Put hand-written procedures in their own file and compose them in
+  `api.ts`; use `--force` only when you want the scaffold regenerated.
 
 ## Verifying a generated folder
 

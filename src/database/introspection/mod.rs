@@ -10,5 +10,5 @@ pub mod model;
 pub mod postgres;
 mod queries;
 
-pub use model::{Column, ForeignKey, Index, Schema, Table, Unique};
+pub use model::{Column, Enum, ForeignKey, Index, Schema, Table, Unique};
 pub use postgres::read;

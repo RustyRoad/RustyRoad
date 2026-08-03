@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-08-03
+
+### Added
+- `rustyroad pull` now respects hand-written code. Files derived from the database are still rewritten on every run, but `db/api.ts` and `db/openapi/openapi-ts.config.ts` are written once and then left alone, so hand-written procedures and config edits survive regeneration. `pull` reports each file as `wrote` or `kept`, and `--force` overwrites the preserved ones.
+- Split the router: `router.ts` now exports a `generated` namespace and is regenerated every run, while `api.ts` composes it with hand-written routers and is the file served. This is what makes composition survive a re-pull.
+- `pull` warns when a table's procedures are generated but not referenced by the preserved `api.ts`, printing the line to add. Automatic wiring is deferred to a later release; silently generating unreachable procedures would be worse than saying so.
+- Added `pgEnum` support. A Postgres enum previously degraded to `text`, losing its values. Enum types are now introspected and emitted as `pgEnum` declarations ahead of the tables that reference them, so the allowed values reach the Drizzle types, the Zod validation, and the OpenAPI document. An invalid value is rejected as a validation error rather than reaching Postgres and raising `22P02`.
+- A nullable enum admits `null` in both its JSON Schema `type` and `enum` list, because a validator checks membership before nullability.
+- `pull` now reports the number of enum types found alongside tables, columns, and foreign keys.
+
+### Notes
+- Verified live against PostgreSQL 16. Ownership: a second `pull` after adding a hand-written `billing` router reported `kept ./db/api.ts`, the composition survived, and 8/8 runtime checks passed with generated and hand-written procedures served together over RPC, REST, and OpenAPI, including a preserved custom `FORBIDDEN` error code. Enums: 5/5 runtime checks passed, with an invalid value rejected as `BAD_REQUEST` on both transports. `tsc --noEmit` under strict passed in both cases.
+- Because `api.ts` is preserved, `os.router()` is no longer used in it: that helper widens the context type and would reject procedures built on a typed context. A plain nested record is used instead, which oRPC accepts.
+
 ## [1.5.0] - 2026-08-03
 
 Unifies the generated API surface on oRPC, so migrations, `pull`, and client

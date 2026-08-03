@@ -1,7 +1,7 @@
 //! Table-level constraints in `schema.ts`.
 
-use super::support::{column, schema, users};
-use crate::database::introspection::{Schema, Table};
+use super::support::{column, from_tables, schema, users};
+use crate::database::introspection::Table;
 use crate::generators::typescript::schema::render;
 use crate::generators::typescript::Casing;
 
@@ -21,22 +21,20 @@ fn tables_without_constraints_have_no_second_argument() {
     table.uniques.clear();
     table.indexes.clear();
 
-    let ts = render(&Schema { tables: vec![table] }, Casing::Camel);
+    let ts = render(&from_tables(vec![table]), Casing::Camel);
     assert!(!ts.contains("(table) => ["));
 }
 
 #[test]
 fn bare_tables_need_no_constraint_imports() {
-    let bare = Schema {
-        tables: vec![Table {
-            name: "logs".to_string(),
-            columns: vec![column("body", "text")],
-            primary_key: Vec::new(),
-            foreign_keys: Vec::new(),
-            uniques: Vec::new(),
-            indexes: Vec::new(),
-        }],
-    };
+    let bare = from_tables(vec![Table {
+        name: "logs".to_string(),
+        columns: vec![column("body", "text")],
+        primary_key: Vec::new(),
+        foreign_keys: Vec::new(),
+        uniques: Vec::new(),
+        indexes: Vec::new(),
+    }]);
 
     let ts = render(&bare, Casing::Camel);
     assert!(!ts.contains("foreignKey"));
@@ -54,7 +52,7 @@ fn composite_primary_keys_become_table_level() {
         indexes: Vec::new(),
     };
 
-    let ts = render(&Schema { tables: vec![table] }, Casing::Camel);
+    let ts = render(&from_tables(vec![table]), Casing::Camel);
 
     // A composite key cannot be expressed on a single column builder.
     assert!(ts.contains("primaryKey({ columns: [table.userId, table.groupName]"));

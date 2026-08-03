@@ -12,13 +12,16 @@ pub fn server() -> String {
 }
 
 /// Renders the imports and the two handlers.
+///
+/// The router comes from `api.ts` rather than `router.ts`, so hand-written
+/// procedures composed there are served too.
 fn imports() -> String {
     String::from(
         "import type { FastifyInstance } from \"fastify\";\n\
          import { OpenAPIHandler } from \"@orpc/openapi/fetch\";\n\
          import { RPCHandler } from \"@orpc/server/fetch\";\n\
          import type { Database } from \"./client\";\n\
-         import { router } from \"./router\";\n\n\
+         import { router } from \"./api\";\n\n\
          /** Serves the router over REST, using the declared method and path. */\n\
          const openApiHandler = new OpenAPIHandler(router);\n\n\
          /** Serves the router over RPC, for the typed client. */\n\

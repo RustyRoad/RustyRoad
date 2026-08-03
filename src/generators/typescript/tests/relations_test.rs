@@ -1,7 +1,6 @@
 //! `relations.ts` generation from foreign keys.
 
-use super::support::{schema, users};
-use crate::database::introspection::Schema;
+use super::support::{from_tables, schema, users};
 use crate::generators::typescript::relations::render;
 use crate::generators::typescript::Casing;
 
@@ -42,7 +41,7 @@ fn schema_import_lists_referenced_tables() {
 
 #[test]
 fn a_schema_without_foreign_keys_yields_no_relations() {
-    let ts = render(&Schema { tables: vec![users()] }, Casing::Camel);
+    let ts = render(&from_tables(vec![users()]), Casing::Camel);
 
     // Emitting an empty relations file would be misleading, so it says why.
     assert!(ts.contains("No foreign keys"));
