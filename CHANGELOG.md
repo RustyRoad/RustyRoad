@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- `migration list` now matches full timestamped ledger identities to their migration directories while displaying the human-readable suffix.
+- Legacy bare-name rows remain compatible, and distinct migrations sharing a suffix are not collapsed.
+
 ## [1.6.1] - 2026-08-03
 
 ### Fixed

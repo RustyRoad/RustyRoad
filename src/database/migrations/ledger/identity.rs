@@ -17,5 +17,16 @@ pub fn ledger_id_for_dir(migration_dir: &str) -> Option<&str> {
 /// than `20251114211514-add_columns`. Returns `None` when `ledger_id` carries no
 /// timestamp prefix and is therefore already a bare name.
 pub(super) fn legacy_bare_name(ledger_id: &str) -> Option<&str> {
-    ledger_id.split_once('-').map(|(_, name)| name)
+    let (prefix, name) = ledger_id.split_once('-')?;
+    (!name.is_empty() && prefix.bytes().all(|byte| byte.is_ascii_digit())).then_some(name)
+}
+
+/// Returns the human-readable suffix while preserving hyphenated bare names.
+pub fn display_name(ledger_id: &str) -> &str {
+    legacy_bare_name(ledger_id).unwrap_or(ledger_id)
+}
+
+/// Whether full and legacy identities refer to the same migration.
+pub fn identities_match(left: &str, right: &str) -> bool {
+    left == right || legacy_bare_name(left) == Some(right) || legacy_bare_name(right) == Some(left)
 }

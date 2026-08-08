@@ -1161,9 +1161,7 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
             let path = entry.path();
             if path.is_dir() {
                 if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                    if let Some((_, migration_name)) = name.split_once('-') {
-                        migration_files.push(migration_name.to_string());
-                    }
+                    migration_files.push(name.to_string());
                 }
             }
         }
@@ -1205,7 +1203,11 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
     // Build a map of latest status per migration name (ordered by applied_at, so later wins)
     let mut latest_by_name: HashMap<String, (String, String)> = HashMap::new();
     for (name, applied_at, direction) in &applied_migrations {
-        latest_by_name.insert(name.clone(), (applied_at.clone(), direction.clone()));
+        let identity = migration_files
+            .iter()
+            .find(|migration| ledger::identities_match(migration, name))
+            .unwrap_or(name);
+        latest_by_name.insert(identity.clone(), (applied_at.clone(), direction.clone()));
     }
 
     if format == "json" {
@@ -1221,7 +1223,7 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
                 _ => ("".to_string(), "Pending".to_string()),
             };
             migrations_list.push(MigrationEntry {
-                name: migration.clone(),
+                name: ledger::display_name(migration).to_string(),
                 timestamp,
                 status,
             });
@@ -1238,15 +1240,22 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
         println!("{:-<30} {:-<22} {:-<12}", "", "", "");
 
         for migration in &migration_files {
+            let migration_name = ledger::display_name(migration);
             match latest_by_name.get(migration) {
                 Some((applied_at, dir)) if dir == "up" => {
-                    println!("{:<30} {:<22} {:<12}", migration, applied_at, "Applied");
+                    println!(
+                        "{:<30} {:<22} {:<12}",
+                        migration_name, applied_at, "Applied"
+                    );
                 }
                 Some((applied_at, dir)) if dir == "down" => {
-                    println!("{:<30} {:<22} {:<12}", migration, applied_at, "Rolled back");
+                    println!(
+                        "{:<30} {:<22} {:<12}",
+                        migration_name, applied_at, "Rolled back"
+                    );
                 }
                 _ => {
-                    println!("{:<30} {:<22} {:<12}", migration, "", "Pending");
+                    println!("{:<30} {:<22} {:<12}", migration_name, "", "Pending");
                 }
             }
         }
@@ -1254,7 +1263,10 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
         // Show records in the DB that no longer exist on disk (useful for debugging)
         let mut orphaned = Vec::new();
         for (name, applied_at, dir) in &applied_migrations {
-            if !migration_files.iter().any(|m| m == name) {
+            if !migration_files
+                .iter()
+                .any(|migration| ledger::identities_match(migration, name))
+            {
                 orphaned.push((name.clone(), applied_at.clone(), dir.clone()));
             }
         }

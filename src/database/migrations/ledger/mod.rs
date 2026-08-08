@@ -23,7 +23,7 @@ const DIRECTION_UP: &str = "up";
 /// Direction recorded for a migration that has been rolled back.
 const DIRECTION_DOWN: &str = "down";
 
-pub use identity::ledger_id_for_dir;
+pub use identity::{display_name, identities_match, ledger_id_for_dir};
 pub use record::{direction_label, record};
 pub use schema::{ensure_table, LEDGER_TABLE};
 pub use state::{is_applied, should_skip};
