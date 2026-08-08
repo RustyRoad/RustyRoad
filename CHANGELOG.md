@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.4] - 2026-08-08
+
+### Changed
+- Published the ledger status and transactional repair work prepared under the tagged but unpublished `v1.6.3` revision.
+- Normalized the repository with stable Rustfmt so the GitHub release gate and local formatting checks agree.
+
 ## [1.6.3] - 2026-08-08
 
 ### Fixed
