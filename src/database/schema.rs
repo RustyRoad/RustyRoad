@@ -245,8 +245,7 @@ pub async fn execute_query(query: &str, format: &str) -> Result<(), CustomMigrat
                     if i > 0 {
                         print!(" | ");
                     }
-                    let value =
-                        crate::database::values::postgres::pg_display(&row, column.name());
+                    let value = crate::database::values::postgres::pg_display(&row, column.name());
                     print!("{:<15}", value);
                 }
                 println!();

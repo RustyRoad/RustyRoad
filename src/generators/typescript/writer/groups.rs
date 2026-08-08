@@ -3,8 +3,8 @@
 use super::emit::write_owned;
 use super::files;
 use super::heyapi;
-use super::ownership::{Outcome, Ownership};
 use super::outputs::Outputs;
+use super::ownership::{Outcome, Ownership};
 use super::{CLIENT_DIR, ROUTE_PREFIX};
 use crate::database::introspection::Schema;
 use crate::generators::typescript::casing::Casing;
@@ -27,11 +27,7 @@ pub(super) fn server(
 }
 
 /// Writes the OpenAPI document and Hey API config.
-pub(super) fn client(
-    out: &Path,
-    model: &Schema,
-    casing: Casing,
-) -> io::Result<Vec<Outcome>> {
+pub(super) fn client(out: &Path, model: &Schema, casing: Casing) -> io::Result<Vec<Outcome>> {
     let directory = out.join(CLIENT_DIR);
     fs::create_dir_all(&directory)?;
 

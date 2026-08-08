@@ -9,7 +9,10 @@ use std::fs;
 /// to exist relative to the test process's working directory.
 fn scratch(label: &str) -> String {
     let path = std::env::temp_dir()
-        .join(format!("rustyroad-folder-test-{label}-{}", std::process::id()))
+        .join(format!(
+            "rustyroad-folder-test-{label}-{}",
+            std::process::id()
+        ))
         .display()
         .to_string();
     let _ = fs::remove_dir_all(&path);

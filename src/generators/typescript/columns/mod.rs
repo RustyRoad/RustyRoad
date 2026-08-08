@@ -10,12 +10,7 @@ use crate::database::introspection::{Column, Schema, Table};
 ///
 /// `schema` is needed to recognize an enum column, which arrives as a bare type
 /// name and must reference its `pgEnum` declaration rather than degrade to text.
-pub(super) fn render(
-    schema: &Schema,
-    table: &Table,
-    column: &Column,
-    casing: Casing,
-) -> String {
+pub(super) fn render(schema: &Schema, table: &Table, column: &Column, casing: Casing) -> String {
     format!(
         "\t{}: {}{}",
         identifier(&column.name, casing),

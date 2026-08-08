@@ -15,7 +15,10 @@ async fn history_is_a_linear_parent_chain() {
     }
 
     // The first migration is the root; each later one points at its predecessor.
-    assert_eq!(query::parent_of(&connection, "01_first").await.unwrap(), None);
+    assert_eq!(
+        query::parent_of(&connection, "01_first").await.unwrap(),
+        None
+    );
     assert_eq!(
         parent(&connection, "02_second").await.as_deref(),
         Some("01_first")
@@ -27,9 +30,6 @@ async fn history_is_a_linear_parent_chain() {
 }
 
 /// Reads a migration's parent.
-async fn parent(
-    connection: &crate::database::DatabaseConnection,
-    name: &str,
-) -> Option<String> {
+async fn parent(connection: &crate::database::DatabaseConnection, name: &str) -> Option<String> {
     query::parent_of(connection, name).await.unwrap()
 }

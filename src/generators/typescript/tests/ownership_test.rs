@@ -47,7 +47,9 @@ fn derived_files_are_always_rewritten() {
     let report = pull(&out, &schema(), false);
 
     assert!(!outcome_for(&report.outcomes, "router.ts").is_preserved());
-    assert!(std::fs::read_to_string(&router).unwrap().contains("generated"));
+    assert!(std::fs::read_to_string(&router)
+        .unwrap()
+        .contains("generated"));
 
     let _ = std::fs::remove_dir_all(&out);
 }

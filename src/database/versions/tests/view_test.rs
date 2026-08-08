@@ -38,7 +38,10 @@ fn deleted_columns_are_omitted() {
 
 #[test]
 fn column_defaults_are_restated_on_the_view() {
-    let table = Table::new("users", vec![Column::new("status").with_default("'active'")]);
+    let table = Table::new(
+        "users",
+        vec![Column::new("status").with_default("'active'")],
+    );
     let sql = create_view("public", "v", &table, 16).join("\n");
 
     // A view does not inherit its table's defaults, so they must be set explicitly.

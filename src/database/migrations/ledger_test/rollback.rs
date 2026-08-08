@@ -8,13 +8,11 @@ use crate::database::migrations::MigrationDirection;
 async fn rollback_of_unapplied_migration_is_skipped() {
     let connection = sqlite_ledger().await;
 
-    assert!(ledger::should_skip(
-        &connection,
-        "create_users_table",
-        MigrationDirection::Down
-    )
-    .await
-    .unwrap());
+    assert!(
+        ledger::should_skip(&connection, "create_users_table", MigrationDirection::Down)
+            .await
+            .unwrap()
+    );
 }
 
 #[tokio::test]

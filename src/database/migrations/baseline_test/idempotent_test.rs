@@ -28,10 +28,9 @@ async fn baseline_honours_legacy_bare_name_entries() {
         .await
         .unwrap();
 
-    let recorded =
-        baseline::record_ids(&connection, &["20251114211514-add_columns".to_string()])
-            .await
-            .unwrap();
+    let recorded = baseline::record_ids(&connection, &["20251114211514-add_columns".to_string()])
+        .await
+        .unwrap();
 
     // Recognised as already applied, so not duplicated under the full identity.
     assert!(recorded.is_empty());

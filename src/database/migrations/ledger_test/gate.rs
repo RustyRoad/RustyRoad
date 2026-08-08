@@ -11,13 +11,11 @@ async fn unrecorded_migration_runs() {
     assert!(!ledger::is_applied(&connection, "create_users_table")
         .await
         .unwrap());
-    assert!(!ledger::should_skip(
-        &connection,
-        "create_users_table",
-        MigrationDirection::Up
-    )
-    .await
-    .unwrap());
+    assert!(
+        !ledger::should_skip(&connection, "create_users_table", MigrationDirection::Up)
+            .await
+            .unwrap()
+    );
 }
 
 #[tokio::test]
@@ -29,13 +27,11 @@ async fn applied_migration_is_skipped() {
         .unwrap();
 
     // This is the check that makes a repeated CI run a no-op.
-    assert!(ledger::should_skip(
-        &connection,
-        "create_users_table",
-        MigrationDirection::Up
-    )
-    .await
-    .unwrap());
+    assert!(
+        ledger::should_skip(&connection, "create_users_table", MigrationDirection::Up)
+            .await
+            .unwrap()
+    );
 }
 
 #[tokio::test]

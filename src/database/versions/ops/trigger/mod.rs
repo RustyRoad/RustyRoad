@@ -33,9 +33,7 @@ impl Trigger<'_> {
     /// Returns the expression with logical names resolved to physical ones.
     pub(super) fn resolved_expression(&self) -> String {
         match self.rewrite {
-            Some((logical, physical)) => {
-                rewrite::to_physical(self.expression, logical, physical)
-            }
+            Some((logical, physical)) => rewrite::to_physical(self.expression, logical, physical),
             None => self.expression.to_string(),
         }
     }

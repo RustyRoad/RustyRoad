@@ -69,7 +69,9 @@ fn not_null_survives_a_rename() {
     assert!(completion.contains(r#"ALTER COLUMN "trash_zone_id" SET NOT NULL"#));
 
     // The constraint must be applied after the rename, or it targets a missing column.
-    let rename_at = completion.find("RENAME COLUMN \"zone_id\"").expect("renamed");
+    let rename_at = completion
+        .find("RENAME COLUMN \"zone_id\"")
+        .expect("renamed");
     let not_null_at = completion.find("SET NOT NULL").expect("constrained");
     assert!(rename_at < not_null_at);
 }

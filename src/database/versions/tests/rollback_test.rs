@@ -21,7 +21,10 @@ async fn rollback_discards_an_incomplete_migration() {
     assert_eq!(query::active(&connection).await.unwrap(), None);
     // The completed predecessor remains the served version.
     assert_eq!(
-        query::current_version(&connection).await.unwrap().as_deref(),
+        query::current_version(&connection)
+            .await
+            .unwrap()
+            .as_deref(),
         Some("01_first")
     );
     assert_eq!(history_rows(&connection).await, 1);

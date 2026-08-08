@@ -12,7 +12,9 @@ fn single_statement_is_not_multi() {
 #[test]
 fn multiple_statements_are_detected() {
     assert!(is_multi_statement("SELECT 1; SELECT 2"));
-    assert!(is_multi_statement("CREATE TABLE t (id int); INSERT INTO t VALUES (1);"));
+    assert!(is_multi_statement(
+        "CREATE TABLE t (id int); INSERT INTO t VALUES (1);"
+    ));
 }
 
 #[test]

@@ -27,12 +27,7 @@ pub fn render(schema: &Schema, casing: Casing) -> String {
 }
 
 /// Renders one `export const <name> = pgTable(...)` declaration.
-fn declaration(
-    schema: &Schema,
-    table: &Table,
-    names: &[String],
-    casing: Casing,
-) -> String {
+fn declaration(schema: &Schema, table: &Table, names: &[String], casing: Casing) -> String {
     let body = table
         .columns
         .iter()

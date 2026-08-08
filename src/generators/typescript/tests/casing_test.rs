@@ -25,7 +25,10 @@ fn pascal_case_is_used_for_type_names() {
 
 #[test]
 fn preserve_casing_keeps_database_names() {
-    assert_eq!(identifier("email_address", Casing::Preserve), "email_address");
+    assert_eq!(
+        identifier("email_address", Casing::Preserve),
+        "email_address"
+    );
     assert_eq!(identifier("email_address", Casing::Camel), "emailAddress");
 }
 

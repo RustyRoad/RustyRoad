@@ -5,11 +5,7 @@ use crate::database::introspection::Schema;
 use crate::generators::typescript::casing::Casing;
 
 /// Renders the OpenAPI 3.1 document.
-pub(super) fn document(
-    schema: &Schema,
-    casing: Casing,
-    operations: &[Operation],
-) -> String {
+pub(super) fn document(schema: &Schema, casing: Casing, operations: &[Operation]) -> String {
     format!(
         "{{\n\
          \x20 \"openapi\": \"3.1.0\",\n\

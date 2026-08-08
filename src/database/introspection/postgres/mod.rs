@@ -31,7 +31,12 @@ pub async fn read(
     attach::primary_keys(
         &mut schema,
         keys.iter()
-            .map(|row| (rows::text(row, "table_name"), rows::text(row, "column_name")))
+            .map(|row| {
+                (
+                    rows::text(row, "table_name"),
+                    rows::text(row, "column_name"),
+                )
+            })
             .collect(),
     );
 

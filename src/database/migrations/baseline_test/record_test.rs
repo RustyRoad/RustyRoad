@@ -10,9 +10,11 @@ async fn baselined_migrations_are_then_skipped() {
 
     // Before: genuinely pending, so it would run against a schema that has
     // already moved on, which is the failure mode baseline exists to prevent.
-    assert!(!ledger::should_skip(&connection, id, MigrationDirection::Up)
-        .await
-        .unwrap());
+    assert!(
+        !ledger::should_skip(&connection, id, MigrationDirection::Up)
+            .await
+            .unwrap()
+    );
 
     baseline::record_ids(&connection, &[id.to_string()])
         .await
@@ -34,10 +36,9 @@ async fn baseline_reports_only_newly_recorded_migrations() {
         .await
         .unwrap();
 
-    let recorded =
-        baseline::record_ids(&connection, &[already.to_string(), pending.to_string()])
-            .await
-            .unwrap();
+    let recorded = baseline::record_ids(&connection, &[already.to_string(), pending.to_string()])
+        .await
+        .unwrap();
 
     // The already-applied migration is not re-recorded.
     assert_eq!(recorded, vec![pending.to_string()]);

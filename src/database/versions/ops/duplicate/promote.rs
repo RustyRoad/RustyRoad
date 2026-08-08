@@ -1,7 +1,7 @@
 //! Promoting a shadow column to replace its original.
 
-use crate::database::versions::quote::quote_ident;
 use super::Duplicate;
+use crate::database::versions::quote::quote_ident;
 
 impl Duplicate<'_> {
     /// Returns the statements promoting the shadow column to the real one.

@@ -1,6 +1,7 @@
 //! Help text for the versioned lifecycle commands.
 
-pub(super) const START: &str = "Applies a migration's up.sql and publishes a new schema version.\n\n\
+pub(super) const START: &str =
+    "Applies a migration's up.sql and publishes a new schema version.\n\n\
      The previous version stays in place, so clients on either version keep\n\
      working. Point a client at a version by setting its search path:\n\n  \
      SET search_path TO public_<version>;\n\n\

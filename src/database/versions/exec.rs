@@ -4,7 +4,11 @@ use crate::database::migrations::CustomMigrationError;
 use crate::database::DatabaseConnection;
 
 /// Selects the placeholder style for `connection`.
-pub fn pick<'a>(connection: &DatabaseConnection, numbered: &'a str, positional: &'a str) -> &'a str {
+pub fn pick<'a>(
+    connection: &DatabaseConnection,
+    numbered: &'a str,
+    positional: &'a str,
+) -> &'a str {
     match connection {
         DatabaseConnection::Pg(_) => numbered,
         DatabaseConnection::MySql(_) | DatabaseConnection::Sqlite(_) => positional,

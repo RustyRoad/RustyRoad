@@ -14,7 +14,10 @@ async fn baseline_entries_are_recorded_as_completed() {
     // A baseline is never in progress; it adopts state that already exists.
     assert_eq!(query::active(&connection).await.unwrap(), None);
     assert_eq!(
-        query::latest_baseline(&connection).await.unwrap().as_deref(),
+        query::latest_baseline(&connection)
+            .await
+            .unwrap()
+            .as_deref(),
         Some("00_existing_schema")
     );
 

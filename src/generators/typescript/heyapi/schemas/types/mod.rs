@@ -46,8 +46,5 @@ fn enum_property(item: &crate::database::introspection::Enum, nullable: bool) ->
         "\"string\""
     };
 
-    format!(
-        "{{ \"type\": {types}, \"enum\": [{}] }}",
-        values.join(", ")
-    )
+    format!("{{ \"type\": {types}, \"enum\": [{}] }}", values.join(", "))
 }

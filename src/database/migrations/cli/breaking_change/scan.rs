@@ -1,6 +1,4 @@
-use crate::database::migrations::{
-    migration_directories, scan_migration, BreakingChangeFinding,
-};
+use crate::database::migrations::{migration_directories, scan_migration, BreakingChangeFinding};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};

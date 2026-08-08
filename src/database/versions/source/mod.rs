@@ -27,7 +27,12 @@ pub fn load(version: &str) -> Result<Migration, CustomMigrationError> {
         name: version.to_string(),
         operations: up(version)?
             .into_iter()
-            .map(|sql| Operation::Sql(RawSql { up: sql, down: None }))
+            .map(|sql| {
+                Operation::Sql(RawSql {
+                    up: sql,
+                    down: None,
+                })
+            })
             .collect(),
     })
 }

@@ -31,7 +31,10 @@ async fn complete_finalizes_the_active_migration() {
     assert_eq!(completed, "01_add_users");
     assert_eq!(query::active(&connection).await.unwrap(), None);
     assert_eq!(
-        query::current_version(&connection).await.unwrap().as_deref(),
+        query::current_version(&connection)
+            .await
+            .unwrap()
+            .as_deref(),
         Some("01_add_users")
     );
 }

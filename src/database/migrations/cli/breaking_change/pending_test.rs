@@ -46,9 +46,13 @@ async fn legacy_bare_name_entries_are_excluded() {
     let connection = sqlite_ledger().await;
 
     // A ledger written by an older version stored bare names.
-    ledger::record(&connection, "add_targeting_metadata_columns", MigrationDirection::Up)
-        .await
-        .unwrap();
+    ledger::record(
+        &connection,
+        "add_targeting_metadata_columns",
+        MigrationDirection::Up,
+    )
+    .await
+    .unwrap();
 
     let directories = vec![PathBuf::from(
         "./config/database/migrations/20251114211514-add_targeting_metadata_columns",
@@ -64,5 +68,8 @@ async fn unrecorded_migrations_are_kept() {
         "./config/database/migrations/20251120000000-zone_id_nullable",
     )];
 
-    assert_eq!(pending::filter(&connection, directories.clone()).await, directories);
+    assert_eq!(
+        pending::filter(&connection, directories.clone()).await,
+        directories
+    );
 }

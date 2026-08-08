@@ -19,9 +19,8 @@ pub async fn active(
 pub async fn latest(
     connection: &DatabaseConnection,
 ) -> Result<Option<String>, CustomMigrationError> {
-    let sql = format!(
-        "SELECT name FROM {HISTORY_TABLE} ORDER BY created_at DESC, name DESC LIMIT 1"
-    );
+    let sql =
+        format!("SELECT name FROM {HISTORY_TABLE} ORDER BY created_at DESC, name DESC LIMIT 1");
     exec::scalar(connection, &sql, &[]).await
 }
 

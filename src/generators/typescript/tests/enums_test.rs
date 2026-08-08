@@ -26,7 +26,10 @@ pub(super) fn orders() -> Schema {
 
     with_enums(
         vec![table],
-        vec![enum_type("order_status", &["pending", "shipped", "delivered"])],
+        vec![enum_type(
+            "order_status",
+            &["pending", "shipped", "delivered"],
+        )],
     )
 }
 

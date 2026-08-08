@@ -41,8 +41,14 @@ fn operation_ids_match_the_server() {
     let parsed = document();
 
     // Hey API derives SDK function names from operationId.
-    assert_eq!(parsed["paths"]["/api/users"]["get"]["operationId"], "listUsers");
-    assert_eq!(parsed["paths"]["/api/users"]["post"]["operationId"], "createUsers");
+    assert_eq!(
+        parsed["paths"]["/api/users"]["get"]["operationId"],
+        "listUsers"
+    );
+    assert_eq!(
+        parsed["paths"]["/api/users"]["post"]["operationId"],
+        "createUsers"
+    );
     assert_eq!(
         parsed["paths"]["/api/users/{id}"]["delete"]["operationId"],
         "deleteUsers"

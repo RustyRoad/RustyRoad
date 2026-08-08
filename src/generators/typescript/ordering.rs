@@ -32,9 +32,10 @@ pub(super) fn ordered(schema: &Schema) -> Vec<&Table> {
 ///
 /// A self-reference is satisfied by the declaration itself.
 fn is_ready(table: &Table, emitted: &[String]) -> bool {
-    table.foreign_keys.iter().all(|key| {
-        key.foreign_table == table.name || emitted.contains(&key.foreign_table)
-    })
+    table
+        .foreign_keys
+        .iter()
+        .all(|key| key.foreign_table == table.name || emitted.contains(&key.foreign_table))
 }
 
 /// Returns `true` when a foreign key points at a table declared later.

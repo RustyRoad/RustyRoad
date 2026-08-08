@@ -17,12 +17,12 @@ const COLUMNS: &str = "name {name_type} NOT NULL,
 fn column_types(connection: &DatabaseConnection) -> (&'static str, &'static str, &'static str) {
     match connection {
         DatabaseConnection::Pg(_) => ("id SERIAL PRIMARY KEY", "VARCHAR(255)", "VARCHAR(10)"),
-        DatabaseConnection::MySql(_) => {
-            ("id INT AUTO_INCREMENT PRIMARY KEY", "VARCHAR(255)", "VARCHAR(10)")
-        }
-        DatabaseConnection::Sqlite(_) => {
-            ("id INTEGER PRIMARY KEY AUTOINCREMENT", "TEXT", "TEXT")
-        }
+        DatabaseConnection::MySql(_) => (
+            "id INT AUTO_INCREMENT PRIMARY KEY",
+            "VARCHAR(255)",
+            "VARCHAR(10)",
+        ),
+        DatabaseConnection::Sqlite(_) => ("id INTEGER PRIMARY KEY AUTOINCREMENT", "TEXT", "TEXT"),
     }
 }
 

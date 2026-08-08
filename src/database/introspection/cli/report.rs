@@ -10,7 +10,11 @@ pub(super) fn written(schema: &Schema, report: &Report) {
     summary(schema);
 
     for outcome in &report.outcomes {
-        let label = if outcome.is_preserved() { "kept " } else { "wrote" };
+        let label = if outcome.is_preserved() {
+            "kept "
+        } else {
+            "wrote"
+        };
         println!("  {label} {}", display(outcome.path()));
     }
 

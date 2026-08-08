@@ -1,8 +1,8 @@
 //! Batch SQL for the backfill loop.
 
-use super::clauses;
 use super::super::super::quote::quote_ident;
 use super::super::trigger::NEEDS_BACKFILL_COLUMN;
+use super::clauses;
 
 /// Returns the statement advancing the backfill by one batch.
 ///

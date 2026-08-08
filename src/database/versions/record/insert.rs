@@ -23,7 +23,11 @@ pub async fn insert_done(
     name: &str,
     baseline: bool,
 ) -> Result<(), CustomMigrationError> {
-    let kind = if baseline { TYPE_BASELINE } else { TYPE_MIGRATION };
+    let kind = if baseline {
+        TYPE_BASELINE
+    } else {
+        TYPE_MIGRATION
+    };
     insert(connection, name, true, kind).await
 }
 
