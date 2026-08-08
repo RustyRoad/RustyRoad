@@ -128,6 +128,17 @@ rustyroad migration list
 ENV=test rustyroad migration list
 ```
 
+Repair a legacy ledger that contains duplicate rows:
+
+```bash
+rustyroad migration repair-ledger
+ENVIRONMENT=prod rustyroad migration repair-ledger --yes
+```
+
+The repair runs in one transaction, keeps the newest state for each migration
+identity, and restores the uniqueness guard. It does not execute `up.sql` or
+`down.sql` files.
+
 Run all migrations (up) in order:
 
 ```bash

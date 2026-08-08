@@ -14,6 +14,7 @@ mod dialect;
 mod exec;
 mod identity;
 mod record;
+mod repair;
 mod schema;
 mod sql;
 mod state;
@@ -23,7 +24,8 @@ const DIRECTION_UP: &str = "up";
 /// Direction recorded for a migration that has been rolled back.
 const DIRECTION_DOWN: &str = "down";
 
-pub use identity::{display_name, identities_match, ledger_id_for_dir};
+pub use identity::{display_name, identities_match, latest_status, ledger_id_for_dir};
 pub use record::{direction_label, record};
+pub use repair::{repair, RepairReport};
 pub use schema::{ensure_table, LEDGER_TABLE};
 pub use state::{is_applied, should_skip};

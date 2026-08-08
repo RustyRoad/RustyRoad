@@ -1,6 +1,5 @@
 use regex::Regex;
 use sqlx::Executor;
-use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, DirEntry};
@@ -1171,7 +1170,7 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
     let applied_migrations = match connection {
         DatabaseConnection::Pg(conn) => {
             match sqlx::query_as::<_, (String, String, String)>(
-                "SELECT name, applied_at::text, direction FROM _rustyroad_migrations ORDER BY applied_at",
+                "SELECT name, applied_at::text, direction FROM _rustyroad_migrations ORDER BY applied_at, id",
             )
             .fetch_all(&*conn)
             .await
@@ -1181,7 +1180,7 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
             }
         }
         DatabaseConnection::MySql(conn) => match sqlx::query_as::<_, (String, String, String)>(
-            "SELECT name, CAST(applied_at AS CHAR), direction FROM _rustyroad_migrations ORDER BY applied_at",
+            "SELECT name, CAST(applied_at AS CHAR), direction FROM _rustyroad_migrations ORDER BY applied_at, id",
         )
         .fetch_all(&*conn)
         .await
@@ -1190,7 +1189,7 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
             Err(e) => return Err(CustomMigrationError::SqlxError(e)),
         },
         DatabaseConnection::Sqlite(conn) => match sqlx::query_as::<_, (String, String, String)>(
-            "SELECT name, CAST(applied_at AS TEXT), direction FROM _rustyroad_migrations ORDER BY applied_at",
+            "SELECT name, CAST(applied_at AS TEXT), direction FROM _rustyroad_migrations ORDER BY applied_at, id",
         )
         .fetch_all(&*conn)
         .await
@@ -1200,26 +1199,12 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
         },
     };
 
-    // Build a map of latest status per migration name (ordered by applied_at, so later wins)
-    let mut latest_by_name: HashMap<String, (String, String)> = HashMap::new();
-    for (name, applied_at, direction) in &applied_migrations {
-        let identity = migration_files
-            .iter()
-            .find(|migration| ledger::identities_match(migration, name))
-            .unwrap_or(name);
-        latest_by_name.insert(identity.clone(), (applied_at.clone(), direction.clone()));
-    }
-
     if format == "json" {
         let mut migrations_list: Vec<MigrationEntry> = Vec::new();
         for migration in &migration_files {
-            let (timestamp, status) = match latest_by_name.get(migration) {
-                Some((applied_at, dir)) if dir == "up" => {
-                    (applied_at.clone(), "Applied".to_string())
-                }
-                Some((applied_at, dir)) if dir == "down" => {
-                    (applied_at.clone(), "Rolled back".to_string())
-                }
+            let (timestamp, status) = match ledger::latest_status(migration, &applied_migrations) {
+                Some((applied_at, "up")) => (applied_at.to_string(), "Applied".to_string()),
+                Some((applied_at, "down")) => (applied_at.to_string(), "Rolled back".to_string()),
                 _ => ("".to_string(), "Pending".to_string()),
             };
             migrations_list.push(MigrationEntry {
@@ -1241,14 +1226,14 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
 
         for migration in &migration_files {
             let migration_name = ledger::display_name(migration);
-            match latest_by_name.get(migration) {
-                Some((applied_at, dir)) if dir == "up" => {
+            match ledger::latest_status(migration, &applied_migrations) {
+                Some((applied_at, "up")) => {
                     println!(
                         "{:<30} {:<22} {:<12}",
                         migration_name, applied_at, "Applied"
                     );
                 }
-                Some((applied_at, dir)) if dir == "down" => {
+                Some((applied_at, "down")) => {
                     println!(
                         "{:<30} {:<22} {:<12}",
                         migration_name, applied_at, "Rolled back"

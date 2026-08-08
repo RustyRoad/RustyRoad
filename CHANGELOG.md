@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2026-08-08
+
+### Fixed
+- `migration list` now uses the execution gate's exact full-identity lookup and legacy bare-name fallback, so its status cannot disagree with `migration run`.
+- Ledger status selection is deterministic when legacy tables contain duplicate timestamps.
+
+### Added
+- `migration repair-ledger` transactionally retains the newest row per migration identity, removes superseded duplicates, and restores the unique index that prevents new duplicate growth.
+- The repair requires interactive confirmation or `--yes`, is idempotent, and never executes application migration SQL.
+
 ## [1.6.2] - 2026-08-08
 
 ### Fixed

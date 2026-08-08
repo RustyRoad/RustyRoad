@@ -6,6 +6,7 @@ mod breaking_change;
 mod convert;
 mod generate;
 mod inspect;
+mod repair;
 mod rollback;
 mod route;
 mod validate_command;
@@ -29,6 +30,7 @@ pub(crate) fn lifecycle_commands() -> Vec<clap::Command> {
         version::rollback_command(),
         version::status_command(),
         baseline::baseline_command(),
+        repair::command(),
     ]
 }
 

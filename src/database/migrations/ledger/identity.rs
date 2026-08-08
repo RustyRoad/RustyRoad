@@ -30,3 +30,21 @@ pub fn display_name(ledger_id: &str) -> &str {
 pub fn identities_match(left: &str, right: &str) -> bool {
     left == right || legacy_bare_name(left) == Some(right) || legacy_bare_name(right) == Some(left)
 }
+
+/// Returns the latest ledger status for one migration directory identity.
+///
+/// Full identities are authoritative. A bare-name row is consulted only when no
+/// full row exists, matching the execution gate in [`super::is_applied`].
+/// Ledger rows must be supplied in oldest-to-newest order.
+pub fn latest_status<'a>(
+    migration_id: &str,
+    rows: &'a [(String, String, String)],
+) -> Option<(&'a str, &'a str)> {
+    let exact = rows.iter().rev().find(|(name, _, _)| name == migration_id);
+    let row = exact.or_else(|| {
+        let bare = legacy_bare_name(migration_id)?;
+        rows.iter().rev().find(|(name, _, _)| name == bare)
+    })?;
+
+    Some((row.1.as_str(), row.2.as_str()))
+}
