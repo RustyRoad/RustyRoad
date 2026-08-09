@@ -2,6 +2,17 @@
 
 use std::path::Path;
 
+/// Metadata read from one ledger row.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LedgerRecord {
+    pub name: String,
+    pub recorded_at: String,
+    pub direction: String,
+    pub provenance: String,
+    pub checksum: Option<String>,
+    pub verified_at: Option<String>,
+}
+
 /// Returns the ledger identity for a migration directory path.
 ///
 /// The ledger stores the full `<timestamp>-<name>` directory name so ordering is
@@ -47,4 +58,15 @@ pub fn latest_status<'a>(
     })?;
 
     Some((row.1.as_str(), row.2.as_str()))
+}
+
+/// Returns the latest rich ledger record for one migration identity.
+///
+/// Exact timestamped identities remain authoritative over legacy bare-name rows.
+pub fn latest_record<'a>(migration_id: &str, rows: &'a [LedgerRecord]) -> Option<&'a LedgerRecord> {
+    let exact = rows.iter().rev().find(|record| record.name == migration_id);
+    exact.or_else(|| {
+        let bare = legacy_bare_name(migration_id)?;
+        rows.iter().rev().find(|record| record.name == bare)
+    })
 }

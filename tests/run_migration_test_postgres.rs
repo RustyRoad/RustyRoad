@@ -10,6 +10,7 @@ mod tests {
     use rustyroad::Project;
 
     #[tokio::test]
+    #[ignore = "requires a live PostgreSQL server configured by rustyroad.toml"]
     async fn test_run_migration() -> Result<(), Box<dyn std::error::Error>> {
         let database_data = Database::get_database_from_rustyroad_toml().unwrap();
         // Construct the database URL for the newly created database
@@ -83,26 +84,18 @@ mod tests {
 
         assert_eq!(result.len(), 1);
         let types_for_database: &TypesForDatabase = &result[0];
-
-        for postgres_type in types_for_database.clone().postgres.types {
-            println!("{:?}", postgres_type);
-        }
-
-        println!("{:?}", types_for_database.postgres.types.len());
-
-        assert_eq!(types_for_database.postgres.types.len(), 6);
+        assert_eq!(types_for_database.postgres.types.len(), 1);
         assert_eq!(types_for_database.mysql.types.len(), 0);
         assert_eq!(types_for_database.sqlite.types.len(), 0);
 
-        let expected_data_types = vec![
-            "smallint", "integer", "bigint", "decimal", "numeric", "real",
-        ];
-
-        for data_type in expected_data_types {
-            assert!(types_for_database
-                .postgres
-                .types
-                .contains_key(&data_type.to_string()));
+        let numeric = &types_for_database.postgres.types["Numeric"];
+        for expected in [
+            rustyroad::database::PostgresTypes::SmallInt,
+            rustyroad::database::PostgresTypes::Integer,
+            rustyroad::database::PostgresTypes::BigInt,
+            rustyroad::database::PostgresTypes::Numeric,
+        ] {
+            assert!(numeric.contains(&expected));
         }
     }
 }

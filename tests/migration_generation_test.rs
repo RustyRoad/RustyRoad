@@ -1,11 +1,25 @@
 use rustyroad::database::migrations::create_migration;
 use std::fs;
+use std::path::PathBuf;
+use std::sync::Mutex;
 use tempfile::TempDir;
+
+static CWD_LOCK: Mutex<()> = Mutex::new(());
+
+struct CurrentDirGuard(PathBuf);
+
+impl Drop for CurrentDirGuard {
+    fn drop(&mut self) {
+        std::env::set_current_dir(&self.0).expect("failed to restore test working directory");
+    }
+}
 
 #[tokio::test]
 async fn test_add_column_migration_generation() {
+    let _lock = CWD_LOCK.lock().unwrap_or_else(|error| error.into_inner());
     let temp_dir = TempDir::new().unwrap();
     let original_dir = std::env::current_dir().unwrap();
+    let _guard = CurrentDirGuard(original_dir);
 
     // Change to temp directory
     std::env::set_current_dir(temp_dir.path()).unwrap();
@@ -57,15 +71,14 @@ database_type = "postgres"
     let down_sql = fs::read_to_string(migration_dir.path().join("down.sql")).unwrap();
     assert!(down_sql.contains("ALTER TABLE funnel_steps"));
     assert!(down_sql.contains("DROP COLUMN page_id"));
-
-    // Restore original directory
-    std::env::set_current_dir(original_dir).unwrap();
 }
 
 #[tokio::test]
 async fn test_create_table_migration_generation() {
+    let _lock = CWD_LOCK.lock().unwrap_or_else(|error| error.into_inner());
     let temp_dir = TempDir::new().unwrap();
     let original_dir = std::env::current_dir().unwrap();
+    let _guard = CurrentDirGuard(original_dir);
 
     // Change to temp directory
     std::env::set_current_dir(temp_dir.path()).unwrap();
@@ -99,24 +112,16 @@ database_type = "postgres"
     let migration_dirs = fs::read_dir("config/database/migrations").unwrap();
     let migration_dir = migration_dirs
         .filter_map(|entry| entry.ok())
-        .find(|entry| {
-            entry
-                .file_name()
-                .to_string_lossy()
-                .contains("create_users_table")
-        })
+        .find(|entry| entry.file_name().to_string_lossy().ends_with("-users"))
         .unwrap();
 
     // Check up.sql
     let up_sql = fs::read_to_string(migration_dir.path().join("up.sql")).unwrap();
-    assert!(up_sql.contains("CREATE TABLE IF NOT EXISTS create_users_table"));
+    assert!(up_sql.contains("CREATE TABLE IF NOT EXISTS users"));
     assert!(up_sql.contains("name VARCHAR(255)"));
     assert!(up_sql.contains("email VARCHAR(255)"));
 
     // Check down.sql
     let down_sql = fs::read_to_string(migration_dir.path().join("down.sql")).unwrap();
-    assert!(down_sql.contains("DROP TABLE IF EXISTS create_users_table"));
-
-    // Restore original directory
-    std::env::set_current_dir(original_dir).unwrap();
+    assert!(down_sql.contains("DROP TABLE IF EXISTS users"));
 }

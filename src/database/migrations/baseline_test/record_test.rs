@@ -1,7 +1,8 @@
-//! Baselining records migrations as applied without executing them.
+//! Baselining records migrations in the ledger without executing them.
 
 use super::support::sqlite_ledger;
 use crate::database::migrations::{baseline, ledger, MigrationDirection};
+use crate::database::DatabaseConnection;
 
 #[tokio::test]
 async fn baselined_migrations_are_then_skipped() {
@@ -20,10 +21,26 @@ async fn baselined_migrations_are_then_skipped() {
         .await
         .unwrap();
 
-    // After: recorded as applied without executing any SQL.
+    // After: recorded as baselined without executing any SQL.
     assert!(ledger::should_skip(&connection, id, MigrationDirection::Up)
         .await
         .unwrap());
+
+    let DatabaseConnection::Sqlite(pool) = &connection else {
+        panic!("expected sqlite connection");
+    };
+    let (provenance, checksum, verified_at): (String, Option<String>, Option<String>) =
+        sqlx::query_as(
+            "SELECT provenance, checksum, CAST(verified_at AS TEXT) \
+             FROM _rustyroad_migrations WHERE name = ? AND direction = 'up'",
+        )
+        .bind(id)
+        .fetch_one(pool.as_ref())
+        .await
+        .unwrap();
+    assert_eq!(provenance, "baselined");
+    assert_eq!(checksum, None);
+    assert_eq!(verified_at, None);
 }
 
 #[tokio::test]

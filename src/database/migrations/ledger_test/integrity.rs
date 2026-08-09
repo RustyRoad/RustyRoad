@@ -31,6 +31,39 @@ async fn repeated_record_does_not_duplicate_rows() {
 }
 
 #[tokio::test]
+async fn executed_record_keeps_provenance_and_checksum_but_not_verification() {
+    let connection = sqlite_ledger().await;
+    let id = "20260101000000-add_email";
+    let checksum = "9f86d081884c7d659a2feaa0c55ad015";
+
+    ledger::record_with_metadata(
+        &connection,
+        id,
+        MigrationDirection::Up,
+        ledger::Provenance::Executed,
+        Some(checksum),
+    )
+    .await
+    .unwrap();
+
+    let DatabaseConnection::Sqlite(pool) = &connection else {
+        panic!("expected sqlite connection");
+    };
+    let row: (String, Option<String>, Option<String>) = sqlx::query_as(
+        "SELECT provenance, checksum, CAST(verified_at AS TEXT) \
+         FROM _rustyroad_migrations WHERE name = ?",
+    )
+    .bind(id)
+    .fetch_one(pool.as_ref())
+    .await
+    .unwrap();
+    assert_eq!(
+        row,
+        ("executed".to_string(), Some(checksum.to_string()), None)
+    );
+}
+
+#[tokio::test]
 async fn rollback_replaces_rather_than_appends() {
     let connection = sqlite_ledger().await;
     let id = "20251114211514-add_columns";

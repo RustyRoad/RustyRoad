@@ -2,8 +2,8 @@
 
 /// Returns the command's detailed description.
 pub(super) fn long_about() -> &'static str {
-    "Reads the live database schema and writes generated TypeScript.\n\n\
-     OUTPUT (default ./db):\n\
+    "Reads the live database schema and writes a generated TypeScript or Rust API.\n\n\
+     TYPESCRIPT OUTPUT (default ./db):\n\
       schema.ts     Drizzle table definitions, enums, constraints, and indexes\n\
       relations.ts  one/many relations derived from foreign keys\n\
       client.ts     a typed repository per table\n\
@@ -13,13 +13,22 @@ pub(super) fn long_about() -> &'static str {
       server.ts     Fastify adapter serving RPC and REST\n\
       openapi.ts    script writing the OpenAPI document from the router\n\
       openapi/      a static OpenAPI document plus a Hey API config\n\n\
+     RUST OUTPUT (--language rust, default ./src/db):\n\
+      models.rs       SQLx row models plus typed create and patch inputs\n\
+      repositories.rs typed SQLx CRUD repositories with bound parameters\n\
+      procedures.rs   Actix CRUD handlers and /api route registration\n\
+      api.rs          composition point: generated plus your own services\n\
+      mod.rs          module facade exporting the API configuration\n\
+      openapi/        the same static OpenAPI document and Hey API config\n\n\
      FILE OWNERSHIP:\n\
-      Files derived from the database are rewritten on every run. `api.ts` and\n\
-      `openapi/openapi-ts.config.ts` are written once and then left alone, so\n\
-      hand-written procedures and config edits survive. Pass --force to\n\
-      overwrite those too.\n\n\
+      Files derived from the database are rewritten on every run. Composition\n\
+      files (`api.ts`, or `api.rs` and `mod.rs`) plus the Hey API config are\n\
+      written once and then left alone, so hand-written code survives. Pass\n\
+      --force to overwrite those too.\n\n\
       Because api.ts is preserved, a table added later is not wired up\n\
       automatically; pull warns when that happens and prints the line to add.\n\n\
+      Rust's stable `configure_generated` entry point automatically includes new\n\
+      tables without rewriting api.rs.\n\n\
      POSTGRES ONLY:\n\
       Introspection reads the Postgres catalog. Other backends are not\n\
       supported by this command yet.\n\n\
@@ -27,6 +36,7 @@ pub(super) fn long_about() -> &'static str {
       Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
      EXAMPLES:\n\
       rustyroad pull\n\
+      rustyroad pull --language rust\n\
       rustyroad pull --out ./src/db --casing preserve\n\
       rustyroad pull --schema-only\n"
 }

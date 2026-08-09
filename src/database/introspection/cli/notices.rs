@@ -1,5 +1,7 @@
 //! Warnings shown after a successful pull.
 
+use super::Language;
+
 /// Warns about tables the composition file does not reference.
 ///
 /// Their procedures were generated but are unreachable, which is invisible without
@@ -34,9 +36,14 @@ pub(super) fn preserved() {
 }
 
 /// Prints the install line for the generated code's dependencies.
-pub(super) fn next_steps() {
-    println!(
-        "\nNext:\n  npm install drizzle-orm pg zod drizzle-zod fastify \\\n\
-        \x20   @orpc/server @orpc/openapi @orpc/zod"
-    );
+pub(super) fn next_steps(language: Language) {
+    match language {
+        Language::TypeScript => println!(
+            "\nNext:\n  npm install drizzle-orm pg zod drizzle-zod fastify \\\n\
+            \x20   @orpc/server @orpc/openapi @orpc/zod"
+        ),
+        Language::Rust => println!(
+            "\nNext:\n  cargo add actix-web serde serde_json chrono uuid bigdecimal ipnetwork mac_address sqlx --features serde/derive,chrono/serde,uuid/serde,bigdecimal/serde,ipnetwork/serde,mac_address/serde,sqlx/runtime-tokio,sqlx/postgres,sqlx/chrono,sqlx/uuid,sqlx/json,sqlx/bigdecimal,sqlx/ipnetwork,sqlx/mac_address"
+        ),
+    }
 }

@@ -4,11 +4,12 @@ mod tests {
     use sqlx::mysql::MySqlConnectOptions;
     use sqlx::{ConnectOptions, Row};
 
-    use rustyroad::database::{Database, DatabaseType};
+    use rustyroad::database::Database;
     use rustyroad::helpers::helpers::get_project_name_from_rustyroad_toml;
     use rustyroad::Project;
 
     #[tokio::test]
+    #[ignore = "requires a live MySQL server configured by rustyroad.toml"]
     async fn test_run_migration() -> Result<(), Box<dyn std::error::Error>> {
         let database_data = Database::get_database_from_rustyroad_toml().unwrap();
         // Construct the database URL for the newly created database

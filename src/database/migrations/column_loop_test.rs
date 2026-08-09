@@ -269,7 +269,7 @@ pub fn column_loop_test(num_columns: i32, migration_name: String) -> Result<Stri
 
 #[cfg(test)]
 mod tests {
-    use crate::database::migrations::column_loop;
+    use super::column_loop_test;
 
     #[tokio::test]
     async fn test_column_loop() {
@@ -278,7 +278,7 @@ mod tests {
         let migration_name = "test_migration".to_string();
 
         // Run the column_loop function
-        let result = column_loop(num_columns, migration_name);
+        let result = column_loop_test(num_columns, migration_name);
 
         // Check if the result is Ok
         assert!(result.is_ok());

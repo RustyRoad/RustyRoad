@@ -544,6 +544,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     #[test]
+    #[ignore = "mutates process cwd; requires subprocess isolation"]
     fn test_write_to_all_page_controllers() {
         let (temp_dir, page_controller_path) =
             setup_test_environment().expect("Failed to set up test environment");

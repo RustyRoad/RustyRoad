@@ -14,6 +14,11 @@ pub(in crate::database::migrations::cli::version) fn status(status: &Status) {
     if let Some(baseline) = &status.baseline {
         println!("Last baseline:   {baseline}");
     }
+    println!(
+        "\nVersion history is separate from _rustyroad_migrations bookkeeping. \
+         Run 'rustyroad migration list' for ledger provenance; ledger rows do not \
+         verify live effects."
+    );
 }
 
 /// Prints one labelled version line, with its schema when versioned.

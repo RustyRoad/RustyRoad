@@ -9,16 +9,22 @@ use crate::database::DatabaseConnection;
 pub(super) fn upsert(connection: &DatabaseConnection) -> &'static str {
     match connection {
         DatabaseConnection::Pg(_) => {
-            "INSERT INTO _rustyroad_migrations (name, direction) VALUES ($1, $2) \
-             ON CONFLICT (name, direction) DO UPDATE SET applied_at = CURRENT_TIMESTAMP"
+            "INSERT INTO _rustyroad_migrations (name, direction, provenance, checksum) \
+             VALUES ($1, $2, $3, NULLIF($4, '')) ON CONFLICT (name, direction) DO UPDATE SET \
+             applied_at = CURRENT_TIMESTAMP, provenance = EXCLUDED.provenance, \
+             checksum = EXCLUDED.checksum, verified_at = NULL"
         }
         DatabaseConnection::MySql(_) => {
-            "INSERT INTO _rustyroad_migrations (name, direction) VALUES (?, ?) \
-             ON DUPLICATE KEY UPDATE applied_at = CURRENT_TIMESTAMP"
+            "INSERT INTO _rustyroad_migrations (name, direction, provenance, checksum) \
+             VALUES (?, ?, ?, NULLIF(?, '')) ON DUPLICATE KEY UPDATE \
+             applied_at = CURRENT_TIMESTAMP, provenance = VALUES(provenance), \
+             checksum = VALUES(checksum), verified_at = NULL"
         }
         DatabaseConnection::Sqlite(_) => {
-            "INSERT INTO _rustyroad_migrations (name, direction) VALUES (?, ?) \
-             ON CONFLICT (name, direction) DO UPDATE SET applied_at = CURRENT_TIMESTAMP"
+            "INSERT INTO _rustyroad_migrations (name, direction, provenance, checksum) \
+             VALUES (?, ?, ?, NULLIF(?, '')) ON CONFLICT (name, direction) DO UPDATE SET \
+             applied_at = CURRENT_TIMESTAMP, provenance = excluded.provenance, \
+             checksum = excluded.checksum, verified_at = NULL"
         }
     }
 }
@@ -27,8 +33,10 @@ pub(super) fn upsert(connection: &DatabaseConnection) -> &'static str {
 pub(super) fn plain_insert(connection: &DatabaseConnection) -> &'static str {
     dialect::pick(
         connection,
-        "INSERT INTO _rustyroad_migrations (name, direction) VALUES ($1, $2)",
-        "INSERT INTO _rustyroad_migrations (name, direction) VALUES (?, ?)",
+        "INSERT INTO _rustyroad_migrations (name, direction, provenance, checksum) \
+         VALUES ($1, $2, $3, NULLIF($4, ''))",
+        "INSERT INTO _rustyroad_migrations (name, direction, provenance, checksum) \
+         VALUES (?, ?, ?, NULLIF(?, ''))",
     )
 }
 

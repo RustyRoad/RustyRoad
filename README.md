@@ -110,6 +110,56 @@ rustyroad config
 
 (It prints `ENVIRONMENT=...`, the config filename, and a sanitized view of the parsed database settings.)
 
+## Generate an API from PostgreSQL
+
+`rustyroad pull` introspects the live PostgreSQL schema and generates a complete
+typed database API. TypeScript remains the default target:
+
+```bash
+rustyroad pull
+```
+
+This writes Drizzle tables and repositories, Zod schemas, oRPC procedures, a
+Fastify server adapter, OpenAPI, and a Hey API configuration to `./db`.
+
+Use the Rust target for the equivalent Actix + SQLx stack:
+
+```bash
+rustyroad pull --language rust
+```
+
+The Rust target writes `./src/db` by default:
+
+- `models.rs` — SQLx row types and separate create/patch input types
+- `repositories.rs` — bound, typed CRUD queries for every table with a
+  single-column primary key
+- `procedures.rs` — Actix handlers for list/get/create/update/delete under
+  `/api`
+- `api.rs` — the developer-owned composition point for custom services
+- `mod.rs` — the module facade exported to the application
+- `openapi/` — the same generated OpenAPI contract and Hey API configuration
+
+Register the generated procedures with the application's pool:
+
+```rust,ignore
+mod db;
+
+HttpServer::new(move || {
+    App::new()
+        .app_data(web::Data::new(pool.clone()))
+        .configure(db::configure)
+})
+```
+
+Database-derived files are regenerated on each pull. Composition files are
+written once and preserved, so custom code in `api.rs` or `api.ts` survives.
+Pass `--force` only when those files should be reset. To emit models without
+repositories and HTTP procedures, pass `--schema-only`.
+
+The Rust output expects `actix-web`, `serde`, and SQLx's Postgres/runtime and
+database-type features. The command prints the exact `cargo add` invocation
+after generation. At present, `pull` introspection is PostgreSQL-only.
+
 ## Migrations
 
 RustyRoad expects migrations in this exact location (do **not** create a plain `./migrations/` folder):
@@ -138,6 +188,27 @@ ENVIRONMENT=prod rustyroad migration repair-ledger --yes
 The repair runs in one transaction, keeps the newest state for each migration
 identity, and restores the uniqueness guard. It does not execute `up.sql` or
 `down.sql` files.
+
+### Ledger provenance is not effect verification
+
+`rustyroad migration list` reports whether a migration is **recorded in the
+ledger**, not whether its SQL or live database effects have been proven. Each
+new ledger row records provenance and the SHA-256 checksum of its migration SQL:
+
+- `executed` — RustyRoad successfully submitted the SQL before recording it
+- `baselined` — the row was adopted without executing the SQL
+- `legacy` — the row predates provenance tracking
+
+Effects remain `UNVERIFIED` unless separate verification evidence populates
+`verified_at`. In particular, `rustyroad migration baseline` never executes SQL;
+it records `baselined` provenance and causes subsequent migration runs to skip
+the recorded identities. Use `rustyroad db schema` as live evidence for tables
+and columns, while remembering that it does not verify data changes or every
+database object.
+
+`migration version-status` reads `_rustyroad_history`, which is intentionally
+separate from `_rustyroad_migrations`. A ledger baseline therefore does not
+become a published schema version.
 
 Run all migrations (up) in order:
 

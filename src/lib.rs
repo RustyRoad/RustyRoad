@@ -916,8 +916,8 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                                  Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
                                 BEHAVIOR:\n\
                                  - Executes each up.sql file in timestamp order\n\
-                                 - Records applied migrations in _rustyroad_migrations table\n\
-                                 - Skips already-applied migrations\n\n\
+                                 - Records execution provenance and source checksum in the ledger\n\
+                                 - Skips migrations already recorded in the ledger\n\n\
                                 EXAMPLE:\n\
                                  rustyroad migration all\n\
                                  ENVIRONMENT=prod rustyroad migration all\n"
@@ -995,15 +995,17 @@ rustyroad migration generate create_users id:serial:primary_key email:string:not
                     .subcommand(
                         Command::new("list")
                             .alias("status")
-                            .about("List migrations and whether they're applied")
+                            .about("List migration ledger state without inferring database effects")
                             .long_about(
-                                "Lists migrations and whether they're applied.\n\n\
-                                CONFIG:\n\
-                                 Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
-                                OUTPUT:\n\
-                                 - Applied: Migration has been run (up)\n\
-                                 - Rolled back: Migration has been undone (down)\n\
-                                 - Pending: Migration exists but has not been run\n\n\
+                                "Lists migrations and their ledger bookkeeping state.\n\n\
+                                 CONFIG:\n\
+                                  Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
+                                 OUTPUT:\n\
+                                  - RECORDED IN LEDGER: an up row exists; effects remain UNVERIFIED\n\
+                                  - Provenance: executed, baselined, or legacy\n\
+                                  - Checksum: SHA-256 of SQL when recorded by a provenance-aware version\n\
+                                  - PENDING: no up ledger row exists\n\n\
+                                 Ledger presence does not prove SQL execution or live schema/data effects.\n\n\
                                 EXAMPLE:\n\
                                  rustyroad migration list\n\
                                  ENVIRONMENT=prod rustyroad migration list\n"

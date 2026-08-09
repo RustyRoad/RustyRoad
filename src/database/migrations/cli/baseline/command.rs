@@ -6,16 +6,17 @@ use clap::{Arg, ArgAction, Command};
 pub(crate) fn baseline() -> Command {
     Command::new("baseline")
         .alias("adopt")
-        .about("Record existing migrations as applied without running them")
+        .about("Record existing migrations as baselined without running them")
         .long_about(
-            "Records every migration on disk as applied, without executing any SQL.\n\n\
+            "Records every migration on disk as baselined, without executing any SQL.\n\n\
              Use this when a database's schema is already current but its ledger\n\
              does not say so. Replaying that history would fail against columns\n\
              that later migrations already superseded.\n\n\
-             This establishes the current state as the starting point for future\n\
-             migrations.\n\n\
+             This is ledger bookkeeping only. It does not prove the SQL ran or that\n\
+             its schema/data effects exist. Baseline rows store provenance and a\n\
+             SHA-256 source checksum while effects remain unverified.\n\n\
              WARNING:\n\
-              This asserts the database already reflects every migration. If that\n\
+              You assert that the database already reflects every migration. If that\n\
               is not true, those migrations will never run. Verify with\n\
               'rustyroad db schema' first.\n\n\
              CONFIG:\n\

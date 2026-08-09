@@ -168,6 +168,7 @@ pub async fn update_index_controller() -> Result<String, tera::Error> {
 mod tests {
 
     #[test]
+    #[ignore = "requires an external ../test42 project and mutates process cwd"]
     fn test_render_index_page() {
         use color_eyre::owo_colors::OwoColorize;
 
@@ -185,6 +186,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires an external ../test42 project and database"]
     async fn test_save_index_page() {
         // change directory to example-grapesjs
         std::env::set_current_dir("../test42").unwrap();
@@ -201,6 +203,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires an external ../test42 project and mutates process cwd"]
     async fn test_update_index_controller() {
         // change directory to example-grapesjs
         std::env::set_current_dir("../test42").unwrap();

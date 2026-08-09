@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.7.0] - 2026-08-09
+
+### Added
+- `rustyroad pull --language rust` now generates the Rust counterpart to the
+  TypeScript Drizzle/oRPC/Fastify stack: SQLx models and repositories, Actix
+  CRUD procedures, and the same OpenAPI/Hey API client contract.
+- Rust composition files (`api.rs` and `mod.rs`) are written once and preserved
+  across pulls; generated procedures use a stable registration entry point so
+  newly introspected tables become reachable without rewriting custom code.
+- Rust create and patch inputs follow database defaults and nullability, with
+  nullable patches distinguishing an omitted field from an explicit JSON null.
+
+### Changed
+- Migration list output now reports `RECORDED IN LEDGER` and `UNVERIFIED`
+  instead of treating ledger presence as proof that SQL ran or its effects exist.
+- `_rustyroad_migrations` now records provenance (`executed`, `baselined`, or
+  the `legacy` default), a SHA-256 migration checksum, and optional
+  `verified_at`; existing ledgers are upgraded in place.
+- `migration baseline` records explicit `baselined` provenance and no longer
+  describes those rows as applied. `version-status` now explains that lifecycle
+  history and migration-ledger bookkeeping are separate evidence sources.
+
+### Fixed
+- SQLite data-type category discovery now returns its supported Boolean,
+  numeric, date/time, text, and fallback types.
+- Generated grouped imports are deterministic, and filesystem-dependent tests
+  no longer race through the process-wide current directory or require live
+  MySQL/PostgreSQL services during the default test suite.
+
 ## [1.6.4] - 2026-08-08
 
 ### Changed

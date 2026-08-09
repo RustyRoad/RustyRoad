@@ -45,6 +45,8 @@ async fn list_matches_full_ledger_identity_to_disk_migration() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(output.status.success());
     assert!(stdout.contains("\"name\": \"change_customer_id\""));
-    assert!(stdout.contains("\"status\": \"Applied\""));
-    assert!(!stdout.contains("\"status\": \"Pending\""));
+    assert!(stdout.contains("\"status\": \"RECORDED IN LEDGER\""));
+    assert!(stdout.contains("\"provenance\": \"legacy\""));
+    assert!(stdout.contains("\"effects\": \"UNVERIFIED\""));
+    assert!(!stdout.contains("\"status\": \"PENDING\""));
 }

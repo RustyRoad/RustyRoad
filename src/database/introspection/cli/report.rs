@@ -1,12 +1,13 @@
 //! Output for `rustyroad pull`.
 
 use super::notices;
+use super::Language;
 use crate::database::introspection::Schema;
-use crate::generators::typescript::writer::{Outcome, Report};
+use crate::generators::report::{Outcome, Report};
 use std::path::Path;
 
 /// Reports what was written, what was kept, and anything left unreachable.
-pub(super) fn written(schema: &Schema, report: &Report) {
+pub(super) fn written(schema: &Schema, report: &Report, language: Language) {
     summary(schema);
 
     for outcome in &report.outcomes {
@@ -23,7 +24,7 @@ pub(super) fn written(schema: &Schema, report: &Report) {
     }
 
     notices::unwired(&report.unwired);
-    notices::next_steps();
+    notices::next_steps(language);
 }
 
 /// Prints what was found in the database.

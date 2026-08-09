@@ -4,6 +4,25 @@ use super::{exec, sql, DIRECTION_DOWN, DIRECTION_UP};
 use crate::database::migrations::{CustomMigrationError, MigrationDirection};
 use crate::database::DatabaseConnection;
 
+/// How a ledger row came to exist.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Provenance {
+    /// RustyRoad successfully executed the migration SQL.
+    Executed,
+    /// A baseline recorded the migration without executing its SQL.
+    Baselined,
+}
+
+impl Provenance {
+    /// Returns the stable value persisted in the ledger.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Executed => "executed",
+            Self::Baselined => "baselined",
+        }
+    }
+}
+
 /// Returns the string persisted in the ledger for `direction`.
 pub fn direction_label(direction: MigrationDirection) -> &'static str {
     match direction {
@@ -24,7 +43,30 @@ pub async fn record(
     migration_name: &str,
     direction: MigrationDirection,
 ) -> Result<(), CustomMigrationError> {
-    let binds = [migration_name, direction_label(direction)];
+    record_with_metadata(
+        connection,
+        migration_name,
+        direction,
+        Provenance::Executed,
+        None,
+    )
+    .await
+}
+
+/// Records a migration together with how it entered the ledger and its source digest.
+pub async fn record_with_metadata(
+    connection: &DatabaseConnection,
+    migration_name: &str,
+    direction: MigrationDirection,
+    provenance: Provenance,
+    checksum: Option<&str>,
+) -> Result<(), CustomMigrationError> {
+    let binds = [
+        migration_name,
+        direction_label(direction),
+        provenance.label(),
+        checksum.unwrap_or(""),
+    ];
 
     if exec::execute(connection, sql::upsert(connection), &binds)
         .await

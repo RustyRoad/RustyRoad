@@ -28,7 +28,7 @@ pub mod helpers {
 
     use lazy_static::lazy_static;
     use regex::Regex;
-    use std::collections::HashSet;
+    use std::collections::BTreeSet;
 
     lazy_static! {
         static ref IMPORT_REGEX: Regex = Regex::new(r"use [a-zA-Z_]+::\{[a-zA-Z_:, ]+\};").unwrap();
@@ -80,7 +80,7 @@ pub mod helpers {
         for line in contents.lines() {
             if import_regex.is_match(line) {
                 found = true;
-                let mut items: HashSet<&str> = line
+                let mut items: BTreeSet<&str> = line
                     .trim_start_matches(&format!("use {}::{{", module))
                     .trim_end_matches("};")
                     .split(", ")
@@ -225,9 +225,12 @@ pub mod helpers {
             assert!(crate_import_index < actix_identity_import_index);
             assert!(crate_import_index < user_import_index);
 
-            // Check for no duplicate imports
-            assert_eq!(base_content.matches("use actix_web::{get,").count(), 1);
-            assert_eq!(base_content.matches("use tera::Context;").count(), 1);
+            assert!(base_content.contains(
+                "use actix_web::{HttpResponse, Responder, get, web, web::Json, web::Path};"
+            ));
+            assert!(base_content.contains("use tera::{Context, Tera};"));
+            assert_eq!(base_content.matches("get").count(), 1);
+            assert_eq!(base_content.matches("Context").count(), 1);
         }
     }
 }

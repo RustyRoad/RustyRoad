@@ -13,8 +13,9 @@ pub(super) fn confirmed(matches: &ArgMatches, count: usize) -> bool {
     }
 
     println!(
-        "This records {count} migration(s) as applied WITHOUT running them.\n\
-         Only do this when the database schema already reflects them.\n"
+        "This records {count} migration(s) as BASELINED WITHOUT running them.\n\
+         Ledger state will not verify schema or data effects.\n\
+         Only do this when the database already reflects them.\n"
     );
 
     if !io::stdin().is_terminal() {
@@ -23,7 +24,7 @@ pub(super) fn confirmed(matches: &ArgMatches, count: usize) -> bool {
     }
 
     dialoguer::Confirm::new()
-        .with_prompt("Record these migrations as applied?")
+        .with_prompt("Record these migrations as baselined with effects UNVERIFIED?")
         .default(false)
         .interact()
         .unwrap_or(false)
@@ -32,11 +33,16 @@ pub(super) fn confirmed(matches: &ArgMatches, count: usize) -> bool {
 /// Prints what the baseline changed.
 pub(super) fn report(recorded: &[String], total: usize) {
     if recorded.is_empty() {
-        println!("Ledger already up to date; {total} migration(s) were already recorded.");
+        println!(
+            "Ledger already contains {total} migration(s). Effects remain UNVERIFIED by ledger state."
+        );
         return;
     }
 
-    println!("Recorded {} migration(s) as applied:", recorded.len());
+    println!(
+        "Recorded {} migration(s) as BASELINED IN LEDGER:",
+        recorded.len()
+    );
     for id in recorded {
         println!("  {id}");
     }
@@ -45,5 +51,5 @@ pub(super) fn report(recorded: &[String], total: usize) {
     if skipped > 0 {
         println!("{skipped} migration(s) were already recorded.");
     }
-    println!("\nSubsequent 'rustyroad migration all' runs will skip these.");
+    println!("\nEffects: UNVERIFIED. Subsequent 'rustyroad migration all' runs will skip these.");
 }

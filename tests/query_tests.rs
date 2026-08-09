@@ -4,8 +4,7 @@ use rustyroad::Project;
 fn test_cli_has_query_command() {
     // Test that the CLI includes the query command
     let app = Project::cli();
-    let db_command = app.find_subcommand("db").unwrap();
-    let query_command = db_command.find_subcommand("query").unwrap();
+    let query_command = app.find_subcommand("query").unwrap();
 
     // Verify the query command exists and has the right structure
     assert_eq!(query_command.get_name(), "query");

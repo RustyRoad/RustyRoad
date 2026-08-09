@@ -5,6 +5,15 @@ mod tests {
     use rustyroad::Project;
     use sqlx::sqlite::SqliteConnectOptions;
     use sqlx::ConnectOptions;
+    use std::path::PathBuf;
+
+    struct CurrentDirGuard(PathBuf);
+
+    impl Drop for CurrentDirGuard {
+        fn drop(&mut self) {
+            std::env::set_current_dir(&self.0).expect("failed to restore test working directory");
+        }
+    }
 
     // Define a new struct to hold the table names
     #[derive(Debug, sqlx::FromRow, PartialEq)]
@@ -14,6 +23,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_run_migration() -> Result<(), Box<dyn std::error::Error>> {
+        let original_dir = std::env::current_dir()?;
+        let _guard = CurrentDirGuard(original_dir);
+        let test_dir = tempfile::tempdir()?;
+        std::env::set_current_dir(test_dir.path())?;
+
         // SQLite databases do not require a username, password, host, or port, so we leave these fields empty
         let database: Database = Database::new(
             "test".to_owned(),
@@ -33,7 +47,7 @@ mod tests {
         // Verify that the migration was applied successfully
         let mut connection = SqliteConnectOptions::new()
             // Use the config_dev_db field as the SQLite database file path
-            .filename(&project.config_dev_db)
+            .filename(test_dir.path().join(&project.config_dev_db))
             .connect()
             .await?;
         println!("{:?}", connection);

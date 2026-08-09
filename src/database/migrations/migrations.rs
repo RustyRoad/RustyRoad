@@ -26,8 +26,13 @@ use super::ledger;
 #[derive(Serialize)]
 struct MigrationEntry {
     name: String,
-    timestamp: String,
+    recorded_at: String,
     status: String,
+    provenance: Option<String>,
+    checksum: Option<String>,
+    checksum_status: String,
+    effects: String,
+    verified_at: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -414,6 +419,40 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
     Ok(())
 }
 
+/// Ledger presence never proves effects unless a separate verifier recorded evidence.
+fn effects_label(record: Option<&ledger::LedgerRecord>) -> &'static str {
+    match record {
+        Some(record) if record.verified_at.is_some() => "VERIFIED",
+        Some(_) => "UNVERIFIED",
+        None => "NOT RECORDED",
+    }
+}
+
+fn current_checksum(migration: &str, record: Option<&ledger::LedgerRecord>) -> Option<String> {
+    let direction = record.map_or("up", |record| record.direction.as_str());
+    ledger::file_checksum(
+        &Path::new(MIGRATIONS_DIR)
+            .join(migration)
+            .join(format!("{direction}.sql")),
+    )
+    .ok()
+}
+
+fn checksum_status(
+    record: Option<&ledger::LedgerRecord>,
+    current_checksum: Option<&str>,
+) -> &'static str {
+    match (
+        record.and_then(|record| record.checksum.as_deref()),
+        current_checksum,
+    ) {
+        (Some(recorded), Some(current)) if recorded == current => "MATCH",
+        (Some(_), Some(_)) => "MISMATCH",
+        (None, _) => "UNKNOWN",
+        (Some(_), None) => "MISSING",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -779,20 +818,35 @@ pub async fn run_migration(
     if ledger::should_skip(&connection, ledger_id, direction).await? {
         match direction {
             MigrationDirection::Up => {
-                println!("Skipping migration '{ledger_id}': already applied")
+                println!(
+                    "Skipping migration '{ledger_id}': already recorded in ledger (effects unverified)"
+                )
             }
             MigrationDirection::Down => {
-                println!("Skipping migration '{ledger_id}': not currently applied")
+                println!("Skipping migration '{ledger_id}': no up record in ledger")
             }
         }
         return Ok(());
     }
 
+    let source_file = match direction {
+        MigrationDirection::Up => "up.sql",
+        MigrationDirection::Down => "down.sql",
+    };
+    let checksum = ledger::file_checksum(&Path::new(migration_dir).join(source_file))
+        .map_err(CustomMigrationError::IoError)?;
+
     // Execute the migration and handle potential errors
     match execute_migration_with_connection(connection.clone(), migration_files, direction).await {
         Ok(_) => {
-            // Record the migration in the tracking table
-            ledger::record(&connection, ledger_id, direction).await?;
+            ledger::record_with_metadata(
+                &connection,
+                ledger_id,
+                direction,
+                ledger::Provenance::Executed,
+                Some(&checksum),
+            )
+            .await?;
 
             // Only print success message if execution was successful
             match direction {
@@ -1090,11 +1144,11 @@ async fn execute_migration_with_connection(
         let mut sql = String::new();
         file.read_to_string(&mut sql)?;
 
-        // Skip the migration if it is a down.sql file and we're migrating up, or vice versa
-        let is_down_file = path.file_stem() == Some(std::ffi::OsStr::new("down"));
-        if (direction == MigrationDirection::Up && is_down_file)
-            || (direction == MigrationDirection::Down && !is_down_file)
-        {
+        // Execute only the directional source whose checksum is recorded. Treating
+        // arbitrary extra `.sql` files as part of `up` would make the checksum lie
+        // about which bytes were submitted.
+        let expected_stem = ledger::direction_label(direction);
+        if path.file_stem() != Some(std::ffi::OsStr::new(expected_stem)) {
             continue;
         }
         match connection.clone() {
@@ -1120,7 +1174,7 @@ async fn execute_migration_with_connection(
 }
 
 /// ## Name: list_migrations
-/// ### Description: Lists all migrations and their status (applied or not)
+/// ### Description: Lists migration ledger state without inferring database effects
 /// ### Returns:
 /// * `Result<(), CustomMigrationError>` - Returns Ok if successful, or an error
 /// ### Example:
@@ -1166,11 +1220,12 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
         }
     }
 
-    // Get applied migrations from the database
-    let applied_migrations = match connection {
+    // Read ledger bookkeeping. A row alone does not prove live database effects.
+    let ledger_rows = match connection {
         DatabaseConnection::Pg(conn) => {
-            match sqlx::query_as::<_, (String, String, String)>(
-                "SELECT name, applied_at::text, direction FROM _rustyroad_migrations ORDER BY applied_at, id",
+            match sqlx::query_as::<_, (String, String, String, String, Option<String>, Option<String>)>(
+                "SELECT name, applied_at::text, direction, provenance, checksum, verified_at::text \
+                 FROM _rustyroad_migrations ORDER BY applied_at, id",
             )
             .fetch_all(&*conn)
             .await
@@ -1179,8 +1234,19 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
                 Err(e) => return Err(CustomMigrationError::SqlxError(e)),
             }
         }
-        DatabaseConnection::MySql(conn) => match sqlx::query_as::<_, (String, String, String)>(
-            "SELECT name, CAST(applied_at AS CHAR), direction FROM _rustyroad_migrations ORDER BY applied_at, id",
+        DatabaseConnection::MySql(conn) => match sqlx::query_as::<
+            _,
+            (
+                String,
+                String,
+                String,
+                String,
+                Option<String>,
+                Option<String>,
+            ),
+        >(
+            "SELECT name, CAST(applied_at AS CHAR), direction, provenance, checksum, \
+             CAST(verified_at AS CHAR) FROM _rustyroad_migrations ORDER BY applied_at, id",
         )
         .fetch_all(&*conn)
         .await
@@ -1188,8 +1254,19 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
             Ok(rows) => rows,
             Err(e) => return Err(CustomMigrationError::SqlxError(e)),
         },
-        DatabaseConnection::Sqlite(conn) => match sqlx::query_as::<_, (String, String, String)>(
-            "SELECT name, CAST(applied_at AS TEXT), direction FROM _rustyroad_migrations ORDER BY applied_at, id",
+        DatabaseConnection::Sqlite(conn) => match sqlx::query_as::<
+            _,
+            (
+                String,
+                String,
+                String,
+                String,
+                Option<String>,
+                Option<String>,
+            ),
+        >(
+            "SELECT name, CAST(applied_at AS TEXT), direction, provenance, checksum, \
+             CAST(verified_at AS TEXT) FROM _rustyroad_migrations ORDER BY applied_at, id",
         )
         .fetch_all(&*conn)
         .await
@@ -1198,19 +1275,41 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
             Err(e) => return Err(CustomMigrationError::SqlxError(e)),
         },
     };
+    let ledger_records = ledger_rows
+        .into_iter()
+        .map(
+            |(name, recorded_at, direction, provenance, checksum, verified_at)| {
+                ledger::LedgerRecord {
+                    name,
+                    recorded_at,
+                    direction,
+                    provenance,
+                    checksum,
+                    verified_at,
+                }
+            },
+        )
+        .collect::<Vec<_>>();
 
     if format == "json" {
         let mut migrations_list: Vec<MigrationEntry> = Vec::new();
         for migration in &migration_files {
-            let (timestamp, status) = match ledger::latest_status(migration, &applied_migrations) {
-                Some((applied_at, "up")) => (applied_at.to_string(), "Applied".to_string()),
-                Some((applied_at, "down")) => (applied_at.to_string(), "Rolled back".to_string()),
-                _ => ("".to_string(), "Pending".to_string()),
-            };
+            let record = ledger::latest_record(migration, &ledger_records);
+            let current_checksum = current_checksum(migration, record);
+            let status = record.map_or("PENDING", |record| match record.direction.as_str() {
+                "up" => "RECORDED IN LEDGER",
+                "down" => "ROLLBACK RECORDED IN LEDGER",
+                _ => "UNKNOWN LEDGER STATE",
+            });
             migrations_list.push(MigrationEntry {
                 name: ledger::display_name(migration).to_string(),
-                timestamp,
-                status,
+                recorded_at: record.map_or(String::new(), |record| record.recorded_at.clone()),
+                status: status.to_string(),
+                provenance: record.map(|record| record.provenance.clone()),
+                checksum: record.and_then(|record| record.checksum.clone()),
+                checksum_status: checksum_status(record, current_checksum.as_deref()).to_string(),
+                effects: effects_label(record).to_string(),
+                verified_at: record.and_then(|record| record.verified_at.clone()),
             });
         }
 
@@ -1220,45 +1319,53 @@ pub async fn list_migrations(format: &str) -> Result<(), CustomMigrationError> {
         };
         println!("{}", serde_json::to_string_pretty(&output)?);
     } else {
-        println!("Migrations (from disk + database):");
-        println!("{:<30} {:<22} {:<12}", "Name", "Last Applied At", "Status");
-        println!("{:-<30} {:-<22} {:-<12}", "", "", "");
+        println!("Migrations (disk + ledger bookkeeping; effects are not inferred):");
+        println!(
+            "{:<30} {:<22} {:<26} {:<12} {:<10} {:<12}",
+            "Name", "Ledger Recorded At", "Status", "Provenance", "Checksum", "Effects"
+        );
+        println!(
+            "{:-<30} {:-<22} {:-<26} {:-<12} {:-<10} {:-<12}",
+            "", "", "", "", "", ""
+        );
 
         for migration in &migration_files {
             let migration_name = ledger::display_name(migration);
-            match ledger::latest_status(migration, &applied_migrations) {
-                Some((applied_at, "up")) => {
-                    println!(
-                        "{:<30} {:<22} {:<12}",
-                        migration_name, applied_at, "Applied"
-                    );
-                }
-                Some((applied_at, "down")) => {
-                    println!(
-                        "{:<30} {:<22} {:<12}",
-                        migration_name, applied_at, "Rolled back"
-                    );
-                }
-                _ => {
-                    println!("{:<30} {:<22} {:<12}", migration_name, "", "Pending");
-                }
-            }
+            let record = ledger::latest_record(migration, &ledger_records);
+            let current_checksum = current_checksum(migration, record);
+            let status = record.map_or("PENDING", |record| match record.direction.as_str() {
+                "up" => "RECORDED IN LEDGER",
+                "down" => "ROLLBACK RECORDED",
+                _ => "UNKNOWN LEDGER STATE",
+            });
+            println!(
+                "{:<30} {:<22} {:<26} {:<12} {:<10} {:<12}",
+                migration_name,
+                record.map_or("", |record| record.recorded_at.as_str()),
+                status,
+                record.map_or("", |record| record.provenance.as_str()),
+                checksum_status(record, current_checksum.as_deref()),
+                effects_label(record),
+            );
         }
 
         // Show records in the DB that no longer exist on disk (useful for debugging)
         let mut orphaned = Vec::new();
-        for (name, applied_at, dir) in &applied_migrations {
+        for record in &ledger_records {
             if !migration_files
                 .iter()
-                .any(|migration| ledger::identities_match(migration, name))
+                .any(|migration| ledger::identities_match(migration, &record.name))
             {
-                orphaned.push((name.clone(), applied_at.clone(), dir.clone()));
+                orphaned.push(record);
             }
         }
         if !orphaned.is_empty() {
             println!("\nNote: The database contains migration records that are missing on disk:");
-            for (name, applied_at, dir) in orphaned {
-                println!("  {name} ({dir}) at {applied_at}");
+            for record in orphaned {
+                println!(
+                    "  {} ({}) at {}",
+                    record.name, record.direction, record.recorded_at
+                );
             }
         }
     }

@@ -244,10 +244,8 @@ impl DataTypeCategory {
                     types_for_database
                 }
                 DataTypeCategory::Boolean => {
-                    types_for_database.add_postgres_type(
-                        self.to_string(),
-                        vec![PostgresTypes::Boolean, PostgresTypes::Bit],
-                    );
+                    types_for_database
+                        .add_postgres_type(self.to_string(), vec![PostgresTypes::Boolean]);
                     types_for_database
                 }
                 DataTypeCategory::Numeric => {
@@ -388,6 +386,28 @@ impl DataTypeCategory {
                     types_for_database
                 }
             },
+            DatabaseType::Sqlite => {
+                use crate::database::sqlite_types::SqliteTypes;
+
+                let types = match self {
+                    DataTypeCategory::Boolean => vec![SqliteTypes::Boolean],
+                    DataTypeCategory::Numeric => {
+                        vec![
+                            SqliteTypes::Integer,
+                            SqliteTypes::Real,
+                            SqliteTypes::Numeric,
+                        ]
+                    }
+                    DataTypeCategory::DateTime => {
+                        vec![SqliteTypes::Date, SqliteTypes::Time, SqliteTypes::DateTime]
+                    }
+                    DataTypeCategory::Text => vec![SqliteTypes::Text],
+                    DataTypeCategory::Other => vec![SqliteTypes::Blob, SqliteTypes::Null],
+                    _ => Vec::new(),
+                };
+                let _ = types_for_database.add_sqlite_type(self.to_string(), types);
+                types_for_database
+            }
             _ => types_for_database,
         }
     }
@@ -426,8 +446,13 @@ mod tests {
         let types_for_db = TypesForDatabase::new();
         let category = DataTypeCategory::Text;
 
-        // Expected types for category
-        let expected_types = vec![PostgresTypes::Text];
+        let expected_types = vec![
+            PostgresTypes::VarChar,
+            PostgresTypes::Char,
+            PostgresTypes::Text,
+            PostgresTypes::ByteA,
+            PostgresTypes::Xml,
+        ];
 
         // Get types
         let retrieved_types = types_for_db.get_postgres_types(&category);

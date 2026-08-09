@@ -3,7 +3,7 @@
 //! Modelled on `pgroll baseline`, which inserts a completed migration record
 //! capturing current schema state so that history before it is no longer replayed.
 //!
-//! RustyRoad's equivalent records every migration currently on disk as applied,
+//! RustyRoad's equivalent records every migration currently on disk as baselined,
 //! without executing any of it. This is the operation needed when a database's
 //! schema is already current but its ledger does not say so — replaying that
 //! history would fail against columns that later migrations already superseded.
@@ -16,14 +16,14 @@ use std::path::Path;
 /// Directory holding migration folders.
 const MIGRATIONS_DIR: &str = "./config/database/migrations";
 
-/// Records every on-disk migration as applied without running it.
+/// Records every on-disk migration as baselined without running it.
 ///
 /// Returns the ledger identities that were newly recorded.
 pub async fn create(connection: &DatabaseConnection) -> Result<Vec<String>, CustomMigrationError> {
     record_ids(connection, &identities()?).await
 }
 
-/// Records each identity in `ids` as applied, skipping those already recorded.
+/// Records each identity in `ids` as baselined, skipping those already recorded.
 ///
 /// No migration SQL is executed. This asserts the database already reflects the
 /// changes, which is the whole point: replaying them would fail against a schema
@@ -39,7 +39,16 @@ pub async fn record_ids(
         if ledger::is_applied(connection, id).await? {
             continue;
         }
-        ledger::record(connection, id, super::MigrationDirection::Up).await?;
+        let checksum =
+            ledger::file_checksum(&Path::new(MIGRATIONS_DIR).join(id).join("up.sql")).ok();
+        ledger::record_with_metadata(
+            connection,
+            id,
+            super::MigrationDirection::Up,
+            ledger::Provenance::Baselined,
+            checksum.as_deref(),
+        )
+        .await?;
         recorded.push(id.clone());
     }
     Ok(recorded)

@@ -7,6 +7,8 @@
 
 use std::path::Path;
 
+pub use crate::generators::report::Outcome;
+
 /// Who owns an emitted file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Ownership {
@@ -30,28 +32,5 @@ impl Ownership {
             Self::Generated => true,
             Self::Scaffold => force || !path.exists(),
         }
-    }
-}
-
-/// What happened to one file during a run.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Outcome {
-    /// The file was written.
-    Written(std::path::PathBuf),
-    /// The file already existed and is owned by the developer.
-    Preserved(std::path::PathBuf),
-}
-
-impl Outcome {
-    /// Returns the path this outcome refers to.
-    pub fn path(&self) -> &Path {
-        match self {
-            Self::Written(path) | Self::Preserved(path) => path,
-        }
-    }
-
-    /// Returns `true` when the file was left untouched.
-    pub fn is_preserved(&self) -> bool {
-        matches!(self, Self::Preserved(_))
     }
 }

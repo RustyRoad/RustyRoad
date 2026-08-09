@@ -261,15 +261,16 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_column_loop() {
-        // Set the number of columns and migration name
-        let num_columns = 2;
+    async fn zero_columns_does_not_prompt() {
+        let num_columns = 0;
         let migration_name = "test_migration".to_string();
 
-        // Run the column_loop function
         let result = column_loop(num_columns, migration_name);
 
-        // Check if the result is Ok
         assert!(result.is_ok());
+        assert!(result
+            .unwrap()
+            .up_sql_contents
+            .contains("CREATE TABLE test_migration"));
     }
 }
