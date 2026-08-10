@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-08-10
+
+### Fixed
+- Rust generation now disambiguates PostgreSQL enum labels that normalize to
+  the same Rust variant, such as `recurring_service` and `recurring-service`.
+- Generated `inet` and `cidr` fields now use SQLx's `IpNetwork` re-export,
+  preventing type-trait failures when an application has a different direct
+  `ipnetwork` dependency version. Rust pull guidance no longer adds that
+  redundant direct dependency.
+
 ## [1.7.0] - 2026-08-09
 
 ### Added
