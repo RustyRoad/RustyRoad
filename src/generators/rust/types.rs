@@ -45,7 +45,7 @@ pub(super) fn base_type(sql_type: &str, schema: &Schema) -> String {
         "timestamp with time zone" | "timestamptz" => "chrono::DateTime<chrono::Utc>".to_string(),
         "time" | "time without time zone" => "chrono::NaiveTime".to_string(),
         "bytea" => "Vec<u8>".to_string(),
-        "inet" | "cidr" => "ipnetwork::IpNetwork".to_string(),
+        "inet" | "cidr" => "sqlx::types::ipnetwork::IpNetwork".to_string(),
         "macaddr" | "macaddr8" => "mac_address::MacAddress".to_string(),
         "interval" => "Interval".to_string(),
         _ => "String".to_string(),

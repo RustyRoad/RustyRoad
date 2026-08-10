@@ -3,6 +3,7 @@
 use super::naming::{literal, pascal, snake};
 use super::types::{base_type, column_type};
 use crate::database::introspection::{Column, Enum, Schema, Table};
+use std::collections::HashSet;
 
 /// Renders `models.rs`.
 pub(super) fn render(schema: &Schema) -> String {
@@ -55,15 +56,17 @@ pub(super) fn render(schema: &Schema) -> String {
 }
 
 fn render_enum(item: &Enum) -> String {
+    let mut used = HashSet::new();
     let variants = item
         .values
         .iter()
         .map(|value| {
+            let variant = unique_variant(value, &mut used);
             format!(
                 "    #[sqlx(rename = {})]\n    #[serde(rename = {})]\n    {},",
                 literal(value),
                 literal(value),
-                pascal(value)
+                variant
             )
         })
         .collect::<Vec<_>>()
@@ -77,6 +80,22 @@ fn render_enum(item: &Enum) -> String {
         pascal(&item.name),
         variants
     )
+}
+
+fn unique_variant(value: &str, used: &mut HashSet<String>) -> String {
+    let base = pascal(value);
+    if used.insert(base.clone()) {
+        return base;
+    }
+
+    let mut sequence = 2;
+    loop {
+        let candidate = format!("{base}Variant{sequence}");
+        if used.insert(candidate.clone()) {
+            return candidate;
+        }
+        sequence += 1;
+    }
 }
 
 fn render_table(table: &Table, schema: &Schema) -> String {

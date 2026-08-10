@@ -43,7 +43,7 @@ pub(super) fn next_steps(language: Language) {
             \x20   @orpc/server @orpc/openapi @orpc/zod"
         ),
         Language::Rust => println!(
-            "\nNext:\n  cargo add actix-web serde serde_json chrono uuid bigdecimal ipnetwork mac_address sqlx --features serde/derive,chrono/serde,uuid/serde,bigdecimal/serde,ipnetwork/serde,mac_address/serde,sqlx/runtime-tokio,sqlx/postgres,sqlx/chrono,sqlx/uuid,sqlx/json,sqlx/bigdecimal,sqlx/ipnetwork,sqlx/mac_address"
+            "\nNext:\n  cargo add actix-web serde serde_json chrono uuid bigdecimal mac_address sqlx --features serde/derive,chrono/serde,uuid/serde,bigdecimal/serde,mac_address/serde,sqlx/runtime-tokio,sqlx/postgres,sqlx/chrono,sqlx/uuid,sqlx/json,sqlx/bigdecimal,sqlx/ipnetwork,sqlx/mac_address"
         ),
     }
 }

@@ -8,7 +8,11 @@ fn schema() -> Schema {
     Schema {
         enums: vec![Enum {
             name: "user_role".to_string(),
-            values: vec!["admin".to_string(), "read-only".to_string()],
+            values: vec![
+                "admin".to_string(),
+                "read_only".to_string(),
+                "read-only".to_string(),
+            ],
         }],
         tables: vec![Table {
             name: "users".to_string(),
@@ -120,6 +124,19 @@ fn models_derive_rows_and_separate_create_and_patch_inputs() {
     assert!(rust.contains("pub display_name: Option<String>"));
     assert!(rust.contains("pub enum UserRole"));
     assert!(rust.contains("#[sqlx(rename = \"read-only\")]"));
+    assert!(rust.contains("pub network: Option<sqlx::types::ipnetwork::IpNetwork>"));
+}
+
+#[test]
+fn colliding_enum_labels_receive_unique_rust_variants() {
+    let rust = models::render(&schema());
+
+    assert!(rust.contains(
+        "#[sqlx(rename = \"read_only\")]\n    #[serde(rename = \"read_only\")]\n    ReadOnly,"
+    ));
+    assert!(rust.contains(
+        "#[sqlx(rename = \"read-only\")]\n    #[serde(rename = \"read-only\")]\n    ReadOnlyVariant2,"
+    ));
 }
 
 #[test]
