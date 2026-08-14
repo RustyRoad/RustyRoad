@@ -39,9 +39,7 @@ fn string_keys_are_not_coerced() {
         name: "sessions".to_string(),
         columns: vec![column("id", "uuid")],
         primary_key: vec!["id".to_string()],
-        foreign_keys: Vec::new(),
-        uniques: Vec::new(),
-        indexes: Vec::new(),
+        ..Table::default()
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel, "/api");
@@ -55,9 +53,7 @@ fn composite_keys_are_skipped() {
         name: "memberships".to_string(),
         columns: vec![column("user_id", "integer"), column("group_id", "integer")],
         primary_key: vec!["user_id".to_string(), "group_id".to_string()],
-        foreign_keys: Vec::new(),
-        uniques: Vec::new(),
-        indexes: Vec::new(),
+        ..Table::default()
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel, "/api");

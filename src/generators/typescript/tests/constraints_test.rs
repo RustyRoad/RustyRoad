@@ -34,6 +34,7 @@ fn bare_tables_need_no_constraint_imports() {
         foreign_keys: Vec::new(),
         uniques: Vec::new(),
         indexes: Vec::new(),
+        view: false,
     }]);
 
     let ts = render(&bare, Casing::Camel);
@@ -50,6 +51,7 @@ fn composite_primary_keys_become_table_level() {
         foreign_keys: Vec::new(),
         uniques: Vec::new(),
         indexes: Vec::new(),
+        view: false,
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel);

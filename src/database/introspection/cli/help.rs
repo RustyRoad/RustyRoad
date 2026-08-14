@@ -32,11 +32,30 @@ pub(super) fn long_about() -> &'static str {
      POSTGRES ONLY:\n\
       Introspection reads the Postgres catalog. Other backends are not\n\
       supported by this command yet.\n\n\
+     RUST MODELS (--models, default ./src/models):\n\
+      One folder per table, following the layout hand-written models use:\n\
+        mod.rs      the struct, its derives, Default, and new\n\
+        create.rs   the insert\n\
+        read.rs     the listing and the keyed lookup\n\
+        update.rs   the update\n\
+        delete.rs   the delete\n\
+      Each CRUD file adds an impl block to the struct in mod.rs. The parent\n\
+      mod.rs is written once and then left alone, so hand-written models\n\
+      declared beside the generated ones survive.\n\n\
+     TETHERSCRIPT MODELS (--tether-models, default ./models):\n\
+      The same folder layout in .tether files, reaching SQL through the `db`\n\
+      capability. TetherScript has no structs, so a row is a map keyed by\n\
+      column name and mod.tether carries what a struct would: the column\n\
+      list, seeded defaults, and a validate() checking required columns and\n\
+      value kinds before any write.\n\n\
      CONFIG:\n\
       Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
      EXAMPLES:\n\
       rustyroad pull\n\
       rustyroad pull --language rust\n\
       rustyroad pull --out ./src/db --casing preserve\n\
-      rustyroad pull --schema-only\n"
+      rustyroad pull --schema-only\n\
+      rustyroad pull --models\n\
+      rustyroad pull --models --models-out ./src/models\n\
+      rustyroad pull --tether-models\n"
 }

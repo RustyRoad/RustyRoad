@@ -29,7 +29,7 @@ pub struct Column {
 }
 
 /// A table and everything generation needs to know about it.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Table {
     pub name: String,
     pub columns: Vec<Column>,
@@ -38,6 +38,11 @@ pub struct Table {
     pub foreign_keys: Vec<ForeignKey>,
     pub uniques: Vec<Unique>,
     pub indexes: Vec<Index>,
+    /// True for a view or materialized view.
+    ///
+    /// A view has no insert, update, or delete, so generators emit only the reads;
+    /// writing to one fails at runtime, and offering the methods would advertise it.
+    pub view: bool,
 }
 
 impl Table {

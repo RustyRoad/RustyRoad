@@ -1,8 +1,8 @@
 //! The server-side files `pull` emits.
 
 use super::outputs::Outputs;
-use super::ownership::Ownership;
 use crate::database::introspection::Schema;
+use crate::generators::ownership::Ownership;
 use crate::generators::typescript::casing::Casing;
 use crate::generators::typescript::{client, orpc, relations, schema, zod};
 

@@ -1,0 +1,32 @@
+//! Tests for Rust model generation.
+
+mod actix_error_test;
+mod actix_mount_test;
+mod actix_test;
+mod actix_view_test;
+mod audit_type_test;
+mod casing_test;
+mod collision_fixture;
+mod collision_test;
+mod composite_test;
+mod crud_test;
+mod enum_decl_test;
+mod enum_fixture;
+mod enum_key_test;
+mod enum_variant_test;
+mod enums_test;
+mod export_test;
+mod layout_test;
+mod ownership_test;
+mod rendered;
+mod root_test;
+mod sample;
+mod schema_test;
+mod support;
+mod timestamp_fixture;
+mod timestamp_test;
+mod types_shape_test;
+mod types_test;
+mod variant_fixture;
+mod view_audit_test;
+mod view_test;

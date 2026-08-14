@@ -26,5 +26,6 @@ pub(in crate::generators::typescript::tests) fn posts() -> Table {
         }],
         uniques: Vec::new(),
         indexes: Vec::new(),
+        view: false,
     }
 }

@@ -22,6 +22,7 @@ fn uuid_keys_are_typed_as_strings() {
         foreign_keys: Vec::new(),
         uniques: Vec::new(),
         indexes: Vec::new(),
+        view: false,
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel);
@@ -37,6 +38,7 @@ fn tables_without_a_primary_key_get_no_repository() {
         foreign_keys: Vec::new(),
         uniques: Vec::new(),
         indexes: Vec::new(),
+        view: false,
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel);

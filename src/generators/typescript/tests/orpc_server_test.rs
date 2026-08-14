@@ -23,6 +23,7 @@ fn string_keys_are_not_coerced() {
         foreign_keys: Vec::new(),
         uniques: Vec::new(),
         indexes: Vec::new(),
+        view: false,
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel, "/api");

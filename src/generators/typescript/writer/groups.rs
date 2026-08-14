@@ -1,12 +1,11 @@
 //! Grouping the emitted files by ownership.
 
-use super::emit::write_owned;
 use super::files;
 use super::heyapi;
 use super::outputs::Outputs;
-use super::ownership::{Outcome, Ownership};
 use super::{CLIENT_DIR, ROUTE_PREFIX};
 use crate::database::introspection::Schema;
+use crate::generators::ownership::{write_owned, Outcome, Ownership};
 use crate::generators::typescript::casing::Casing;
 use std::path::Path;
 use std::{fs, io};

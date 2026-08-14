@@ -19,9 +19,7 @@ pub(super) fn orders() -> Schema {
             column("fulfilment", "order_status"),
         ],
         primary_key: vec!["id".to_string()],
-        foreign_keys: Vec::new(),
-        uniques: Vec::new(),
-        indexes: Vec::new(),
+        ..Table::default()
     };
 
     with_enums(

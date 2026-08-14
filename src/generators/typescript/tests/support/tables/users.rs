@@ -19,6 +19,7 @@ pub(in crate::generators::typescript::tests) fn users() -> Table {
             columns: vec!["is_active".to_string()],
             unique: false,
         }],
+        view: false,
     }
 }
 
