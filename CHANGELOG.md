@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.2] - 2026-08-14
+
+### Added
+- `rustyroad pull` can now filter introspected schemas and emit companion Rust and TetherScript model folders from the same TypeScript pull flow.
+- Rust model generation now uses a shared layout writer, naming resolver, ownership tracking, and split Actix CRUD renderers for keyed and unkeyed routes.
+
+### Changed
+- Pull reporting and generator file ownership are shared across TypeScript, Rust, and TetherScript outputs so preserved files and missing parent-module declarations are reported consistently.
+
 ## [1.7.1] - 2026-08-10
 
 ### Fixed
