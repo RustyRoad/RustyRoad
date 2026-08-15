@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.4] - 2026-08-15
+
 ### Fixed
 - TypeScript repositories now derive primary-key parameter types from the inferred
   Drizzle select row, preserving PostgreSQL enum unions in keyed CRUD queries and
