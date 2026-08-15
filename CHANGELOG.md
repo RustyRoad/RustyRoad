@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `rustyroad pull --zod` can now emit a standalone Drizzle schema and its derived
+  Zod select, insert, and update schemas, with `--zod-out` controlling the folder.
+
 ## [1.7.2] - 2026-08-14
 
 ### Added

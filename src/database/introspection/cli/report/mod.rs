@@ -31,6 +31,12 @@ pub(super) fn models(label: &str, layout: &Layout) {
     notices::undeclared(&layout.undeclared);
 }
 
+/// Reports a flat companion output with no developer-owned parent module.
+pub(super) fn artifacts(label: &str, outcomes: &[Outcome]) {
+    println!("\n{label}:");
+    summary::list(outcomes);
+}
+
 /// Reports an empty schema, which is usually a wrong schema name.
 pub(super) fn empty(schema_name: &str) {
     println!(

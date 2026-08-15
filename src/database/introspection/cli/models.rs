@@ -6,6 +6,7 @@
 
 use super::report;
 use crate::database::introspection::Schema;
+use crate::generators::typescript::{self, Casing, Outputs};
 use crate::generators::{rust, tetherscript};
 use clap::ArgMatches;
 use std::path::PathBuf;
@@ -18,6 +19,9 @@ const RUST_OUT: &str = "./src/models";
 /// Outside `src/` because a `.tether` module is loaded at runtime by path rather than
 /// compiled into the Rust binary.
 const TETHER_OUT: &str = "./models";
+
+/// Default folder for standalone TypeScript validation schemas.
+const ZOD_OUT: &str = "./src/schemas";
 
 /// Writes whichever model languages were asked for.
 pub(super) fn write(matches: &ArgMatches, schema: &Schema) {
@@ -39,6 +43,16 @@ pub(super) fn write(matches: &ArgMatches, schema: &Schema) {
         let out = folder(matches, "tether-models-out", TETHER_OUT);
         match tetherscript::write(&out, schema, force) {
             Ok(layout) => report::models("TetherScript models", &layout),
+            Err(error) => report::fail(&error.to_string()),
+        }
+    }
+
+    if matches.get_flag("zod") {
+        let out = folder(matches, "zod-out", ZOD_OUT);
+        let casing = Casing::parse(matches.get_one::<String>("casing").map(String::as_str));
+
+        match typescript::write(&out, schema, casing, Outputs::zod_only(), force) {
+            Ok(generated) => report::artifacts("Zod schemas", &generated.outcomes),
             Err(error) => report::fail(&error.to_string()),
         }
     }

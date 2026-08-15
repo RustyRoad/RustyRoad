@@ -122,6 +122,17 @@ rustyroad pull
 This writes Drizzle tables and repositories, Zod schemas, oRPC procedures, a
 Fastify server adapter, OpenAPI, and a Hey API configuration to `./db`.
 
+To also write a standalone Drizzle/Zod schema pair for application validation,
+use:
+
+```bash
+rustyroad pull --zod
+```
+
+This writes `schema.ts` and `zod.ts` to `./src/schemas`; pass `--zod-out` to
+choose another folder. `--zod-models` and `--zod-models-out` are accepted as
+aliases.
+
 Use the Rust target for the equivalent Actix + SQLx stack:
 
 ```bash

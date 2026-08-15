@@ -33,7 +33,7 @@ pub(super) fn server(model: &Schema, casing: Casing, outputs: Outputs) -> Vec<Em
             relations::render(model, casing),
         ),
         generated(outputs.client, "client.ts", client::render(model, casing)),
-        generated(outputs.api, "zod.ts", zod::render(model, casing)),
+        generated(outputs.zod, "zod.ts", zod::render(model, casing)),
         generated(
             outputs.api,
             "router.ts",

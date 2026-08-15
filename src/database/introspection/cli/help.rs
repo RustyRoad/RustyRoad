@@ -48,6 +48,11 @@ pub(super) fn long_about() -> &'static str {
       column name and mod.tether carries what a struct would: the column\n\
       list, seeded defaults, and a validate() checking required columns and\n\
       value kinds before any write.\n\n\
+     ZOD SCHEMAS (--zod, default ./src/schemas):\n\
+      A standalone schema.ts and zod.ts pair. The latter derives select, insert,\n\
+      and update validators from the generated Drizzle definitions, keeping the\n\
+      validation types in lockstep with the database. Use --zod-out to choose a\n\
+      different folder.\n\n\
      CONFIG:\n\
       Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
      EXAMPLES:\n\
@@ -57,5 +62,7 @@ pub(super) fn long_about() -> &'static str {
       rustyroad pull --schema-only\n\
       rustyroad pull --models\n\
       rustyroad pull --models --models-out ./src/models\n\
-      rustyroad pull --tether-models\n"
+      rustyroad pull --tether-models\n\
+      rustyroad pull --zod\n\
+      rustyroad pull --zod --zod-out ./src/schemas\n"
 }
