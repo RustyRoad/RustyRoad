@@ -52,3 +52,30 @@ pub(super) fn enum_type(name: &str, values: &[&str]) -> Enum {
 pub(super) fn schema() -> Schema {
     from_tables(vec![users(), posts()])
 }
+
+/// A schema whose single-column primary key is a PostgreSQL enum.
+///
+/// Mirrors the shape that exposed overly broad `string` repository IDs in
+/// SpotlessBinCo's generated campaign workflow tables.
+pub(super) fn enum_key_schema() -> Schema {
+    let table = Table {
+        name: "campaign_workflow_node_bindings".to_string(),
+        columns: vec![Column {
+            name: "node_kind".to_string(),
+            sql_type: "campaign_node_kind".to_string(),
+            nullable: false,
+            default: None,
+            auto_increment: false,
+        }],
+        primary_key: vec!["node_kind".to_string()],
+        foreign_keys: Vec::new(),
+        uniques: Vec::new(),
+        indexes: Vec::new(),
+        view: false,
+    };
+
+    with_enums(
+        vec![table],
+        vec![enum_type("campaign_node_kind", &["email", "sms"])],
+    )
+}

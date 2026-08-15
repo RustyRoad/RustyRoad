@@ -23,7 +23,7 @@ pub(super) fn update(
     casing: Casing,
 ) -> String {
     let field = identifier(key, casing);
-    let key_type = key_type(table, key);
+    let key_type = key_type(table, key, casing);
 
     format!(
         "\tasync update(db: Database, id: {key_type}, values: Partial<New{type_name}Row>): Promise<{type_name}Row | undefined> {{\n\
@@ -36,7 +36,7 @@ pub(super) fn update(
 /// Renders the delete.
 pub(super) fn remove(name: &str, table: &Table, key: &str, casing: Casing) -> String {
     let field = identifier(key, casing);
-    let key_type = key_type(table, key);
+    let key_type = key_type(table, key, casing);
 
     format!(
         "\tasync remove(db: Database, id: {key_type}): Promise<boolean> {{\n\

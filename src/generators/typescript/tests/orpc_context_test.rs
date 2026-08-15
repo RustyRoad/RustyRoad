@@ -34,7 +34,7 @@ fn numeric_keys_are_coerced() {
 }
 
 #[test]
-fn string_keys_are_not_coerced() {
+fn nonnumeric_keys_are_not_coerced() {
     let table = Table {
         name: "sessions".to_string(),
         columns: vec![column("id", "uuid")],
@@ -43,7 +43,7 @@ fn string_keys_are_not_coerced() {
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel, "/api");
-    assert!(ts.contains("z.object({ id: z.string() })"));
+    assert!(ts.contains(r#"z.object({ id: sessionsSelectSchema.shape["id"] })"#));
     assert!(!ts.contains("z.coerce"));
 }
 

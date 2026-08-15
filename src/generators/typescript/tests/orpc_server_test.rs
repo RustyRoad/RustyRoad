@@ -1,6 +1,6 @@
 //! Server wiring and key coercion for the oRPC router.
 
-use super::support::{column, from_tables, schema};
+use super::support::{column, enum_key_schema, from_tables, schema};
 use crate::database::introspection::Table;
 use crate::generators::typescript::orpc::{openapi_script, render, server};
 use crate::generators::typescript::Casing;
@@ -15,7 +15,7 @@ fn numeric_keys_are_coerced() {
 }
 
 #[test]
-fn string_keys_are_not_coerced() {
+fn nonnumeric_keys_reuse_the_derived_column_schema() {
     let table = Table {
         name: "sessions".to_string(),
         columns: vec![column("id", "uuid")],
@@ -27,8 +27,20 @@ fn string_keys_are_not_coerced() {
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel, "/api");
-    assert!(ts.contains("z.object({ id: z.string() })"));
+    assert!(ts.contains(r#"z.object({ id: sessionsSelectSchema.shape["id"] })"#));
     assert!(!ts.contains("z.coerce"));
+}
+
+#[test]
+fn enum_keys_keep_the_enum_schema_in_every_keyed_router_input() {
+    let ts = render(&enum_key_schema(), Casing::Camel, "/api");
+    let key_schema =
+        r#"z.object({ id: campaignWorkflowNodeBindingsSelectSchema.shape["nodeKind"] })"#;
+
+    // get, update, and delete all use the exact enum schema. This keeps input.id
+    // assignable to the indexed row type expected by each repository method.
+    assert_eq!(ts.matches(key_schema).count(), 3);
+    assert!(!ts.contains("z.object({ id: z.string() })"));
 }
 
 #[test]
@@ -49,6 +61,16 @@ fn server_disables_body_parsing() {
     // The handlers need the raw request; Fastify would otherwise consume the body.
     assert!(ts.contains("removeAllContentTypeParsers"));
     assert!(ts.contains("addContentTypeParser"));
+}
+
+#[test]
+fn server_uses_request_init_members_instead_of_dom_only_aliases() {
+    let ts = server();
+
+    assert!(ts.contains(r#"request.headers as RequestInit["headers"]"#));
+    assert!(ts.contains(r#"request.raw as unknown as RequestInit["body"]"#));
+    assert!(!ts.contains("HeadersInit"));
+    assert!(!ts.contains("BodyInit"));
 }
 
 #[test]

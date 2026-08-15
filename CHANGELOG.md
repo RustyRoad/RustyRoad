@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- TypeScript repositories now derive primary-key parameter types from the inferred
+  Drizzle select row, preserving PostgreSQL enum unions in keyed CRUD queries and
+  router inputs.
+- Generated Fastify adapters no longer reference the DOM-only `HeadersInit` and
+  `BodyInit` aliases, so they compile under Node-only TypeScript configurations.
+
 ## [1.7.3] - 2026-08-15
 
 ### Added

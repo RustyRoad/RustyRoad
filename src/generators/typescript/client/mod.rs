@@ -16,7 +16,7 @@ mod write;
 use super::casing::{binding, Casing};
 use crate::database::introspection::Schema;
 
-pub(super) use rows::key_type;
+pub(super) use rows::{key_is_numeric, quoted_property};
 
 /// Renders `client.ts`.
 pub fn render(schema: &Schema, casing: Casing) -> String {

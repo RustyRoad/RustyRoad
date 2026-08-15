@@ -1,6 +1,6 @@
 //! Typed client generation.
 
-use super::support::schema;
+use super::support::{enum_key_schema, schema};
 use crate::generators::typescript::client::render;
 use crate::generators::typescript::Casing;
 
@@ -40,4 +40,18 @@ fn client_factory_is_emitted() {
     let ts = render(&schema(), Casing::Camel);
 
     assert!(ts.contains("export function createClient(connectionString: string): Database"));
+}
+
+#[test]
+fn enum_primary_keys_use_the_inferred_column_type_for_every_keyed_query() {
+    let ts = render(&enum_key_schema(), Casing::Camel);
+    let key_type = "id: CampaignWorkflowNodeBindingsRow[\"nodeKind\"]";
+
+    // find, update, and remove must pass the enum union to Drizzle's `eq`
+    // overload rather than widening it to an incompatible plain string.
+    assert_eq!(ts.matches(key_type).count(), 3);
+    assert!(ts.contains("eq(campaignWorkflowNodeBindings.nodeKind, id)"));
+    assert!(!ts.contains("async find(db: Database, id: string"));
+    assert!(!ts.contains("async update(db: Database, id: string"));
+    assert!(!ts.contains("async remove(db: Database, id: string"));
 }

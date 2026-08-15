@@ -27,7 +27,7 @@ pub(super) fn get(table: &Table, path: String, casing: Casing) -> Procedure {
         name: "get",
         method: "GET",
         path,
-        input: format!("z.object({{ id: {} }})", key_schema(table)),
+        input: format!("z.object({{ id: {} }})", key_schema(table, casing)),
         output: format!("{name}SelectSchema"),
         body: format!("found(await {name}Repository.find(context.db, input.id), \"{entity}\")"),
     }

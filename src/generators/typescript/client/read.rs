@@ -22,7 +22,7 @@ pub(super) fn find(
     casing: Casing,
 ) -> String {
     let field = identifier(key, casing);
-    let key_type = key_type(table, key);
+    let key_type = key_type(table, key, casing);
 
     format!(
         "\tasync find(db: Database, id: {key_type}): Promise<{type_name}Row | undefined> {{\n\

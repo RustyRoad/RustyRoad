@@ -28,10 +28,10 @@ fn forward() -> String {
         "\t\tconst { matched, response } = await handler.handle(\n\
          \t\t\tnew Request(url, {\n\
          \t\t\t\tmethod: request.method,\n\
-         \t\t\t\theaders: request.headers as HeadersInit,\n\
+         \t\t\t\theaders: request.headers as RequestInit[\"headers\"],\n\
          \t\t\t\tbody: request.method === \"GET\" || request.method === \"HEAD\"\n\
          \t\t\t\t\t? undefined\n\
-         \t\t\t\t\t: (request.raw as unknown as BodyInit),\n\
+         \t\t\t\t\t: (request.raw as unknown as RequestInit[\"body\"]),\n\
          \t\t\t\tduplex: \"half\",\n\
          \t\t\t} as RequestInit),\n\
          \t\t\t{ context: { db }, prefix: isRpc ? rpcPrefix : undefined },\n\
