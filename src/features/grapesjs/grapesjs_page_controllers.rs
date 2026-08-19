@@ -550,7 +550,7 @@ async fn main() -> std::io::Result<()> {
             setup_test_environment().expect("Failed to set up test environment");
 
         // change the current working directory to the temp directory
-        std::env::set_current_dir(&temp_dir.path())
+        std::env::set_current_dir(temp_dir.path())
             .expect("Failed to change current working directory");
 
         crate::features::grapesjs::grapesjs_page_controllers::write_to_all_page_controllers()

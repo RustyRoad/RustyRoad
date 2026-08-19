@@ -39,7 +39,7 @@ pub(super) async fn fetch(
     sql: &str,
     schema_name: &str,
 ) -> Result<Vec<PgRow>, CustomMigrationError> {
-    sqlx::query(sql)
+    sqlx::query(sqlx::AssertSqlSafe(sql.to_owned()))
         .bind(schema_name)
         .fetch_all(pool)
         .await

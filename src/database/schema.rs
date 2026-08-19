@@ -1,5 +1,7 @@
 use crate::database::migrations::CustomMigrationError;
+use crate::database::render;
 use crate::database::statement::is_multi_statement;
+use crate::database::values::DecodableRow;
 use crate::database::{get_config_file_name, Database, DatabaseConnection};
 use serde_json::json;
 use sqlx::{Column, Row, ValueRef};
@@ -124,9 +126,12 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
             for table in tables {
                 let table_name: String = table.get("name");
 
-                let columns = sqlx::query(&format!("PRAGMA table_info({})", table_name))
-                    .fetch_all(&*conn)
-                    .await?;
+                let columns = sqlx::query(sqlx::AssertSqlSafe(format!(
+                    "PRAGMA table_info({})",
+                    table_name
+                )))
+                .fetch_all(&*conn)
+                .await?;
 
                 let mut table_columns: Vec<SchemaColumn> = Vec::new();
                 for col in columns {
@@ -185,9 +190,18 @@ async fn execute_script(
     use sqlx::Executor;
 
     match connection {
-        DatabaseConnection::Pg(conn) => conn.execute(query).await.map(|_| ())?,
-        DatabaseConnection::MySql(conn) => conn.execute(query).await.map(|_| ())?,
-        DatabaseConnection::Sqlite(conn) => conn.execute(query).await.map(|_| ())?,
+        DatabaseConnection::Pg(conn) => conn
+            .execute(sqlx::AssertSqlSafe(query.to_owned()))
+            .await
+            .map(|_| ())?,
+        DatabaseConnection::MySql(conn) => conn
+            .execute(sqlx::AssertSqlSafe(query.to_owned()))
+            .await
+            .map(|_| ())?,
+        DatabaseConnection::Sqlite(conn) => conn
+            .execute(sqlx::AssertSqlSafe(query.to_owned()))
+            .await
+            .map(|_| ())?,
     }
 
     println!("Script executed successfully.");
@@ -220,137 +234,27 @@ pub async fn execute_query(query: &str, format: &str) -> Result<(), CustomMigrat
 
     match connection {
         DatabaseConnection::Pg(conn) => {
-            let rows = sqlx::query(query).fetch_all(&*conn).await?;
-
-            if rows.is_empty() {
+            let rows = sqlx::query(sqlx::AssertSqlSafe(query.to_owned()))
+                .fetch_all(&*conn)
+                .await?;
+            if !render::table(&rows, crate::database::values::pg_display) {
                 println!("No results found.");
-                return Ok(());
-            }
-
-            if let Some(first_row) = rows.first() {
-                let columns = first_row.columns();
-                for (i, column) in columns.iter().enumerate() {
-                    if i > 0 {
-                        print!(" | ");
-                    }
-                    print!("{:<15}", column.name());
-                }
-                println!();
-                println!("{:-<50}", "");
-            }
-
-            for row in rows {
-                let columns = row.columns();
-                for (i, column) in columns.iter().enumerate() {
-                    if i > 0 {
-                        print!(" | ");
-                    }
-                    let value = crate::database::values::postgres::pg_display(&row, column.name());
-                    print!("{:<15}", value);
-                }
-                println!();
             }
         }
         DatabaseConnection::MySql(conn) => {
-            let rows = sqlx::query(query).fetch_all(&*conn).await?;
-
-            if rows.is_empty() {
+            let rows = sqlx::query(sqlx::AssertSqlSafe(query.to_owned()))
+                .fetch_all(&*conn)
+                .await?;
+            if !render::table(&rows, DecodableRow::decode_display) {
                 println!("No results found.");
-                return Ok(());
-            }
-
-            if let Some(first_row) = rows.first() {
-                let columns = first_row.columns();
-                for (i, column) in columns.iter().enumerate() {
-                    if i > 0 {
-                        print!(" | ");
-                    }
-                    print!("{:<15}", column.name());
-                }
-                println!();
-                println!("{:-<50}", "");
-            }
-
-            for row in rows {
-                let columns = row.columns();
-                for (i, column) in columns.iter().enumerate() {
-                    if i > 0 {
-                        print!(" | ");
-                    }
-                    let value = match row.try_get_raw(column.name()) {
-                        Ok(value) => {
-                            if value.is_null() {
-                                "NULL".to_string()
-                            } else {
-                                if let Ok(s) = row.try_get::<String, _>(column.name()) {
-                                    s
-                                } else if let Ok(i) = row.try_get::<i32, _>(column.name()) {
-                                    i.to_string()
-                                } else if let Ok(i) = row.try_get::<i64, _>(column.name()) {
-                                    i.to_string()
-                                } else if let Ok(b) = row.try_get::<bool, _>(column.name()) {
-                                    b.to_string()
-                                } else {
-                                    "<unprintable>".to_string()
-                                }
-                            }
-                        }
-                        Err(_) => "<error>".to_string(),
-                    };
-                    print!("{:<15}", value);
-                }
-                println!();
             }
         }
         DatabaseConnection::Sqlite(conn) => {
-            let rows = sqlx::query(query).fetch_all(&*conn).await?;
-
-            if rows.is_empty() {
+            let rows = sqlx::query(sqlx::AssertSqlSafe(query.to_owned()))
+                .fetch_all(&*conn)
+                .await?;
+            if !render::table(&rows, DecodableRow::decode_display) {
                 println!("No results found.");
-                return Ok(());
-            }
-
-            if let Some(first_row) = rows.first() {
-                let columns = first_row.columns();
-                for (i, column) in columns.iter().enumerate() {
-                    if i > 0 {
-                        print!(" | ");
-                    }
-                    print!("{:<15}", column.name());
-                }
-                println!();
-                println!("{:-<50}", "");
-            }
-
-            for row in rows {
-                let columns = row.columns();
-                for (i, column) in columns.iter().enumerate() {
-                    if i > 0 {
-                        print!(" | ");
-                    }
-                    let value = match row.try_get_raw(column.name()) {
-                        Ok(value) => {
-                            if value.is_null() {
-                                "NULL".to_string()
-                            } else {
-                                if let Ok(s) = row.try_get::<String, _>(column.name()) {
-                                    s
-                                } else if let Ok(i) = row.try_get::<i32, _>(column.name()) {
-                                    i.to_string()
-                                } else if let Ok(i) = row.try_get::<i64, _>(column.name()) {
-                                    i.to_string()
-                                } else if let Ok(b) = row.try_get::<bool, _>(column.name()) {
-                                    b.to_string()
-                                } else {
-                                    "<unprintable>".to_string()
-                                }
-                            }
-                        }
-                        Err(_) => "<error>".to_string(),
-                    };
-                    print!("{:<15}", value);
-                }
-                println!();
             }
         }
     }
@@ -381,11 +285,15 @@ async fn execute_query_json(
 
     let rows_json = match connection {
         DatabaseConnection::Pg(conn) => {
-            let rows = sqlx::query(query).fetch_all(&*conn).await?;
+            let rows = sqlx::query(sqlx::AssertSqlSafe(query.to_owned()))
+                .fetch_all(&*conn)
+                .await?;
             rows.iter().map(crate::database::values::pg_row).collect()
         }
         DatabaseConnection::MySql(conn) => {
-            let rows = sqlx::query(query).fetch_all(&*conn).await?;
+            let rows = sqlx::query(sqlx::AssertSqlSafe(query.to_owned()))
+                .fetch_all(&*conn)
+                .await?;
             let mut rows_data: Vec<serde_json::Map<String, serde_json::Value>> = Vec::new();
 
             for row in rows {
@@ -421,7 +329,9 @@ async fn execute_query_json(
             rows_data
         }
         DatabaseConnection::Sqlite(conn) => {
-            let rows = sqlx::query(query).fetch_all(&*conn).await?;
+            let rows = sqlx::query(sqlx::AssertSqlSafe(query.to_owned()))
+                .fetch_all(&*conn)
+                .await?;
             let mut rows_data: Vec<serde_json::Map<String, serde_json::Value>> = Vec::new();
 
             for row in rows {

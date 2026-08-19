@@ -1,4 +1,5 @@
-use rand::{distributions::Alphanumeric, Rng};
+use rand::distr::Alphanumeric;
+use rand::RngExt;
 
 pub(super) const DATABASE_PREFIX: &str = "rustyroad_validate_";
 pub(super) const USER_PREFIX: &str = "rr_validate_";
@@ -20,8 +21,8 @@ impl Identity {
 }
 
 fn random(length: usize) -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
+    rand::rng()
+        .sample_iter(Alphanumeric)
         .take(length)
         .map(char::from)
         .collect()

@@ -6,6 +6,8 @@
 mod arrays;
 mod ladder;
 pub mod postgres;
+pub mod rows;
 mod scalars;
 
 pub use postgres::{pg_display, pg_row};
+pub use rows::DecodableRow;

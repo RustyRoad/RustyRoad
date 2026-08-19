@@ -1155,17 +1155,17 @@ async fn execute_migration_with_connection(
             DatabaseConnection::Pg(connection) => {
                 println!("Executing query: {:?}", sql.clone().as_str());
                 //unwrap the arc
-                let rows_affected = connection.execute(sql.as_str()).await?;
+                let rows_affected = connection.execute(sqlx::AssertSqlSafe(sql.clone())).await?;
                 println!("{:?} rows affected", rows_affected);
             }
             DatabaseConnection::MySql(connection) => {
                 println!("Executing query: {:?}", sql);
-                let rows_affected = connection.execute(sql.as_str()).await?;
+                let rows_affected = connection.execute(sqlx::AssertSqlSafe(sql.clone())).await?;
                 println!("{:?} rows affected", rows_affected);
             }
             DatabaseConnection::Sqlite(connection) => {
                 println!("Executing query: {:?}", sql);
-                let rows_affected = connection.execute(sql.as_str()).await?;
+                let rows_affected = connection.execute(sqlx::AssertSqlSafe(sql.clone())).await?;
                 println!("{:?} rows affected", rows_affected);
             }
         };

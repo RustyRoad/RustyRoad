@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-08-16
+
+### Changed
+- All 37 direct dependencies updated to their latest published versions,
+  including major upgrades to sqlx 0.9, tera 2.1, rustyline 18, sqlparser 0.62,
+  syn 3, rand 0.10, mysql 28, mysql_async 0.37, bcrypt 0.19, strum 0.28,
+  sha2 0.11, toml 1.1, dirs 6, and dialoguer 0.12.
+- **Breaking for library consumers:** `DatabaseConnection` re-exports sqlx pool
+  types, so the sqlx 0.9 upgrade changes this crate's public API surface. Code
+  depending on `rustyroad` as a library must also move to sqlx 0.9. The
+  `rustyroad` command-line interface is unchanged.
+- Dynamic SQL is now routed through sqlx 0.9's `AssertSqlSafe` at every
+  internally-constructed query site. Identifier interpolation continues to pass
+  through the existing database, user, and password guards.
+- Query result rendering is factored into a shared aligned-table renderer and a
+  shared MySQL/SQLite value-decode ladder, so the three backends no longer carry
+  divergent copies of the same formatting and decoding logic.
+- Migration-ledger repair shares one transactional routine across PostgreSQL,
+  MySQL, and SQLite instead of repeating it per backend.
+
+### Fixed
+- Migration checksums are computed with an explicit hex encoder, keeping digests
+  byte-identical after sha2 0.11 removed `LowerHex` from digest output.
+- Template loading matches the tera 2.x API and enables the `glob_fs` feature
+  that `Tera::load_from_glob` now requires.
+- Secret and scoped-identity generation matches the rand 0.10 API.
+
 ## [1.7.4] - 2026-08-15
 
 ### Fixed

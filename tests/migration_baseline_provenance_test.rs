@@ -3,6 +3,16 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use std::fs;
 use std::process::Command;
 
+fn sha256_hex(bytes: &[u8]) -> String {
+    use std::fmt::Write as _;
+    let digest = Sha256::digest(bytes);
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest.iter() {
+        let _ = write!(hex, "{byte:02x}");
+    }
+    hex
+}
+
 #[tokio::test]
 async fn baseline_records_provenance_without_claiming_or_creating_effects() {
     let root = tempfile::tempdir().unwrap();
@@ -70,7 +80,7 @@ async fn baseline_records_provenance_without_claiming_or_creating_effects() {
     .await
     .unwrap();
     assert_eq!(row.0, "baselined");
-    assert_eq!(row.1, Some(format!("{:x}", Sha256::digest(up_sql))));
+    assert_eq!(row.1, Some(sha256_hex(up_sql.as_ref())));
     assert_eq!(row.2, None);
     pool.close().await;
 
@@ -173,6 +183,6 @@ async fn executed_migration_records_checksum_without_claiming_effect_verificatio
     .await
     .unwrap();
     assert_eq!(row.0, "executed");
-    assert_eq!(row.1, Some(format!("{:x}", Sha256::digest(up_sql))));
+    assert_eq!(row.1, Some(sha256_hex(up_sql.as_ref())));
     assert_eq!(row.2, None);
 }

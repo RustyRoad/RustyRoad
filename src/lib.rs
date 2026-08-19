@@ -599,7 +599,7 @@ static/styles.css
                 // Iterate through the vector of SQL commands and execute them one at a time
                 for sql_command in sql_content {
                     // Execute the SQL command
-                    sqlx::query(&sql_command)
+                    sqlx::query(sqlx::AssertSqlSafe(sql_command))
                         .execute(&mut connection)
                         .await
                         .unwrap_or_else(|why| panic!("Failed to execute SQL command: {why}"));
@@ -671,7 +671,7 @@ static/styles.css
                 // Iterate through the vector of SQL commands and execute them one at a time
                 for sql_command in sql_content {
                     // Execute the SQL command
-                    sqlx::query(&sql_command)
+                    sqlx::query(sqlx::AssertSqlSafe(sql_command))
                         .execute(&mut connection)
                         .await
                         .unwrap_or_else(|why| panic!("Failed to execute SQL command: {why}"));
@@ -745,7 +745,10 @@ static/styles.css
                 for sql_command in sql_content {
                     println!("Executing SQL command: {sql_command}"); // Log the SQL command being executed
                                                                       // Execute the SQL command
-                    match sqlx::query(&sql_command).execute(&mut connection).await {
+                    match sqlx::query(sqlx::AssertSqlSafe(sql_command.clone()))
+                        .execute(&mut connection)
+                        .await
+                    {
                         Ok(_) => {
                             println!("Successfully executed SQL command: {sql_command}");
                         }

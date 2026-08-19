@@ -1551,7 +1551,7 @@ async fn execute_query_internal(
 ) -> Result<Value, String> {
     match connection {
         DatabaseConnection::Pg(pool) => {
-            let rows: Vec<sqlx::postgres::PgRow> = sqlx::query(sql)
+            let rows: Vec<sqlx::postgres::PgRow> = sqlx::query(sqlx::AssertSqlSafe(sql.to_owned()))
                 .fetch_all(pool.as_ref())
                 .await
                 .map_err(|e| format!("Query failed: {}", e))?;
@@ -1582,10 +1582,11 @@ async fn execute_query_internal(
             Ok(json!(results))
         }
         DatabaseConnection::Sqlite(pool) => {
-            let rows: Vec<sqlx::sqlite::SqliteRow> = sqlx::query(sql)
-                .fetch_all(pool.as_ref())
-                .await
-                .map_err(|e| format!("Query failed: {}", e))?;
+            let rows: Vec<sqlx::sqlite::SqliteRow> =
+                sqlx::query(sqlx::AssertSqlSafe(sql.to_owned()))
+                    .fetch_all(pool.as_ref())
+                    .await
+                    .map_err(|e| format!("Query failed: {}", e))?;
 
             let mut results = Vec::new();
             for row in rows {
@@ -1609,7 +1610,7 @@ async fn execute_query_internal(
             Ok(json!(results))
         }
         DatabaseConnection::MySql(pool) => {
-            let rows: Vec<sqlx::mysql::MySqlRow> = sqlx::query(sql)
+            let rows: Vec<sqlx::mysql::MySqlRow> = sqlx::query(sqlx::AssertSqlSafe(sql.to_owned()))
                 .fetch_all(pool.as_ref())
                 .await
                 .map_err(|e| format!("Query failed: {}", e))?;

@@ -41,8 +41,14 @@ pub async fn run(
     sql: &str,
     binds: &[&str],
 ) -> Result<(), CustomMigrationError> {
-    dispatch!(connection, sqlx::query(sql), binds, execute, |_| ())
-        .map_err(CustomMigrationError::SqlxError)
+    dispatch!(
+        connection,
+        sqlx::query(sqlx::AssertSqlSafe(sql.to_owned())),
+        binds,
+        execute,
+        |_| ()
+    )
+    .map_err(CustomMigrationError::SqlxError)
 }
 
 /// Returns the first column of the first row, if any.
@@ -53,7 +59,7 @@ pub async fn scalar(
 ) -> Result<Option<String>, CustomMigrationError> {
     dispatch!(
         connection,
-        sqlx::query_scalar::<_, String>(sql),
+        sqlx::query_scalar::<_, String>(sqlx::AssertSqlSafe(sql.to_owned())),
         binds,
         fetch_optional,
         |row| row

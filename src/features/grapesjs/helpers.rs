@@ -11,13 +11,11 @@ pub fn render_index_page() -> Result<String, tera::Error> {
         panic!("Error: {}", err);
     });
 
-    let tera = match Tera::new("src/views/**/*") {
-        Ok(t) => t,
-        Err(e) => {
-            println!("Parsing error(s): {}", e);
-            ::std::process::exit(1);
-        }
-    };
+    let mut tera = Tera::new();
+    if let Err(e) = tera.load_from_glob("src/views/**/*") {
+        println!("Parsing error(s): {}", e);
+        ::std::process::exit(1);
+    }
     let mut templates = Vec::new();
 
     tera.get_template_names().for_each(|name| {
