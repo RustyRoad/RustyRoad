@@ -148,7 +148,6 @@ The Rust target writes `./src/db` by default:
   `/api`
 - `api.rs` — the developer-owned composition point for custom services
 - `mod.rs` — the module facade exported to the application
-- `openapi/` — the same generated OpenAPI contract and Hey API configuration
 
 Register the generated procedures with the application's pool:
 
@@ -164,8 +163,7 @@ HttpServer::new(move || {
 
 Database-derived files are regenerated on each pull. Composition files are
 written once and preserved, so custom code in `api.rs` or `api.ts` survives.
-Pass `--force` only when those files should be reset. To emit models without
-repositories and HTTP procedures, pass `--schema-only`.
+Pass `--force` only when those files should be reset.
 
 The Rust output expects `actix-web`, `serde`, and SQLx's Postgres/runtime and
 database-type features. The command prints the exact `cargo add` invocation

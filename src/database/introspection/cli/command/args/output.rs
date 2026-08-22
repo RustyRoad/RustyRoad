@@ -12,6 +12,10 @@ pub(in crate::database::introspection::cli::command) fn typescript(command: Comm
                 .long("out")
                 .short('o')
                 .help("Output folder (default: ./db)"),
+            Arg::new("language")
+                .long("language")
+                .value_parser(["typescript", "rust"])
+                .help("Output language (default: typescript)"),
             value("schema", "Database schema to introspect (default: public)"),
             clap::Arg::new("tables")
                 .long("tables")

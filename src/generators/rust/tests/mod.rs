@@ -4,6 +4,7 @@ mod actix_error_test;
 mod actix_mount_test;
 mod actix_test;
 mod actix_view_test;
+mod api_test;
 mod audit_type_test;
 mod casing_test;
 mod collision_fixture;

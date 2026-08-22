@@ -17,15 +17,21 @@
 //! which file holds it before opening anything.
 
 pub mod actix;
+mod api;
 pub mod casing;
 pub mod model;
+mod models;
+mod naming;
+mod procedures;
 pub mod render;
+mod repositories;
 pub mod types;
 pub mod writer;
 
 #[cfg(test)]
 mod tests;
 
+pub use api::write as write_api;
 pub use casing::{singularize, to_pascal, to_snake};
 pub use model::Model;
 pub use writer::{write, write_with, Layout, Options};

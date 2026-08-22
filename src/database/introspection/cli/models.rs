@@ -11,6 +11,9 @@ use crate::generators::{rust, tetherscript};
 use clap::ArgMatches;
 use std::path::PathBuf;
 
+/// Default canonical Rust API folder.
+const RUST_API_OUT: &str = "./src/db";
+
 /// Default Rust model folder, matching where a project's models already live.
 const RUST_OUT: &str = "./src/models";
 
@@ -26,6 +29,15 @@ const ZOD_OUT: &str = "./src/schemas";
 /// Writes whichever model languages were asked for.
 pub(super) fn write(matches: &ArgMatches, schema: &Schema) {
     let force = matches.get_flag("force");
+
+    if matches.get_one::<String>("language").map(String::as_str) == Some("rust") {
+        let out = folder(matches, "out", RUST_API_OUT);
+        match rust::write_api(&out, schema, force) {
+            Ok(outcomes) => report::artifacts("Rust API", &outcomes),
+            Err(error) => report::fail(&error.to_string()),
+        }
+        return;
+    }
 
     if matches.get_flag("models") {
         let out = folder(matches, "models-out", RUST_OUT);

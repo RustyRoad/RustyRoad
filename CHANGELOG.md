@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-08-22
+
+### Fixed
+- `rustyroad pull --language rust` now routes directly to the documented flat
+  Rust API generator and writes models, repositories, Actix procedures, and
+  preserved composition scaffolds under `./src/db` by default.
+- Flat Rust API generation now uses the shared SQL type mapper consistently for
+  model fields, primary keys, and create and patch inputs.
+
 ## [1.8.0] - 2026-08-16
 
 ### Changed

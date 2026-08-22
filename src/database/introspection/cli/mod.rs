@@ -46,6 +46,11 @@ pub async fn run(matches: &ArgMatches) {
         return report::empty(schema_name);
     }
 
+    if matches.get_one::<String>("language").map(String::as_str) == Some("rust") {
+        models::write(matches, &schema);
+        return;
+    }
+
     // Models are skipped when the TypeScript write failed, rather than layered onto a
     // half-written output folder.
     if typescript::write(matches, &schema) {

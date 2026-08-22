@@ -1,7 +1,7 @@
 //! Rust model rendering.
 
 use super::naming::{literal, pascal, snake};
-use super::types::{base_type, column_type};
+use super::types;
 use crate::database::introspection::{Column, Enum, Schema, Table};
 use std::collections::HashSet;
 
@@ -177,7 +177,7 @@ where
 }
 
 fn create_type(column: &Column, schema: &Schema) -> String {
-    let base = base_type(&column.sql_type, schema);
+    let base = base_type(column, schema);
     if column.nullable && column.default.is_some() {
         format!("Option<Option<{base}>>")
     } else if is_optional_input(column) {
@@ -188,7 +188,7 @@ fn create_type(column: &Column, schema: &Schema) -> String {
 }
 
 fn patch_type(column: &Column, schema: &Schema) -> String {
-    let base = base_type(&column.sql_type, schema);
+    let base = base_type(column, schema);
     if column.nullable {
         // Outer Option means "field omitted"; inner Option means JSON null.
         format!("Option<Option<{base}>>")
@@ -199,4 +199,14 @@ fn patch_type(column: &Column, schema: &Schema) -> String {
 
 fn is_optional_input(column: &Column) -> bool {
     column.nullable || column.default.is_some() || column.auto_increment
+}
+
+fn column_type(column: &Column, schema: &Schema) -> String {
+    types::map(column, schema).rust
+}
+
+fn base_type(column: &Column, schema: &Schema) -> String {
+    let mut required = column.clone();
+    required.nullable = false;
+    types::map(&required, schema).rust
 }

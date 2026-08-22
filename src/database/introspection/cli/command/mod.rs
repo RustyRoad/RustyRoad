@@ -48,4 +48,16 @@ mod tests {
             Some("generated")
         );
     }
+
+    #[test]
+    fn rust_language_is_accepted() {
+        let matches = pull()
+            .try_get_matches_from(["pull", "--language", "rust"])
+            .expect("--language rust should parse");
+
+        assert_eq!(
+            matches.get_one::<String>("language").map(String::as_str),
+            Some("rust")
+        );
+    }
 }

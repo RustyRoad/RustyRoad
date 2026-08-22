@@ -1,7 +1,7 @@
 //! SQLx repository rendering.
 
 use super::naming::{pascal, snake, sql};
-use super::types::base_type;
+use super::types;
 use crate::database::introspection::{Column, Schema, Table};
 
 /// Renders `repositories.rs`.
@@ -23,7 +23,7 @@ fn repository(table: &Table, schema: &Schema) -> String {
     let key = table
         .column(&table.primary_key[0])
         .expect("introspected primary key should reference a column");
-    let key_type = base_type(&key.sql_type, schema);
+    let key_type = types::map(key, schema).rust;
     let table_sql = sql(&table.name);
     let key_sql = sql(&key.name);
 
