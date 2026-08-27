@@ -28,6 +28,23 @@ fn drizzle_zod_helpers_are_imported() {
 }
 
 #[test]
+fn annotated_jsonb_columns_refine_all_schema_variants() {
+    let ts = render(&super::support::annotated_json_schema(), Casing::Camel);
+    let shape =
+        "z.object({\"city\": z.string(), \"population\": z.number().int().optional()}).strict()";
+
+    assert!(ts.contains(&format!(
+        "createSelectSchema(users, {{ metadata: {shape}.nullable() }})"
+    )));
+    assert!(ts.contains(&format!(
+        "createInsertSchema(users, {{ metadata: {shape}.nullable().optional() }})"
+    )));
+    assert!(ts.contains(&format!(
+        "createUpdateSchema(users, {{ metadata: {shape}.nullable().optional() }})"
+    )));
+}
+
+#[test]
 fn row_types_are_inferred_from_the_zod_schemas() {
     let ts = render(&schema(), Casing::Camel);
 

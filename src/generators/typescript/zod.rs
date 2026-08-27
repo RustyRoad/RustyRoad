@@ -8,7 +8,8 @@
 //! `fastify-type-provider-zod` then uses these directly for request validation,
 //! response serialization, and OpenAPI generation, which is what Hey API reads.
 
-use super::casing::{binding, to_pascal, Casing};
+use super::casing::{binding, identifier, to_pascal, Casing};
+use super::json_schema;
 use crate::database::introspection::{Schema, Table};
 
 /// Renders `zod.ts`.
@@ -52,13 +53,58 @@ fn header(schema: &Schema, casing: Casing) -> String {
 fn schemas(table: &Table, casing: Casing) -> String {
     let name = binding(&table.name, casing);
     let type_name = to_pascal(&table.name);
+    let select = refinements(table, casing, Variant::Select);
+    let insert = refinements(table, casing, Variant::Insert);
+    let update = refinements(table, casing, Variant::Update);
 
     format!(
-        "export const {name}SelectSchema = createSelectSchema({name});\n\
-         export const {name}InsertSchema = createInsertSchema({name});\n\
-         export const {name}UpdateSchema = createUpdateSchema({name});\n\n\
+        "export const {name}SelectSchema = createSelectSchema({name}{select});\n\
+         export const {name}InsertSchema = createInsertSchema({name}{insert});\n\
+         export const {name}UpdateSchema = createUpdateSchema({name}{update});\n\n\
          export type {type_name} = z.infer<typeof {name}SelectSchema>;\n\
          export type New{type_name} = z.infer<typeof {name}InsertSchema>;\n\
          export type Patch{type_name} = z.infer<typeof {name}UpdateSchema>;\n"
     )
+}
+
+#[derive(Clone, Copy)]
+enum Variant {
+    Select,
+    Insert,
+    Update,
+}
+
+/// Builds `drizzle-zod` refinements for database-annotated JSON columns.
+fn refinements(table: &Table, casing: Casing, variant: Variant) -> String {
+    let entries = table
+        .columns
+        .iter()
+        .filter_map(|column| {
+            let schema = column.json_schema.as_ref()?;
+            let mut expression = json_schema::zod(schema);
+            if column.nullable {
+                expression.push_str(".nullable()");
+            }
+            let optional = match variant {
+                Variant::Select => false,
+                Variant::Insert => {
+                    column.nullable || column.default.is_some() || column.auto_increment
+                }
+                Variant::Update => true,
+            };
+            if optional {
+                expression.push_str(".optional()");
+            }
+            Some(format!(
+                "{}: {expression}",
+                identifier(&column.name, casing)
+            ))
+        })
+        .collect::<Vec<_>>();
+
+    if entries.is_empty() {
+        String::new()
+    } else {
+        format!(", {{ {} }}", entries.join(", "))
+    }
 }

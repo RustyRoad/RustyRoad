@@ -24,7 +24,12 @@ pub async fn read(
     let columns = fetch(pool, queries::COLUMNS, schema_name).await?;
     let enums = fetch(pool, queries::ENUMS, schema_name).await?;
     let mut schema = Schema {
-        tables: assemble::tables(columns.iter().map(rows::column).collect()),
+        tables: assemble::tables(
+            columns
+                .iter()
+                .map(rows::column)
+                .collect::<Result<Vec<_>, _>>()?,
+        ),
         enums: group::enums(enums),
     };
 

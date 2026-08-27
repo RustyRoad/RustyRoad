@@ -1,6 +1,9 @@
 //! OpenAPI component schemas.
 
 use super::openapi_support::document;
+use super::support::annotated_json_schema;
+use crate::generators::typescript::heyapi::render;
+use crate::generators::typescript::Casing;
 
 #[test]
 fn three_variants_are_emitted_per_table() {
@@ -66,4 +69,21 @@ fn patch_requires_nothing() {
     assert!(parsed["components"]["schemas"]["PatchUsers"]
         .get("required")
         .is_none());
+}
+
+#[test]
+fn annotated_jsonb_shape_is_preserved() {
+    let contents = render(&annotated_json_schema(), Casing::Camel, "/api")
+        .into_iter()
+        .find(|file| file.name == "openapi.json")
+        .expect("OpenAPI file")
+        .contents;
+    let parsed: serde_json::Value = serde_json::from_str(&contents).expect("valid OpenAPI");
+    let metadata = &parsed["components"]["schemas"]["Users"]["properties"]["metadata"]["anyOf"][0];
+
+    assert_eq!(metadata["type"], "object");
+    assert_eq!(metadata["properties"]["city"]["type"], "string");
+    assert_eq!(metadata["properties"]["population"]["type"], "integer");
+    assert_eq!(metadata["required"][0], "city");
+    assert_eq!(metadata["additionalProperties"], false);
 }

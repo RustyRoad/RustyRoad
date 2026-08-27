@@ -7,6 +7,7 @@ pub(in crate::generators::rust::tests) fn column(name: &str, sql_type: &str) -> 
     Column {
         name: name.to_string(),
         sql_type: sql_type.to_string(),
+        json_schema: None,
         nullable: true,
         default: None,
         auto_increment: false,

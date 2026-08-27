@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.2] - 2026-08-27
+
+### Added
+- PostgreSQL `json` and `jsonb` columns can declare a concrete JSON Schema in a
+  column comment using the `@rustyroad-json-schema` marker.
+- Annotated JSON columns now generate concrete Drizzle TypeScript types,
+  `drizzle-zod` refinements, and matching OpenAPI 3.1 property schemas.
+
+### Changed
+- Malformed RustyRoad JSON Schema annotations stop introspection rather than
+  silently degrading generated contracts; unannotated JSON columns remain
+  backward-compatible as `Record<string, unknown>`.
+
 ## [1.8.1] - 2026-08-22
 
 ### Fixed

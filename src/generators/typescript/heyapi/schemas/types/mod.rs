@@ -3,6 +3,7 @@
 mod formats;
 
 use crate::database::introspection::{Column, Schema};
+use crate::generators::typescript::json_schema;
 
 /// Renders one property's JSON Schema type.
 ///
@@ -13,6 +14,10 @@ pub(super) fn property(schema: &Schema, column: &Column) -> String {
     // rather than collapsing the column to a plain string.
     if let Some(item) = schema.enum_type(column.sql_type.trim().trim_matches('"')) {
         return enum_property(item, column.nullable);
+    }
+
+    if let Some(schema) = column.json_schema.as_ref() {
+        return json_schema::openapi(schema, column.nullable);
     }
 
     let base = formats::base_type(&column.sql_type);

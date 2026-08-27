@@ -133,6 +133,35 @@ This writes `schema.ts` and `zod.ts` to `./src/schemas`; pass `--zod-out` to
 choose another folder. `--zod-models` and `--zod-models-out` are accepted as
 aliases.
 
+### Typed JSON/JSONB columns
+
+Unannotated PostgreSQL `json` and `jsonb` columns intentionally generate as
+`Record<string, unknown>`. To make the database own a richer shape, put a JSON
+Schema on the column comment after the `@rustyroad-json-schema` marker:
+
+```sql
+COMMENT ON COLUMN platform_trash_zone_mappings.coverage_metrics IS
+  'Targeting coverage metrics.
+@rustyroad-json-schema {"type":"object","properties":{"households":{"type":"integer"},"radiusMiles":{"type":"number"}},"required":["households"],"additionalProperties":false}';
+```
+
+The marker and its compact JSON value must occupy one line. Normal prose may
+appear on other lines. A malformed marker stops `pull` rather than silently
+weakening the generated contract.
+
+RustyRoad uses the annotation for all TypeScript outputs:
+
+- the Drizzle column's `$type<...>()` declaration;
+- `drizzle-zod` select, insert, and update refinements;
+- the OpenAPI 3.1 property schema and generated client type.
+
+The supported JSON Schema shape keywords are `type`, `properties`, `required`,
+`additionalProperties`, `items`, `enum`, `const`, `oneOf`, and `anyOf`. Supported
+scalar types are `string`, `number`, `integer`, `boolean`, and `null`. Keywords
+outside this subset remain in OpenAPI but do not add TypeScript or Zod behavior.
+Normalize data into typed columns or related tables when it must participate in
+foreign keys, indexes, uniqueness, or relational queries.
+
 Use the Rust target for the equivalent Actix + SQLx stack:
 
 ```bash

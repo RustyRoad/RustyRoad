@@ -8,6 +8,7 @@ pub const COLUMNS: &str = "\
     SELECT c.relname AS table_name, \
            a.attname AS column_name, \
            format_type(a.atttypid, a.atttypmod) AS sql_type, \
+           col_description(a.attrelid, a.attnum) AS column_comment, \
            NOT a.attnotnull AS nullable, \
            pg_get_expr(d.adbin, d.adrelid) AS default_value, \
            (a.attidentity <> '' OR pg_get_expr(d.adbin, d.adrelid) LIKE 'nextval%') AS auto_increment \

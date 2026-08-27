@@ -22,6 +22,10 @@ pub struct Column {
     pub name: String,
     /// SQL type as reported by the database, e.g. `character varying(255)`.
     pub sql_type: String,
+    /// Opt-in JSON Schema read from an `@rustyroad-json-schema` column comment.
+    ///
+    /// This remains `None` for ordinary columns and unannotated JSON values.
+    pub json_schema: Option<serde_json::Value>,
     pub nullable: bool,
     pub default: Option<String>,
     /// True when the column is `serial`/`identity` backed.
