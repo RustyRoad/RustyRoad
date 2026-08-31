@@ -7,7 +7,7 @@ use crate::database::introspection::Table;
 /// Renders the list query.
 pub(super) fn list(name: &str, type_name: &str) -> String {
     format!(
-        "\tasync list(db: Database): Promise<{type_name}Row[]> {{\n\
+        "\tasync list(db: RepositoryDatabase): Promise<{type_name}Row[]> {{\n\
          \t\treturn db.select().from({name});\n\
          \t}},\n"
     )
@@ -25,7 +25,7 @@ pub(super) fn find(
     let key_type = key_type(table, key, casing);
 
     format!(
-        "\tasync find(db: Database, id: {key_type}): Promise<{type_name}Row | undefined> {{\n\
+        "\tasync find(db: RepositoryDatabase, id: {key_type}): Promise<{type_name}Row | undefined> {{\n\
          \t\tconst rows = await db.select().from({name}).where(eq({name}.{field}, id)).limit(1);\n\
          \t\treturn rows[0];\n\
          \t}},\n"

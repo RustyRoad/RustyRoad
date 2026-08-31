@@ -10,7 +10,7 @@ fn integer_keys_are_inferred_from_the_row() {
     let ts = render(&schema(), Casing::Camel);
 
     // The inferred field resolves to number while remaining coupled to Drizzle.
-    assert!(ts.contains(r#"find(db: Database, id: UsersRow["id"])"#));
+    assert!(ts.contains(r#"find(db: RepositoryDatabase, id: UsersRow["id"])"#));
 }
 
 #[test]
@@ -26,7 +26,7 @@ fn uuid_keys_are_inferred_from_the_row() {
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel);
-    assert!(ts.contains(r#"find(db: Database, id: SessionsRow["id"])"#));
+    assert!(ts.contains(r#"find(db: RepositoryDatabase, id: SessionsRow["id"])"#));
 }
 
 #[test]

@@ -49,8 +49,10 @@ fn header(schema: &Schema, casing: Casing) -> String {
          import {{ eq }} from \"drizzle-orm\";\n\
          import type {{ InferSelectModel, InferInsertModel }} from \"drizzle-orm\";\n\
          import {{ {tables} }} from \"./schema\";\n\n\
-         /** Database handle shared by every repository below. */\n\
-         export type Database = ReturnType<typeof drizzle>;\n\n\
+         /** Root Drizzle database handle returned by the client factory. */\n\
+         export type Database = ReturnType<typeof drizzle>;\n\
+         /** Structural CRUD handle accepted by repositories and transactions. */\n\
+         export type RepositoryDatabase = Pick<Database, \"select\" | \"insert\" | \"update\" | \"delete\">;\n\n\
          /** Opens a client against `connectionString`. */\n\
          export function createClient(connectionString: string): Database {{\n\
          \treturn drizzle(connectionString);\n\

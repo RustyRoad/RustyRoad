@@ -19,6 +19,10 @@ fn row_types_are_inferred_from_the_drizzle_tables() {
 fn repository_signatures_use_the_row_types() {
     let ts = render(&schema(), Casing::Camel);
 
+    assert!(ts.contains(
+        r#"export type RepositoryDatabase = Pick<Database, "select" | "insert" | "update" | "delete">;"#
+    ));
+    assert!(ts.contains("list(db: RepositoryDatabase): Promise<UsersRow[]>"));
     assert!(ts.contains("Promise<UsersRow[]>"));
     assert!(ts.contains("values: NewUsersRow"));
     // A PATCH carries any subset of columns.
@@ -39,6 +43,7 @@ fn repository_covers_full_crud() {
 fn client_factory_is_emitted() {
     let ts = render(&schema(), Casing::Camel);
 
+    assert!(ts.contains("export type Database = ReturnType<typeof drizzle>;"));
     assert!(ts.contains("export function createClient(connectionString: string): Database"));
 }
 
@@ -51,7 +56,7 @@ fn enum_primary_keys_use_the_inferred_column_type_for_every_keyed_query() {
     // overload rather than widening it to an incompatible plain string.
     assert_eq!(ts.matches(key_type).count(), 3);
     assert!(ts.contains("eq(campaignWorkflowNodeBindings.nodeKind, id)"));
-    assert!(!ts.contains("async find(db: Database, id: string"));
-    assert!(!ts.contains("async update(db: Database, id: string"));
-    assert!(!ts.contains("async remove(db: Database, id: string"));
+    assert!(!ts.contains("async find(db: RepositoryDatabase, id: string"));
+    assert!(!ts.contains("async update(db: RepositoryDatabase, id: string"));
+    assert!(!ts.contains("async remove(db: RepositoryDatabase, id: string"));
 }

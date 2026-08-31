@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.3] - 2026-08-31
+
+### Fixed
+- Generated TypeScript CRUD repositories now accept both root Drizzle clients
+  and transaction handles through the generated `RepositoryDatabase` type while
+  preserving PostgreSQL-derived select and insert row types.
+
 ## [1.8.2] - 2026-08-27
 
 ### Added
