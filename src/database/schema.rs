@@ -14,9 +14,18 @@ struct SchemaColumn {
 }
 
 #[derive(serde::Serialize)]
+struct SchemaCheck {
+    name: String,
+    definition: String,
+}
+
+#[derive(serde::Serialize)]
 struct SchemaTable {
     name: String,
     columns: Vec<SchemaColumn>,
+    /// CHECK constraints as rendered by `pg_get_constraintdef` (Postgres only).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    check_constraints: Vec<SchemaCheck>,
 }
 
 #[derive(serde::Serialize)]
@@ -61,6 +70,26 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
                 .fetch_all(&*conn)
                 .await?;
 
+                let checks = sqlx::query(
+                    "SELECT con.conname::text AS name, \
+                            pg_get_constraintdef(con.oid) AS definition \
+                       FROM pg_constraint con \
+                       JOIN pg_class c ON c.oid = con.conrelid \
+                       JOIN pg_namespace n ON n.oid = c.relnamespace \
+                      WHERE n.nspname = 'public' AND c.relname = $1 AND con.contype = 'c' \
+                      ORDER BY con.conname",
+                )
+                .bind(&table_name)
+                .fetch_all(&*conn)
+                .await?;
+                let check_constraints: Vec<SchemaCheck> = checks
+                    .iter()
+                    .map(|row| SchemaCheck {
+                        name: row.get("name"),
+                        definition: row.get("definition"),
+                    })
+                    .collect();
+
                 let mut table_columns: Vec<SchemaColumn> = Vec::new();
                 for col in columns {
                     let name: String = col.get("column_name");
@@ -75,6 +104,7 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
                 all_tables.push(SchemaTable {
                     name: table_name,
                     columns: table_columns,
+                    check_constraints,
                 });
             }
         }
@@ -112,6 +142,7 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
                 all_tables.push(SchemaTable {
                     name: table_name,
                     columns: table_columns,
+                    check_constraints: Vec::new(),
                 });
             }
         }
@@ -147,6 +178,7 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
                 all_tables.push(SchemaTable {
                     name: table_name,
                     columns: table_columns,
+                    check_constraints: Vec::new(),
                 });
             }
         }
@@ -171,6 +203,9 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
                     col.r#type,
                     if col.nullable { "" } else { " NOT NULL" }
                 );
+            }
+            for check in &table.check_constraints {
+                println!("  CHECK {}: {}", check.name, check.definition);
             }
             println!("{:-<30}", "");
         }

@@ -1146,29 +1146,7 @@ Example:\n\
                     .arg_required_else_help(false)
                     .allow_external_subcommands(false),
             )
-            .subcommand(
-                Command::new("db")
-                    .about("Database operations")
-                    .subcommand(
-                        Command::new("schema")
-                            .about("Inspect database schema")
-                            .long_about(
-                                "Lists all tables and their columns from the connected database.\n\n\
-                                CONFIG:\n\
-                                 Reads from ./rustyroad.toml by default.\n\
-                                 Set ENVIRONMENT=<env> to use ./rustyroad.<env>.toml instead.\n\n\
-                                PREREQUISITES:\n\
-                                 - Must be run from your RustyRoad project root\n\
-                                 - Database must be reachable\n\n\
-                                Supports: PostgreSQL, MySQL, SQLite\n\n\
-                                EXAMPLE:\n\
-                                 rustyroad db schema\n\
-                                 ENVIRONMENT=prod rustyroad db schema\n"
-                            )
-                    )
-                    .subcommand_required(true)
-                    .arg_required_else_help(true)
-            )
+            .subcommand(database::cli::db_command())
             .subcommand(database::introspection::cli::pull_command())
             .subcommand(
                 Command::new("query")
@@ -1597,6 +1575,11 @@ Example:\n\
                     inspect_schema(format)
                         .await
                         .unwrap_or_else(|e| println!("Error inspecting schema: {}", e));
+                }
+                Some(("enums", _)) => {
+                    inspect_enums(format)
+                        .await
+                        .unwrap_or_else(|e| println!("Error inspecting enums: {}", e));
                 }
                 _ => {
                     println!("Invalid db command");

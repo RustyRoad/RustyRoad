@@ -326,6 +326,12 @@ Inspect schema:
 rustyroad db schema
 ```
 
+Inspect enum types and their allowed values:
+
+```bash
+rustyroad db enums
+```
+
 Run ad-hoc queries:
 
 ```bash
@@ -341,6 +347,7 @@ RustyRoad includes an MCP (Model Context Protocol) server that exposes database 
 
 - `rustyroad_query` - Execute SQL queries
 - `rustyroad_schema` - Get database schema  
+- `rustyroad_enums` - Get database enum types and their allowed values
 - `rustyroad_migrate` - Run migrations
 - `rustyroad_migration_generate` - Create new migrations
 - `rustyroad_config` - View configuration

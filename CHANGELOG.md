@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.4] - 2026-10-01
+
+### Added
+- `rustyroad db schema` reports PostgreSQL CHECK constraints per table
+  (`check_constraints` in JSON output, `CHECK name: definition` in text).
+- `rustyroad db enums` lists the database's user-defined enum types and their
+  allowed values. PostgreSQL reports enum types from the catalog in declaration
+  order (reusing the introspection query that code generation is built on),
+  MySQL reports enum columns with their value lists, and SQLite reports an
+  empty list. Supports the global `--format json` flag like `db schema`.
+- `rustyroad_enums` MCP tool exposing the same enum listing to AI agents.
+
 ## [1.8.3] - 2026-08-31
 
 ### Fixed
