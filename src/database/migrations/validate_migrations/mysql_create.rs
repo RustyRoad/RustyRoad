@@ -3,7 +3,7 @@ use super::error::MigrationValidationError;
 use super::guard;
 use super::identity::Identity;
 use super::mysql_drop;
-use sqlx::MySqlPool;
+use sqlx::{AssertSqlSafe, MySqlPool};
 
 pub(super) async fn resources(
     pool: &MySqlPool,
@@ -16,13 +16,16 @@ pub(super) async fn resources(
         "CREATE USER '{}'@'%' IDENTIFIED BY '{}'",
         id.user, id.password
     );
-    sqlx::query(&user).execute(pool).await.map_err(|error| {
-        MigrationValidationError::new(format!(
-            "Could not create a scoped MySQL validation user: {error}"
-        ))
-    })?;
+    sqlx::query(AssertSqlSafe(user))
+        .execute(pool)
+        .await
+        .map_err(|error| {
+            MigrationValidationError::new(format!(
+                "Could not create a scoped MySQL validation user: {error}"
+            ))
+        })?;
     let database = format!("CREATE DATABASE `{}`", id.database);
-    if let Err(error) = sqlx::query(&database).execute(pool).await {
+    if let Err(error) = sqlx::query(AssertSqlSafe(database)).execute(pool).await {
         let failure = MigrationValidationError::new(format!(
             "Could not create isolated MySQL validation database '{}': {error}",
             id.database
@@ -35,7 +38,7 @@ pub(super) async fn resources(
         "GRANT ALL PRIVILEGES ON `{}`.* TO '{}'@'%'",
         id.database, id.user
     );
-    if let Err(error) = sqlx::query(&grant).execute(pool).await {
+    if let Err(error) = sqlx::query(AssertSqlSafe(grant)).execute(pool).await {
         let failure = MigrationValidationError::new(format!(
             "Could not grant access to isolated MySQL validation database: {error}"
         ));

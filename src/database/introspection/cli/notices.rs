@@ -1,7 +1,5 @@
 //! Warnings shown after a successful pull.
 
-use super::Language;
-
 /// Warns about tables the composition file does not reference.
 ///
 /// Their procedures were generated but are unreachable, which is invisible without
@@ -36,14 +34,35 @@ pub(super) fn preserved() {
 }
 
 /// Prints the install line for the generated code's dependencies.
-pub(super) fn next_steps(language: Language) {
-    match language {
-        Language::TypeScript => println!(
-            "\nNext:\n  npm install drizzle-orm pg zod drizzle-zod fastify \\\n\
-            \x20   @orpc/server @orpc/openapi @orpc/zod"
-        ),
-        Language::Rust => println!(
-            "\nNext:\n  cargo add actix-web serde serde_json chrono uuid bigdecimal mac_address sqlx --features serde/derive,chrono/serde,uuid/serde,bigdecimal/serde,mac_address/serde,sqlx/runtime-tokio,sqlx/postgres,sqlx/chrono,sqlx/uuid,sqlx/json,sqlx/bigdecimal,sqlx/ipnetwork,sqlx/mac_address"
-        ),
+pub(super) fn next_steps() {
+    println!(
+        "
+Next:
+  npm install drizzle-orm pg zod drizzle-zod fastify \
+         @orpc/server @orpc/openapi @orpc/zod"
+    );
+}
+
+/// Warns about models the parent module does not declare.
+///
+/// Their files were written but are not compiled, which is invisible without saying
+/// so: a module Rust never sees produces no error of its own.
+pub(super) fn undeclared(models: &[String]) {
+    if models.is_empty() {
+        return;
     }
+
+    println!(
+        "\nWarning: {} model(s) were written but are not declared, because the \
+         parent mod.rs is yours and does not list them:",
+        models.len()
+    );
+    for model in models {
+        println!("  {model}");
+    }
+    println!(
+        "Declare them in the parent mod.rs, for example:\n\
+        \x20 pub mod {};",
+        models[0]
+    );
 }

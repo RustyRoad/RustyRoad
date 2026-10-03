@@ -32,7 +32,7 @@ pub(super) fn update(table: &Table, path: String, casing: Casing) -> Procedure {
         path,
         input: format!(
             "z.object({{ id: {} }}).and({name}UpdateSchema)",
-            key_schema(table)
+            key_schema(table, casing)
         ),
         output: format!("{name}SelectSchema"),
         body: format!(
@@ -50,7 +50,7 @@ pub(super) fn delete(table: &Table, path: String, casing: Casing) -> Procedure {
         name: "delete",
         method: "DELETE",
         path,
-        input: format!("z.object({{ id: {} }})", key_schema(table)),
+        input: format!("z.object({{ id: {} }})", key_schema(table, casing)),
         output: "z.object({ deleted: z.boolean() })".to_string(),
         // Parenthesized because an arrow body starting with `{` parses as a block
         // rather than an object literal, which would return void.

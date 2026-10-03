@@ -46,7 +46,7 @@ pub async fn run(
     let mut last: Option<Vec<String>> = None;
     for executed in 0..MAX_BATCHES {
         let sql = batch::batch(table, &primary_key, batch_size, last.as_deref());
-        let row = sqlx::query(&sql)
+        let row = sqlx::query(sqlx::AssertSqlSafe(sql))
             .fetch_optional(pool.as_ref())
             .await
             .map_err(CustomMigrationError::SqlxError)?;

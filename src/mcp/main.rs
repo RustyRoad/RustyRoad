@@ -28,7 +28,6 @@
 
 use regex::Regex;
 use rustyroad::database::{get_environment, Database, DatabaseConnection};
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqlx::{Column, Row};
 use std::env;
@@ -37,54 +36,18 @@ use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
 use std::process::Command;
 
-/// MCP Protocol version
-const PROTOCOL_VERSION: &str = "2024-11-05";
+mod enums;
+mod protocol;
 
-/// Server info
-const SERVER_NAME: &str = "rustyroad-mcp";
-const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct JsonRpcRequest {
-    jsonrpc: String,
-    id: Option<Value>,
-    method: String,
-    #[serde(default)]
-    params: Value,
-}
-
-#[derive(Debug, Serialize)]
-struct JsonRpcResponse {
-    jsonrpc: String,
-    id: Value,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    result: Option<Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    error: Option<JsonRpcError>,
-}
-
-#[derive(Debug, Serialize)]
-struct JsonRpcError {
-    code: i32,
-    message: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    data: Option<Value>,
-}
-
-/// Tool definition for MCP
-#[derive(Debug, Serialize)]
-struct Tool {
-    name: String,
-    description: String,
-    #[serde(rename = "inputSchema")]
-    input_schema: Value,
-}
+use protocol::{
+    JsonRpcError, JsonRpcRequest, JsonRpcResponse, Tool, PROTOCOL_VERSION, SERVER_NAME,
+    SERVER_VERSION,
+};
 
 /// Server state
-struct McpServer {
-    project_dir: PathBuf,
-    environment: String,
+pub(crate) struct McpServer {
+    pub(crate) project_dir: PathBuf,
+    pub(crate) environment: String,
 }
 
 impl McpServer {
@@ -291,6 +254,7 @@ impl McpServer {
                     }
                 }),
             },
+            enums::tool_definition(),
         ]
     }
 
@@ -298,6 +262,7 @@ impl McpServer {
         match name {
             "rustyroad_query" => self.handle_query(arguments).await,
             "rustyroad_schema" => self.handle_schema(arguments).await,
+            "rustyroad_enums" => self.handle_enums(arguments).await,
             "rustyroad_migrate" => self.handle_migrate(arguments).await,
             "rustyroad_migration_generate" => self.handle_migration_generate(arguments).await,
             "rustyroad_config" => self.handle_config(arguments),
@@ -1551,7 +1516,7 @@ async fn execute_query_internal(
 ) -> Result<Value, String> {
     match connection {
         DatabaseConnection::Pg(pool) => {
-            let rows: Vec<sqlx::postgres::PgRow> = sqlx::query(sql)
+            let rows: Vec<sqlx::postgres::PgRow> = sqlx::query(sqlx::AssertSqlSafe(sql.to_owned()))
                 .fetch_all(pool.as_ref())
                 .await
                 .map_err(|e| format!("Query failed: {}", e))?;
@@ -1582,10 +1547,11 @@ async fn execute_query_internal(
             Ok(json!(results))
         }
         DatabaseConnection::Sqlite(pool) => {
-            let rows: Vec<sqlx::sqlite::SqliteRow> = sqlx::query(sql)
-                .fetch_all(pool.as_ref())
-                .await
-                .map_err(|e| format!("Query failed: {}", e))?;
+            let rows: Vec<sqlx::sqlite::SqliteRow> =
+                sqlx::query(sqlx::AssertSqlSafe(sql.to_owned()))
+                    .fetch_all(pool.as_ref())
+                    .await
+                    .map_err(|e| format!("Query failed: {}", e))?;
 
             let mut results = Vec::new();
             for row in rows {
@@ -1609,7 +1575,7 @@ async fn execute_query_internal(
             Ok(json!(results))
         }
         DatabaseConnection::MySql(pool) => {
-            let rows: Vec<sqlx::mysql::MySqlRow> = sqlx::query(sql)
+            let rows: Vec<sqlx::mysql::MySqlRow> = sqlx::query(sqlx::AssertSqlSafe(sql.to_owned()))
                 .fetch_all(pool.as_ref())
                 .await
                 .map_err(|e| format!("Query failed: {}", e))?;

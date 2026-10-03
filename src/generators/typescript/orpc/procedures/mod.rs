@@ -8,7 +8,7 @@ mod read;
 mod write;
 
 use crate::database::introspection::Table;
-use crate::generators::typescript::casing::Casing;
+use crate::generators::typescript::casing::{binding, Casing};
 
 /// One generated oRPC procedure.
 pub(super) struct Procedure {
@@ -44,10 +44,16 @@ pub(super) fn procedures(table: &Table, prefix: &str, casing: Casing) -> Vec<Pro
 ///
 /// `coerce` is required because a REST path parameter arrives as a string, while a
 /// direct RPC call may already pass the right type.
-fn key_schema(table: &Table) -> &'static str {
+fn key_schema(table: &Table, casing: Casing) -> String {
     let key = &table.primary_key[0];
-    match crate::generators::typescript::client::key_type(table, key) {
-        "number" => "z.coerce.number().int()",
-        _ => "z.string()",
+    if crate::generators::typescript::client::key_is_numeric(table, key) {
+        return "z.coerce.number().int()".to_string();
     }
+
+    let name = binding(&table.name, casing);
+    let property = crate::generators::typescript::client::quoted_property(key, casing);
+
+    // Reusing the derived field schema preserves enum unions (and refinements such
+    // as UUID validation) while ensuring direct RPC input matches the repository.
+    format!("{name}SelectSchema.shape[{property}]")
 }

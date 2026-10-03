@@ -18,19 +18,43 @@ pub(super) fn row_types(table: &Table, casing: Casing) -> String {
 }
 
 /// Returns the TypeScript type of a table's primary key column.
-pub(in crate::generators::typescript) fn key_type(table: &Table, key: &str) -> &'static str {
+///
+/// Indexing the inferred select row preserves the exact Drizzle type, including
+/// PostgreSQL enum unions. Reducing every nonnumeric key to `string` makes the
+/// value too wide for Drizzle's `eq(column, value)` overload.
+pub(in crate::generators::typescript) fn key_type(
+    table: &Table,
+    key: &str,
+    casing: Casing,
+) -> String {
+    format!(
+        "{}Row[{}]",
+        to_pascal(&table.name),
+        quoted_property(key, casing)
+    )
+}
+
+/// Returns whether a key is represented as a JavaScript number.
+///
+/// The router needs this separately from the repository type so REST path values
+/// can be coerced before reaching a numerically typed Drizzle column.
+pub(in crate::generators::typescript) fn key_is_numeric(table: &Table, key: &str) -> bool {
     let Some(column) = table.column(key) else {
-        return "string";
+        return false;
     };
     let lowered = column.sql_type.to_lowercase();
 
-    let numeric = ["int", "smallint", "bigint", "serial", "real", "double"]
+    ["int", "smallint", "bigint", "serial", "real", "double"]
         .iter()
-        .any(|prefix| lowered.starts_with(prefix));
+        .any(|prefix| lowered.starts_with(prefix))
+}
 
-    if numeric {
-        "number"
+/// Returns a quoted property key after applying the configured casing.
+pub(in crate::generators::typescript) fn quoted_property(key: &str, casing: Casing) -> String {
+    let property = super::super::casing::identifier(key, casing);
+    if property.starts_with('"') {
+        property
     } else {
-        "string"
+        format!("\"{property}\"")
     }
 }

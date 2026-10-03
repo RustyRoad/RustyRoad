@@ -1,10 +1,8 @@
 //! Writing generated TypeScript into the output folder.
 
-mod emit;
 mod files;
 mod groups;
 mod outputs;
-mod ownership;
 mod report;
 mod wiring;
 
@@ -14,9 +12,9 @@ use crate::database::introspection::Schema;
 use std::path::Path;
 use std::{fs, io};
 
+pub use crate::generators::ownership::Outcome;
 pub use files::ROUTE_PREFIX;
 pub use outputs::Outputs;
-pub use ownership::Outcome;
 pub use report::Report;
 
 /// Subfolder holding the OpenAPI document and Hey API config.

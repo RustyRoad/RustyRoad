@@ -6,7 +6,13 @@ use crate::generators::typescript::types::map;
 fn integers_map_to_their_builders() {
     assert_eq!(map("integer", false).import, "integer");
     assert_eq!(map("smallint", false).import, "smallint");
-    assert_eq!(map("bigint", false).import, "bigint");
+    let bigint = map("bigint", false);
+    assert_eq!(bigint.import, "bigint");
+    assert_eq!(bigint.options.as_deref(), Some("{ mode: 'number' }"));
+
+    let int8 = map("int8", false);
+    assert_eq!(int8.import, "bigint");
+    assert_eq!(int8.options.as_deref(), Some("{ mode: 'number' }"));
 }
 
 #[test]

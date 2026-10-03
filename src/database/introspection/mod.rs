@@ -8,7 +8,7 @@ mod assemble;
 pub mod cli;
 pub mod model;
 pub mod postgres;
-mod queries;
+pub(crate) mod queries;
 
 pub use model::{Column, Enum, ForeignKey, Index, Schema, Table, Unique};
 pub use postgres::read;

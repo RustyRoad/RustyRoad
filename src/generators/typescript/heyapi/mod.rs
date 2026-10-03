@@ -15,7 +15,7 @@ mod paths;
 mod schemas;
 
 use super::casing::Casing;
-use super::client::key_type;
+use super::client::key_is_numeric;
 use crate::database::introspection::{Schema, Table};
 use operations::Operation;
 
@@ -57,5 +57,9 @@ fn collect(schema: &Schema, prefix: &str) -> Vec<Operation> {
 
 /// Returns the TypeScript type of a table's primary key.
 fn primary_key_type(table: &Table) -> &'static str {
-    key_type(table, &table.primary_key[0])
+    if key_is_numeric(table, &table.primary_key[0]) {
+        "number"
+    } else {
+        "string"
+    }
 }

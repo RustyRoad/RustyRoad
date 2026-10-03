@@ -7,7 +7,7 @@ use crate::database::introspection::Table;
 /// Renders the insert.
 pub(super) fn create(name: &str, type_name: &str) -> String {
     format!(
-        "\tasync create(db: Database, values: New{type_name}Row): Promise<{type_name}Row> {{\n\
+        "\tasync create(db: RepositoryDatabase, values: New{type_name}Row): Promise<{type_name}Row> {{\n\
          \t\tconst rows = await db.insert({name}).values(values).returning();\n\
          \t\treturn rows[0];\n\
          \t}},\n"
@@ -23,10 +23,10 @@ pub(super) fn update(
     casing: Casing,
 ) -> String {
     let field = identifier(key, casing);
-    let key_type = key_type(table, key);
+    let key_type = key_type(table, key, casing);
 
     format!(
-        "\tasync update(db: Database, id: {key_type}, values: Partial<New{type_name}Row>): Promise<{type_name}Row | undefined> {{\n\
+        "\tasync update(db: RepositoryDatabase, id: {key_type}, values: Partial<New{type_name}Row>): Promise<{type_name}Row | undefined> {{\n\
          \t\tconst rows = await db.update({name}).set(values).where(eq({name}.{field}, id)).returning();\n\
          \t\treturn rows[0];\n\
          \t}},\n"
@@ -36,10 +36,10 @@ pub(super) fn update(
 /// Renders the delete.
 pub(super) fn remove(name: &str, table: &Table, key: &str, casing: Casing) -> String {
     let field = identifier(key, casing);
-    let key_type = key_type(table, key);
+    let key_type = key_type(table, key, casing);
 
     format!(
-        "\tasync remove(db: Database, id: {key_type}): Promise<boolean> {{\n\
+        "\tasync remove(db: RepositoryDatabase, id: {key_type}): Promise<boolean> {{\n\
          \t\tconst rows = await db.delete({name}).where(eq({name}.{field}, id)).returning();\n\
          \t\treturn rows.length > 0;\n\
          \t}},\n"

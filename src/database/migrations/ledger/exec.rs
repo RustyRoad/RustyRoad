@@ -33,8 +33,14 @@ pub(super) async fn execute(
     sql: &str,
     binds: &[&str],
 ) -> Result<(), CustomMigrationError> {
-    dispatch!(connection, sqlx::query(sql), binds, execute, |_| ())
-        .map_err(CustomMigrationError::SqlxError)
+    dispatch!(
+        connection,
+        sqlx::query(sqlx::AssertSqlSafe(sql.to_owned())),
+        binds,
+        execute,
+        |_| ()
+    )
+    .map_err(CustomMigrationError::SqlxError)
 }
 
 /// Returns `true` when the query yields at least one row.
@@ -45,7 +51,7 @@ pub(super) async fn exists(
 ) -> Result<bool, CustomMigrationError> {
     dispatch!(
         connection,
-        sqlx::query_scalar::<_, i32>(sql),
+        sqlx::query_scalar::<_, i32>(sqlx::AssertSqlSafe(sql.to_owned())),
         binds,
         fetch_optional,
         |row: Option<i32>| row.is_some()

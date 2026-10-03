@@ -122,6 +122,46 @@ rustyroad pull
 This writes Drizzle tables and repositories, Zod schemas, oRPC procedures, a
 Fastify server adapter, OpenAPI, and a Hey API configuration to `./db`.
 
+To also write a standalone Drizzle/Zod schema pair for application validation,
+use:
+
+```bash
+rustyroad pull --zod
+```
+
+This writes `schema.ts` and `zod.ts` to `./src/schemas`; pass `--zod-out` to
+choose another folder. `--zod-models` and `--zod-models-out` are accepted as
+aliases.
+
+### Typed JSON/JSONB columns
+
+Unannotated PostgreSQL `json` and `jsonb` columns intentionally generate as
+`Record<string, unknown>`. To make the database own a richer shape, put a JSON
+Schema on the column comment after the `@rustyroad-json-schema` marker:
+
+```sql
+COMMENT ON COLUMN platform_trash_zone_mappings.coverage_metrics IS
+  'Targeting coverage metrics.
+@rustyroad-json-schema {"type":"object","properties":{"households":{"type":"integer"},"radiusMiles":{"type":"number"}},"required":["households"],"additionalProperties":false}';
+```
+
+The marker and its compact JSON value must occupy one line. Normal prose may
+appear on other lines. A malformed marker stops `pull` rather than silently
+weakening the generated contract.
+
+RustyRoad uses the annotation for all TypeScript outputs:
+
+- the Drizzle column's `$type<...>()` declaration;
+- `drizzle-zod` select, insert, and update refinements;
+- the OpenAPI 3.1 property schema and generated client type.
+
+The supported JSON Schema shape keywords are `type`, `properties`, `required`,
+`additionalProperties`, `items`, `enum`, `const`, `oneOf`, and `anyOf`. Supported
+scalar types are `string`, `number`, `integer`, `boolean`, and `null`. Keywords
+outside this subset remain in OpenAPI but do not add TypeScript or Zod behavior.
+Normalize data into typed columns or related tables when it must participate in
+foreign keys, indexes, uniqueness, or relational queries.
+
 Use the Rust target for the equivalent Actix + SQLx stack:
 
 ```bash
@@ -137,7 +177,6 @@ The Rust target writes `./src/db` by default:
   `/api`
 - `api.rs` — the developer-owned composition point for custom services
 - `mod.rs` — the module facade exported to the application
-- `openapi/` — the same generated OpenAPI contract and Hey API configuration
 
 Register the generated procedures with the application's pool:
 
@@ -153,8 +192,7 @@ HttpServer::new(move || {
 
 Database-derived files are regenerated on each pull. Composition files are
 written once and preserved, so custom code in `api.rs` or `api.ts` survives.
-Pass `--force` only when those files should be reset. To emit models without
-repositories and HTTP procedures, pass `--schema-only`.
+Pass `--force` only when those files should be reset.
 
 The Rust output expects `actix-web`, `serde`, and SQLx's Postgres/runtime and
 database-type features. The command prints the exact `cargo add` invocation
@@ -288,6 +326,12 @@ Inspect schema:
 rustyroad db schema
 ```
 
+Inspect enum types and their allowed values:
+
+```bash
+rustyroad db enums
+```
+
 Run ad-hoc queries:
 
 ```bash
@@ -303,6 +347,7 @@ RustyRoad includes an MCP (Model Context Protocol) server that exposes database 
 
 - `rustyroad_query` - Execute SQL queries
 - `rustyroad_schema` - Get database schema  
+- `rustyroad_enums` - Get database enum types and their allowed values
 - `rustyroad_migrate` - Run migrations
 - `rustyroad_migration_generate` - Create new migrations
 - `rustyroad_config` - View configuration

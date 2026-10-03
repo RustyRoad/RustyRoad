@@ -1,14 +1,14 @@
 use super::error::MigrationValidationError;
 use super::guard;
 use super::identity::Identity;
-use sqlx::MySqlPool;
+use sqlx::{AssertSqlSafe, MySqlPool};
 
 pub(super) async fn database(
     pool: &MySqlPool,
     id: &Identity,
 ) -> Result<(), MigrationValidationError> {
     guard::database(&id.database)?;
-    sqlx::query(&format!("DROP DATABASE `{}`", id.database))
+    sqlx::query(AssertSqlSafe(format!("DROP DATABASE `{}`", id.database)))
         .execute(pool)
         .await
         .map(|_| ())
@@ -22,7 +22,7 @@ pub(super) async fn database(
 
 pub(super) async fn user(pool: &MySqlPool, id: &Identity) -> Result<(), MigrationValidationError> {
     guard::user(&id.user)?;
-    sqlx::query(&format!("DROP USER '{}'@'%'", id.user))
+    sqlx::query(AssertSqlSafe(format!("DROP USER '{}'@'%'", id.user)))
         .execute(pool)
         .await
         .map(|_| ())

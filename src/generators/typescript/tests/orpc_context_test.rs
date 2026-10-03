@@ -34,18 +34,16 @@ fn numeric_keys_are_coerced() {
 }
 
 #[test]
-fn string_keys_are_not_coerced() {
+fn nonnumeric_keys_are_not_coerced() {
     let table = Table {
         name: "sessions".to_string(),
         columns: vec![column("id", "uuid")],
         primary_key: vec!["id".to_string()],
-        foreign_keys: Vec::new(),
-        uniques: Vec::new(),
-        indexes: Vec::new(),
+        ..Table::default()
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel, "/api");
-    assert!(ts.contains("z.object({ id: z.string() })"));
+    assert!(ts.contains(r#"z.object({ id: sessionsSelectSchema.shape["id"] })"#));
     assert!(!ts.contains("z.coerce"));
 }
 
@@ -55,9 +53,7 @@ fn composite_keys_are_skipped() {
         name: "memberships".to_string(),
         columns: vec![column("user_id", "integer"), column("group_id", "integer")],
         primary_key: vec!["user_id".to_string(), "group_id".to_string()],
-        foreign_keys: Vec::new(),
-        uniques: Vec::new(),
-        indexes: Vec::new(),
+        ..Table::default()
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel, "/api");

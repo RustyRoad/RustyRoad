@@ -98,10 +98,13 @@ pub async fn create_database_if_not_exists(
 
             if row.is_none() {
                 // If the database does not exist, create it
-                sqlx::query(&format!("CREATE DATABASE {}", &database.name))
-                    .execute(&pool)
-                    .await
-                    .unwrap();
+                sqlx::query(sqlx::AssertSqlSafe(format!(
+                    "CREATE DATABASE {}",
+                    &database.name
+                )))
+                .execute(&pool)
+                .await
+                .unwrap();
             }
         }
         crate::database::DatabaseType::Sqlite => todo!(),

@@ -12,6 +12,7 @@ pub struct ForeignKey {
 }
 
 /// A unique constraint.
+/// Introspection retains immediate constraints, e.g. a nondeferrable email key.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Unique {
     pub name: String,
@@ -19,6 +20,9 @@ pub struct Unique {
 }
 
 /// A non-constraint index.
+/// Only valid, ready, immediate, unconditional plain-column indexes are represented.
+/// For example, an index on `email INCLUDE (name)` has `columns == ["email"]`.
+/// Partial/expression indexes are omitted by introspection, not treated as plain keys.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Index {
     pub name: String,

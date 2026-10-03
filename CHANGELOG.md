@@ -7,6 +7,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.4] - 2026-10-01
+
+### Added
+- `rustyroad db schema` reports PostgreSQL CHECK constraints per table
+  (`check_constraints` in JSON output, `CHECK name: definition` in text).
+- `rustyroad db enums` lists the database's user-defined enum types and their
+  allowed values. PostgreSQL reports enum types from the catalog in declaration
+  order (reusing the introspection query that code generation is built on),
+  MySQL reports enum columns with their value lists, and SQLite reports an
+  empty list. Supports the global `--format json` flag like `db schema`.
+- `rustyroad_enums` MCP tool exposing the same enum listing to AI agents.
+
+## [1.8.3] - 2026-08-31
+
+### Fixed
+- Generated TypeScript CRUD repositories now accept both root Drizzle clients
+  and transaction handles through the generated `RepositoryDatabase` type while
+  preserving PostgreSQL-derived select and insert row types.
+
+## [1.8.2] - 2026-08-27
+
+### Added
+- PostgreSQL `json` and `jsonb` columns can declare a concrete JSON Schema in a
+  column comment using the `@rustyroad-json-schema` marker.
+- Annotated JSON columns now generate concrete Drizzle TypeScript types,
+  `drizzle-zod` refinements, and matching OpenAPI 3.1 property schemas.
+
+### Changed
+- Malformed RustyRoad JSON Schema annotations stop introspection rather than
+  silently degrading generated contracts; unannotated JSON columns remain
+  backward-compatible as `Record<string, unknown>`.
+
+## [1.8.1] - 2026-08-22
+
+### Fixed
+- `rustyroad pull --language rust` now routes directly to the documented flat
+  Rust API generator and writes models, repositories, Actix procedures, and
+  preserved composition scaffolds under `./src/db` by default.
+- Flat Rust API generation now uses the shared SQL type mapper consistently for
+  model fields, primary keys, and create and patch inputs.
+
+## [1.8.0] - 2026-08-16
+
+### Changed
+- All 37 direct dependencies updated to their latest published versions,
+  including major upgrades to sqlx 0.9, tera 2.1, rustyline 18, sqlparser 0.62,
+  syn 3, rand 0.10, mysql 28, mysql_async 0.37, bcrypt 0.19, strum 0.28,
+  sha2 0.11, toml 1.1, dirs 6, and dialoguer 0.12.
+- **Breaking for library consumers:** `DatabaseConnection` re-exports sqlx pool
+  types, so the sqlx 0.9 upgrade changes this crate's public API surface. Code
+  depending on `rustyroad` as a library must also move to sqlx 0.9. The
+  `rustyroad` command-line interface is unchanged.
+- Dynamic SQL is now routed through sqlx 0.9's `AssertSqlSafe` at every
+  internally-constructed query site. Identifier interpolation continues to pass
+  through the existing database, user, and password guards.
+- Query result rendering is factored into a shared aligned-table renderer and a
+  shared MySQL/SQLite value-decode ladder, so the three backends no longer carry
+  divergent copies of the same formatting and decoding logic.
+- Migration-ledger repair shares one transactional routine across PostgreSQL,
+  MySQL, and SQLite instead of repeating it per backend.
+
+### Fixed
+- Migration checksums are computed with an explicit hex encoder, keeping digests
+  byte-identical after sha2 0.11 removed `LowerHex` from digest output.
+- Template loading matches the tera 2.x API and enables the `glob_fs` feature
+  that `Tera::load_from_glob` now requires.
+- Secret and scoped-identity generation matches the rand 0.10 API.
+
+## [1.7.4] - 2026-08-15
+
+### Fixed
+- TypeScript repositories now derive primary-key parameter types from the inferred
+  Drizzle select row, preserving PostgreSQL enum unions in keyed CRUD queries and
+  router inputs.
+- Generated Fastify adapters no longer reference the DOM-only `HeadersInit` and
+  `BodyInit` aliases, so they compile under Node-only TypeScript configurations.
+
+## [1.7.3] - 2026-08-15
+
+### Added
+- `rustyroad pull --zod` can now emit a standalone Drizzle schema and its derived
+  Zod select, insert, and update schemas, with `--zod-out` controlling the folder.
+
+## [1.7.2] - 2026-08-14
+
+### Added
+- `rustyroad pull` can now filter introspected schemas and emit companion Rust and TetherScript model folders from the same TypeScript pull flow.
+- Rust model generation now uses a shared layout writer, naming resolver, ownership tracking, and split Actix CRUD renderers for keyed and unkeyed routes.
+
+### Changed
+- Pull reporting and generator file ownership are shared across TypeScript, Rust, and TetherScript outputs so preserved files and missing parent-module declarations are reported consistently.
+
 ## [1.7.1] - 2026-08-10
 
 ### Fixed

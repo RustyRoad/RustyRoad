@@ -17,6 +17,7 @@ pub(super) fn orders() -> Table {
         foreign_keys: Vec::new(),
         uniques: Vec::new(),
         indexes: Vec::new(),
+        view: false,
     }
 }
 

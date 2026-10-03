@@ -45,6 +45,15 @@ fn jsonb_columns_are_type_annotated() {
 }
 
 #[test]
+fn annotated_jsonb_columns_use_the_database_shape() {
+    let ts = render(&super::support::annotated_json_schema(), Casing::Camel);
+
+    assert!(
+        ts.contains("jsonb(\"metadata\").$type<{ \"city\": string; \"population\"?: number }>()")
+    );
+}
+
+#[test]
 fn serial_sequence_default_is_not_emitted() {
     let ts = render(&schema(), Casing::Camel);
 

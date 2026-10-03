@@ -2,6 +2,7 @@
 
 use super::super::casing::{binding, db_name_argument, Casing};
 use super::super::enums;
+use super::super::json_schema;
 use super::super::types::{self, Builder};
 use crate::database::introspection::{Column, Schema};
 
@@ -23,7 +24,7 @@ pub(super) fn call(schema: &Schema, column: &Column, casing: Casing) -> String {
         "{}({}){}",
         builder.import,
         arguments(&builder, &name),
-        type_annotation(&builder)
+        type_annotation(&builder, column)
     )
 }
 
@@ -42,9 +43,16 @@ fn arguments(builder: &Builder, name: &str) -> String {
 /// `json`/`jsonb` default to `unknown`, which does not match the recursive `Json`
 /// union `drizzle-zod` infers. Stating the type keeps the Drizzle row type and the
 /// Zod schema assignable to each other.
-fn type_annotation(builder: &Builder) -> &'static str {
+fn type_annotation(builder: &Builder, column: &Column) -> String {
     match builder.import {
-        "json" | "jsonb" => ".$type<Record<string, unknown>>()",
-        _ => "",
+        "json" | "jsonb" => format!(
+            ".$type<{}>()",
+            column
+                .json_schema
+                .as_ref()
+                .map(json_schema::typescript)
+                .unwrap_or_else(|| "Record<string, unknown>".to_string())
+        ),
+        _ => String::new(),
     }
 }

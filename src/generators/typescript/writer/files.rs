@@ -1,8 +1,8 @@
 //! The server-side files `pull` emits.
 
 use super::outputs::Outputs;
-use super::ownership::Ownership;
 use crate::database::introspection::Schema;
+use crate::generators::ownership::Ownership;
 use crate::generators::typescript::casing::Casing;
 use crate::generators::typescript::{client, orpc, relations, schema, zod};
 
@@ -33,7 +33,7 @@ pub(super) fn server(model: &Schema, casing: Casing, outputs: Outputs) -> Vec<Em
             relations::render(model, casing),
         ),
         generated(outputs.client, "client.ts", client::render(model, casing)),
-        generated(outputs.api, "zod.ts", zod::render(model, casing)),
+        generated(outputs.zod, "zod.ts", zod::render(model, casing)),
         generated(
             outputs.api,
             "router.ts",

@@ -1,6 +1,7 @@
 //! SHA-256 checksums for migration source files.
 
 use sha2::{Digest, Sha256};
+use std::fmt::Write as _;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -8,7 +9,12 @@ use std::path::Path;
 /// Returns the lowercase SHA-256 digest of a migration file's exact bytes.
 pub fn file_checksum(path: &Path) -> Result<String, io::Error> {
     let bytes = fs::read(path)?;
-    Ok(format!("{:x}", Sha256::digest(bytes)))
+    let digest = Sha256::digest(bytes);
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest.iter() {
+        let _ = write!(hex, "{byte:02x}");
+    }
+    Ok(hex)
 }
 
 #[cfg(test)]

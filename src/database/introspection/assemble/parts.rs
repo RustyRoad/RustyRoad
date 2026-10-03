@@ -1,7 +1,8 @@
 //! Grouped constraint parts collected during introspection.
 
-/// Grouped constraint parts keyed by name, preserving column order.
-pub(crate) type Grouped = std::collections::BTreeMap<String, (String, Vec<String>)>;
+/// Constraint columns keyed by `(table, name)`, preserving column order.
+/// For example, two tables may both declare a constraint named `token_key`.
+pub(crate) type Grouped = std::collections::BTreeMap<(String, String), Vec<String>>;
 
 /// Accumulated parts of one index.
 #[derive(Default)]

@@ -9,7 +9,7 @@ pub(super) async fn run(
 ) -> Result<(), MigrationValidationError> {
     for migration in migrations {
         let statement = sql::read(migration)?;
-        sqlx::raw_sql(&statement)
+        sqlx::raw_sql(sqlx::AssertSqlSafe(statement))
             .execute(pool)
             .await
             .map_err(|error| sql::execution_error(migration, "SQLite", error))?;

@@ -6,15 +6,15 @@ use crate::generators::typescript::client::render;
 use crate::generators::typescript::Casing;
 
 #[test]
-fn integer_keys_are_typed_as_numbers() {
+fn integer_keys_are_inferred_from_the_row() {
     let ts = render(&schema(), Casing::Camel);
 
-    // users.id is serial, so lookups take a number.
-    assert!(ts.contains("find(db: Database, id: number)"));
+    // The inferred field resolves to number while remaining coupled to Drizzle.
+    assert!(ts.contains(r#"find(db: RepositoryDatabase, id: UsersRow["id"])"#));
 }
 
 #[test]
-fn uuid_keys_are_typed_as_strings() {
+fn uuid_keys_are_inferred_from_the_row() {
     let table = Table {
         name: "sessions".to_string(),
         columns: vec![column("id", "uuid")],
@@ -22,10 +22,11 @@ fn uuid_keys_are_typed_as_strings() {
         foreign_keys: Vec::new(),
         uniques: Vec::new(),
         indexes: Vec::new(),
+        view: false,
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel);
-    assert!(ts.contains("find(db: Database, id: string)"));
+    assert!(ts.contains(r#"find(db: RepositoryDatabase, id: SessionsRow["id"])"#));
 }
 
 #[test]
@@ -37,6 +38,7 @@ fn tables_without_a_primary_key_get_no_repository() {
         foreign_keys: Vec::new(),
         uniques: Vec::new(),
         indexes: Vec::new(),
+        view: false,
     };
 
     let ts = render(&from_tables(vec![table]), Casing::Camel);

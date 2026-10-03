@@ -17,10 +17,7 @@ pub(crate) fn tables(rows: Vec<(String, Column)>) -> Vec<Table> {
             None => tables.push(Table {
                 name: table_name,
                 columns: vec![column],
-                primary_key: Vec::new(),
-                foreign_keys: Vec::new(),
-                uniques: Vec::new(),
-                indexes: Vec::new(),
+                ..Table::default()
             }),
         }
     }

@@ -4,10 +4,16 @@ use super::{options, Builder};
 
 /// Maps types that take no modifier.
 pub(super) fn scalar(base: &str) -> Option<Builder> {
+    if matches!(base, "bigint" | "int8") {
+        return Some(Builder::with_options(
+            "bigint",
+            "{ mode: 'number' }".to_string(),
+        ));
+    }
+
     let import = match base {
         "smallint" | "int2" => "smallint",
         "integer" | "int4" => "integer",
-        "bigint" | "int8" => "bigint",
         "boolean" | "bool" => "boolean",
         "real" | "float4" => "real",
         "double precision" | "float8" => "doublePrecision",

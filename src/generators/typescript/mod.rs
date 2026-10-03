@@ -23,6 +23,7 @@ mod columns;
 mod constraints;
 mod enums;
 pub mod heyapi;
+mod json_schema;
 mod ordering;
 pub mod orpc;
 pub mod relations;
