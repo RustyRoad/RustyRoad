@@ -22,9 +22,9 @@ pub(crate) fn views(schema: &mut Schema, names: Vec<String>) {
     }
 }
 
-/// Attaches unique constraints, grouped by constraint name.
+/// Attaches table-scoped keys; e.g. `token_key` on two tables retains both targets.
 pub(crate) fn uniques(schema: &mut Schema, grouped: Grouped) {
-    for (name, (table_name, columns)) in grouped {
+    for ((table_name, name), columns) in grouped {
         if let Some(table) = schema.tables.iter_mut().find(|t| t.name == table_name) {
             table.uniques.push(Unique { name, columns });
         }

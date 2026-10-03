@@ -21,14 +21,14 @@ pub(super) fn enums(rows: Vec<PgRow>) -> Vec<crate::database::introspection::Enu
         .collect()
 }
 
-/// Groups constraint rows by name, preserving column order.
+/// Groups by table and name; e.g. two tables' `token_key` constraints stay separate.
 pub(super) fn constraints(rows: Vec<PgRow>) -> Grouped {
     let mut grouped: Grouped = BTreeMap::new();
     for row in rows {
         let entry = grouped
-            .entry(text(&row, "name"))
-            .or_insert_with(|| (text(&row, "table_name"), Vec::new()));
-        entry.1.push(text(&row, "column_name"));
+            .entry((text(&row, "table_name"), text(&row, "name")))
+            .or_default();
+        entry.push(text(&row, "column_name"));
     }
     grouped
 }
