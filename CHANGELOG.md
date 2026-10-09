@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.6] - 2026-10-02
+
+### Fixed
+- `rustyroad migration convert` no longer parses `IF [NOT] EXISTS` as a
+  column name. `ADD COLUMN IF NOT EXISTS channel` now rolls back with
+  `DROP COLUMN IF EXISTS channel` instead of the invalid
+  `DROP COLUMN IF EXISTS IF`. `ADD`/`DROP CONSTRAINT` clauses and
+  `ALTER TABLE IF EXISTS`/`ONLY` are also handled.
+
 ## [1.8.4] - 2026-10-01
 
 ### Added

@@ -407,15 +407,20 @@ fn parse_alter_table(stmt: &str) -> Option<SqlOperation> {
     let stmt_upper = stmt.to_uppercase();
 
     // Pattern: ALTER TABLE table_name ADD [COLUMN] column_name ...
-    let table_pattern = Regex::new(r#"(?i)ALTER\s+TABLE\s+[`"\[]?(\w+)[`"\]]?"#).unwrap();
+    let table_pattern =
+        Regex::new(r#"(?i)ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:ONLY\s+)?[`"\[]?(\w+)[`"\]]?"#)
+            .unwrap();
     let table_name = table_pattern.captures(stmt)?.get(1)?.as_str().to_string();
 
     if stmt_upper.contains("ADD COLUMN") || stmt_upper.contains("ADD ") {
         // Extract added columns
-        let add_pattern = Regex::new(r#"(?i)ADD\s+(?:COLUMN\s+)?[`"\[]?(\w+)[`"\]]?"#).unwrap();
+        let add_pattern =
+            Regex::new(r#"(?i)\bADD\s+(?:COLUMN\s+)?(?:IF\s+NOT\s+EXISTS\s+)?[`"\[]?(\w+)[`"\]]?"#)
+                .unwrap();
         let columns: Vec<String> = add_pattern
             .captures_iter(stmt)
             .filter_map(|c| c.get(1).map(|m| m.as_str().to_string()))
+            .filter(|name| !is_table_element_keyword(name))
             .collect();
 
         return Some(SqlOperation::AlterTableAddColumn {
@@ -427,10 +432,13 @@ fn parse_alter_table(stmt: &str) -> Option<SqlOperation> {
 
     if stmt_upper.contains("DROP COLUMN") || stmt_upper.contains("DROP ") {
         // Extract dropped columns
-        let drop_pattern = Regex::new(r#"(?i)DROP\s+(?:COLUMN\s+)?[`"\[]?(\w+)[`"\]]?"#).unwrap();
+        let drop_pattern =
+            Regex::new(r#"(?i)\bDROP\s+(?:COLUMN\s+)?(?:IF\s+EXISTS\s+)?[`"\[]?(\w+)[`"\]]?"#)
+                .unwrap();
         let columns: Vec<String> = drop_pattern
             .captures_iter(stmt)
             .filter_map(|c| c.get(1).map(|m| m.as_str().to_string()))
+            .filter(|name| !is_table_element_keyword(name))
             .collect();
 
         return Some(SqlOperation::AlterTableDropColumn {
@@ -444,6 +452,14 @@ fn parse_alter_table(stmt: &str) -> Option<SqlOperation> {
     Some(SqlOperation::RawSql {
         sql: stmt.to_string(),
     })
+}
+
+/// `ADD`/`DROP` followed by one of these targets a constraint or default, not a column.
+fn is_table_element_keyword(word: &str) -> bool {
+    matches!(
+        word.to_ascii_uppercase().as_str(),
+        "CONSTRAINT" | "PRIMARY" | "FOREIGN" | "UNIQUE" | "CHECK" | "EXCLUDE" | "DEFAULT" | "NOT"
+    )
 }
 
 /// Parse a CREATE INDEX statement
@@ -874,6 +890,53 @@ pub fn cleanup_empty_rogue_dirs() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn columns_of(sql: &str) -> Vec<String> {
+        match parse_sql_operations(sql).into_iter().next() {
+            Some(SqlOperation::AlterTableAddColumn { columns, .. })
+            | Some(SqlOperation::AlterTableDropColumn { columns, .. }) => columns,
+            other => panic!("unexpected operation: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn add_column_if_not_exists_captures_the_real_column() {
+        let sql = "ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS channel TEXT DEFAULT 'chat';";
+        assert_eq!(columns_of(sql), vec!["channel"]);
+
+        let down = generate_down_sql(&parse_sql_operations(sql));
+        assert!(down.contains("DROP COLUMN IF EXISTS channel;"), "{down}");
+        assert!(!down.contains("IF EXISTS IF"), "{down}");
+    }
+
+    #[test]
+    fn multi_add_column_if_not_exists_captures_every_column() {
+        let sql = "ALTER TABLE leads ADD COLUMN IF NOT EXISTS a TEXT, ADD COLUMN IF NOT EXISTS b INT, ADD c BOOLEAN;";
+        assert_eq!(columns_of(sql), vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn drop_column_if_exists_captures_the_real_column() {
+        let sql = "ALTER TABLE leads DROP COLUMN IF EXISTS legacy_flag;";
+        assert_eq!(columns_of(sql), vec!["legacy_flag"]);
+    }
+
+    #[test]
+    fn add_constraint_is_not_a_column() {
+        let sql = "ALTER TABLE leads ADD COLUMN IF NOT EXISTS x INT, ADD CONSTRAINT leads_x_check CHECK (x > 0);";
+        assert_eq!(columns_of(sql), vec!["x"]);
+    }
+
+    #[test]
+    fn alter_table_if_exists_keeps_the_table_name() {
+        let sql = "ALTER TABLE IF EXISTS leads ADD COLUMN IF NOT EXISTS x INT;";
+        match parse_sql_operations(sql).into_iter().next() {
+            Some(SqlOperation::AlterTableAddColumn { table_name, .. }) => {
+                assert_eq!(table_name, "leads")
+            }
+            other => panic!("unexpected operation: {other:?}"),
+        }
+    }
 
     #[test]
     fn test_extract_migration_name() {
