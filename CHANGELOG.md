@@ -5,7 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.8.8] - 2026-10-12
+
+### Added
+- `rustyroad::database::pool`: one shared, lazily connected Postgres pool with `fetch_one`, `fetch_all`, `fetch_optional`, `execute`, `scalar_*`, `query_*`, and `begin` helpers. It connects from `DATABASE_URL`, the `DATABASE_*` variables, or the RustyRoad config file (searched via `RUSTYROAD_CONFIG_PATH`, `/vault/secrets/rustyroad.toml`, then the working and executable directories), and is sized by the `DATABASE_POOL_*` variables.
+- `rustyroad pull --models` now scaffolds `src/db_pool.rs` re-exporting that pool, so the generated `crate::db_pool::...` calls compile, and warns when the crate root does not declare `mod db_pool;`.
+
+## [1.8.7] - 2026-10-14
+
+### Fixed
+- Migration conversion now preserves schema-qualified table names, reverses supported constraints, guarded columns, functions, views, and triggers, and retains valid existing rollback cleanup when reconverting.
 
 ## [1.8.4] - 2026-10-01
 

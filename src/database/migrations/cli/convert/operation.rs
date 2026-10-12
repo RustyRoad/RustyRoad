@@ -32,6 +32,7 @@ pub(super) fn print(operation: &SqlOperation) {
             println!("       - CREATE INDEX {index_name} ON {table_name}")
         }
         SqlOperation::DropIndex { index_name } => println!("       - DROP INDEX {index_name}"),
+        SqlOperation::Cleanup { summary, .. } => println!("       - {summary}"),
         SqlOperation::RawSql { .. } => println!("       - [Raw SQL statement]"),
     }
 }

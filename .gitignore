@@ -10,3 +10,4 @@ deno_text/
 .vite/
 Cargo.lock
 example-grapesjs2/
+artifacts/

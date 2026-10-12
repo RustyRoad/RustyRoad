@@ -13,7 +13,7 @@ pub(super) fn render(schema: &Schema) -> String {
          #[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type)]\n\
          #[sqlx(transparent)]\n\
          pub struct Interval(pub sqlx::postgres::types::PgInterval);\n\n\
-         #[derive(serde::Serialize, serde::Deserialize)]\n\
+         #[derive(serde::Serialize, serde::Deserialize, utoipa::ToSchema)]\n\
          struct IntervalWire {\n\
              months: i32,\n\
              days: i32,\n\
@@ -43,7 +43,14 @@ pub(super) fn render(schema: &Schema) -> String {
                      microseconds: wire.microseconds,\n\
                  }))\n\
              }\n\
-         }\n\n",
+         }\n\n\
+         // PgInterval has no OpenAPI schema, so Interval documents the shape serde emits.\n\
+         impl utoipa::PartialSchema for Interval {\n\
+             fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {\n\
+                 <IntervalWire as utoipa::PartialSchema>::schema()\n\
+             }\n\
+         }\n\n\
+         impl utoipa::ToSchema for Interval {}\n\n",
     );
 
     for item in &schema.enums {
@@ -73,7 +80,7 @@ fn render_enum(item: &Enum) -> String {
         .join("\n");
 
     format!(
-        "#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, sqlx::Type)]\n\
+        "#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, sqlx::Type, utoipa::ToSchema)]\n\
          #[sqlx(type_name = {})]\n\
          pub enum {} {{\n{}\n}}\n\n",
         literal(&item.name),
@@ -133,13 +140,13 @@ fn render_table(table: &Table, schema: &Schema) -> String {
 
     format!(
         "/// A row from the `{table_name}` table.\n\
-         #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, sqlx::FromRow)]\n\
+         #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, sqlx::FromRow, utoipa::ToSchema)]\n\
          pub struct {name} {{\n{row_fields}\n}}\n\n\
          /// Values accepted when creating a `{table_name}` row.\n\
-         #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]\n\
+         #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, utoipa::ToSchema)]\n\
          pub struct New{name} {{\n{create_fields}\n}}\n\n\
          /// Values accepted when partially updating a `{table_name}` row.\n\
-         #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]\n\
+         #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize, utoipa::ToSchema)]\n\
          pub struct Patch{name} {{\n{patch_fields}\n}}\n\n",
         table_name = table.name,
     )

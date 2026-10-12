@@ -19,6 +19,13 @@
 use chrono::Local;
 use regex::Regex;
 
+mod alter;
+mod objects;
+mod preserve;
+#[cfg(test)]
+mod rollback_tests;
+mod split;
+
 use std::fs::{self, create_dir_all};
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
@@ -38,6 +45,8 @@ pub struct DetectedMigration {
     pub sql_content: String,
     /// Parsed operations from the SQL
     pub operations: Vec<SqlOperation>,
+    /// Existing `down.sql` beside the source `up.sql`, preserved on reconversion.
+    pub existing_down: Option<String>,
 }
 
 /// Represents a SQL operation parsed from migration content
@@ -68,6 +77,11 @@ pub enum SqlOperation {
     },
     DropIndex {
         index_name: String,
+    },
+    /// Reversible non-table object (constraint, function, view, trigger, guarded column).
+    Cleanup {
+        summary: String,
+        down_sql: String,
     },
     /// Raw SQL that couldn't be parsed - will be kept as-is
     RawSql {
@@ -195,11 +209,14 @@ fn parse_migration_directory(dir: &Path) -> io::Result<DetectedMigration> {
 
     let operations = parse_sql_operations(&sql_content);
 
+    let existing_down = fs::read_to_string(dir.join("down.sql")).ok();
+
     Ok(DetectedMigration {
         source_path: dir.to_path_buf(),
         name,
         sql_content,
         operations,
+        existing_down,
     })
 }
 
@@ -222,6 +239,7 @@ fn parse_sql_file(path: &Path) -> io::Result<DetectedMigration> {
         name,
         sql_content,
         operations,
+        existing_down: None,
     })
 }
 
@@ -297,15 +315,9 @@ pub fn parse_sql_operations(sql: &str) -> Vec<SqlOperation> {
     let normalized = normalize_sql(sql);
 
     // Split by semicolons to get individual statements
-    for statement in normalized.split(';') {
-        let stmt = statement.trim();
-        if stmt.is_empty() {
-            continue;
-        }
-
-        if let Some(op) = parse_single_statement(stmt) {
-            operations.push(op);
-        }
+    // Quote-aware: semicolons inside `$$ ... $$` bodies do not split statements.
+    for stmt in split::split_outside(&normalized, ';') {
+        operations.extend(parse_statement(&stmt));
     }
 
     operations
@@ -329,6 +341,17 @@ fn normalize_sql(sql: &str) -> String {
         .to_string()
 }
 
+/// Parse one statement into zero or more operations.
+fn parse_statement(stmt: &str) -> Vec<SqlOperation> {
+    if stmt.to_uppercase().starts_with("ALTER TABLE") {
+        return alter::parse_alter_table(stmt);
+    }
+    if let Some(ops) = objects::parse_object(stmt) {
+        return ops;
+    }
+    parse_single_statement(stmt).into_iter().collect()
+}
+
 /// Parse a single SQL statement into an operation
 fn parse_single_statement(stmt: &str) -> Option<SqlOperation> {
     let stmt_upper = stmt.to_uppercase();
@@ -341,11 +364,6 @@ fn parse_single_statement(stmt: &str) -> Option<SqlOperation> {
     // DROP TABLE
     if stmt_upper.starts_with("DROP TABLE") {
         return parse_drop_table(stmt);
-    }
-
-    // ALTER TABLE
-    if stmt_upper.starts_with("ALTER TABLE") {
-        return parse_alter_table(stmt);
     }
 
     // CREATE INDEX
@@ -368,12 +386,14 @@ fn parse_single_statement(stmt: &str) -> Option<SqlOperation> {
 fn parse_create_table(stmt: &str) -> Option<SqlOperation> {
     // Pattern: CREATE TABLE [IF NOT EXISTS] table_name (...)
     // Handles optional quoting with backticks, double quotes, or brackets
-    let pattern =
-        Regex::new(r#"(?i)CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"\[]?(\w+)[`"\]]?\s*\("#)
-            .unwrap();
+    let pattern = Regex::new(&format!(
+        r"(?i)CREATE\s+(?:(?:GLOBAL\s+|LOCAL\s+)?(?:TEMP(?:ORARY)?|UNLOGGED)\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?({})\s*\(",
+        alter::qualified()
+    ))
+    .unwrap();
 
     if let Some(captures) = pattern.captures(stmt) {
-        let table_name = captures.get(1)?.as_str().to_string();
+        let table_name = alter::clean(captures.get(1)?.as_str());
 
         // Extract column definitions
         let columns = extract_column_definitions(stmt);
@@ -391,72 +411,33 @@ fn parse_create_table(stmt: &str) -> Option<SqlOperation> {
 /// Parse a DROP TABLE statement
 fn parse_drop_table(stmt: &str) -> Option<SqlOperation> {
     // Pattern: DROP TABLE [IF EXISTS] table_name
-    let pattern =
-        Regex::new(r#"(?i)DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?[`"\[]?(\w+)[`"\]]?"#).unwrap();
+    let pattern = Regex::new(&format!(
+        r"(?i)DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?({})",
+        alter::qualified()
+    ))
+    .unwrap();
 
     if let Some(captures) = pattern.captures(stmt) {
-        let table_name = captures.get(1)?.as_str().to_string();
+        let table_name = alter::clean(captures.get(1)?.as_str());
         return Some(SqlOperation::DropTable { table_name });
     }
 
     None
 }
 
-/// Parse an ALTER TABLE statement
-fn parse_alter_table(stmt: &str) -> Option<SqlOperation> {
-    let stmt_upper = stmt.to_uppercase();
-
-    // Pattern: ALTER TABLE table_name ADD [COLUMN] column_name ...
-    let table_pattern = Regex::new(r#"(?i)ALTER\s+TABLE\s+[`"\[]?(\w+)[`"\]]?"#).unwrap();
-    let table_name = table_pattern.captures(stmt)?.get(1)?.as_str().to_string();
-
-    if stmt_upper.contains("ADD COLUMN") || stmt_upper.contains("ADD ") {
-        // Extract added columns
-        let add_pattern = Regex::new(r#"(?i)ADD\s+(?:COLUMN\s+)?[`"\[]?(\w+)[`"\]]?"#).unwrap();
-        let columns: Vec<String> = add_pattern
-            .captures_iter(stmt)
-            .filter_map(|c| c.get(1).map(|m| m.as_str().to_string()))
-            .collect();
-
-        return Some(SqlOperation::AlterTableAddColumn {
-            table_name,
-            columns,
-            full_sql: stmt.to_string(),
-        });
-    }
-
-    if stmt_upper.contains("DROP COLUMN") || stmt_upper.contains("DROP ") {
-        // Extract dropped columns
-        let drop_pattern = Regex::new(r#"(?i)DROP\s+(?:COLUMN\s+)?[`"\[]?(\w+)[`"\]]?"#).unwrap();
-        let columns: Vec<String> = drop_pattern
-            .captures_iter(stmt)
-            .filter_map(|c| c.get(1).map(|m| m.as_str().to_string()))
-            .collect();
-
-        return Some(SqlOperation::AlterTableDropColumn {
-            table_name,
-            columns,
-            full_sql: stmt.to_string(),
-        });
-    }
-
-    // Other ALTER TABLE operations - keep as raw
-    Some(SqlOperation::RawSql {
-        sql: stmt.to_string(),
-    })
-}
-
 /// Parse a CREATE INDEX statement
 fn parse_create_index(stmt: &str) -> Option<SqlOperation> {
     // Pattern: CREATE [UNIQUE] INDEX index_name ON table_name (...)
-    let pattern = Regex::new(
-        r#"(?i)CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"\[]?(\w+)[`"\]]?\s+ON\s+[`"\[]?(\w+)[`"\]]?"#,
-    )
+    let pattern = Regex::new(&format!(
+        r"(?i)CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:CONCURRENTLY\s+)?(?:IF\s+NOT\s+EXISTS\s+)?({})\s+ON\s+(?:ONLY\s+)?({})",
+        alter::qualified(),
+        alter::qualified()
+    ))
     .unwrap();
 
     if let Some(captures) = pattern.captures(stmt) {
-        let index_name = captures.get(1)?.as_str().to_string();
-        let table_name = captures.get(2)?.as_str().to_string();
+        let index_name = alter::clean(captures.get(1)?.as_str());
+        let table_name = alter::clean(captures.get(2)?.as_str());
         return Some(SqlOperation::CreateIndex {
             index_name,
             table_name,
@@ -570,6 +551,7 @@ pub fn generate_down_sql(operations: &[SqlOperation]) -> String {
                     ));
                 }
             }
+            SqlOperation::Cleanup { down_sql, .. } => down_statements.push(down_sql.clone()),
             SqlOperation::CreateIndex { index_name, .. } => {
                 down_statements.push(format!("DROP INDEX IF EXISTS {};", index_name));
             }
@@ -661,7 +643,11 @@ fn convert_single_migration(
     }
 
     // Generate and write down.sql
-    let down_sql_content = generate_down_sql(&migration.operations);
+    let generated_down = generate_down_sql(&migration.operations);
+    let down_sql_content = match &migration.existing_down {
+        Some(existing) => preserve::merge_existing_down(generated_down, existing),
+        None => generated_down,
+    };
     let down_sql_path = destination_path.join("down.sql");
     if let Err(e) = create_file(down_sql_path.to_str().unwrap()) {
         return ConversionResult {
@@ -783,6 +769,9 @@ pub fn detect_and_convert_rogue_migrations(auto_convert: bool, remove_source: bo
                 SqlOperation::DropIndex { index_name } => {
                     println!("       - DROP INDEX {}", index_name);
                 }
+                SqlOperation::Cleanup { summary, .. } => {
+                    println!("       - {}", summary);
+                }
                 SqlOperation::RawSql { .. } => {
                     println!("       - [Raw SQL statement]");
                 }
@@ -874,6 +863,53 @@ pub fn cleanup_empty_rogue_dirs() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn columns_of(sql: &str) -> Vec<String> {
+        match parse_sql_operations(sql).into_iter().next() {
+            Some(SqlOperation::AlterTableAddColumn { columns, .. })
+            | Some(SqlOperation::AlterTableDropColumn { columns, .. }) => columns,
+            other => panic!("unexpected operation: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn add_column_if_not_exists_captures_the_real_column() {
+        let sql = "ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS channel TEXT DEFAULT 'chat';";
+        assert_eq!(columns_of(sql), vec!["channel"]);
+
+        let down = generate_down_sql(&parse_sql_operations(sql));
+        assert!(down.contains("DROP COLUMN IF EXISTS channel;"), "{down}");
+        assert!(!down.contains("IF EXISTS IF"), "{down}");
+    }
+
+    #[test]
+    fn multi_add_column_if_not_exists_captures_every_column() {
+        let sql = "ALTER TABLE leads ADD COLUMN IF NOT EXISTS a TEXT, ADD COLUMN IF NOT EXISTS b INT, ADD c BOOLEAN;";
+        assert_eq!(columns_of(sql), vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn drop_column_if_exists_captures_the_real_column() {
+        let sql = "ALTER TABLE leads DROP COLUMN IF EXISTS legacy_flag;";
+        assert_eq!(columns_of(sql), vec!["legacy_flag"]);
+    }
+
+    #[test]
+    fn add_constraint_is_not_a_column() {
+        let sql = "ALTER TABLE leads ADD COLUMN IF NOT EXISTS x INT, ADD CONSTRAINT leads_x_check CHECK (x > 0);";
+        assert_eq!(columns_of(sql), vec!["x"]);
+    }
+
+    #[test]
+    fn alter_table_if_exists_keeps_the_table_name() {
+        let sql = "ALTER TABLE IF EXISTS leads ADD COLUMN IF NOT EXISTS x INT;";
+        match parse_sql_operations(sql).into_iter().next() {
+            Some(SqlOperation::AlterTableAddColumn { table_name, .. }) => {
+                assert_eq!(table_name, "leads")
+            }
+            other => panic!("unexpected operation: {other:?}"),
+        }
+    }
 
     #[test]
     fn test_extract_migration_name() {
