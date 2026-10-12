@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.9] - 2026-10-12
+
+### Changed
+- **Breaking for generated callers of composite unique keys that are not alphabetical.** Generated `find_*`, `update_*`, `delete_*` and `upsert_*` functions for a composite unique key now name and order their arguments by the key's column order in the database, not alphabetically. `UNIQUE (tenant_id, slug)` now yields `find_products_by_tenant_id_and_slug(pool, tenant_id, slug)` instead of `..._by_slug_and_tenant_id`. Keys that were already alphabetical, such as `(city, country, line1, postal_code, state)`, are unchanged. Equivalent keys that differ only in column order still produce one target.
+
 ## [1.8.8] - 2026-10-12
 
 ### Added
