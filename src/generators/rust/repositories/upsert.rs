@@ -11,26 +11,42 @@ pub(super) fn render(table: &Table, key: &[String], merge: Option<&Column>) -> S
         Some(column) => vec![column],
         None => policy::payload(table, key),
     };
-    let mut assignments = payload.iter().map(|column| {
-        let name = sql(&column.name);
-        if merge.is_some() {
-            format!("{name} = {}.{name} || EXCLUDED.{name}", sql("existing"))
-        } else {
-            format!("{name} = EXCLUDED.{name}")
-        }
-    }).collect::<Vec<_>>();
+    let mut assignments = payload
+        .iter()
+        .map(|column| {
+            let name = sql(&column.name);
+            if merge.is_some() {
+                format!("{name} = {}.{name} || EXCLUDED.{name}", sql("existing"))
+            } else {
+                format!("{name} = EXCLUDED.{name}")
+            }
+        })
+        .collect::<Vec<_>>();
     if let Some(clock) = policy::clock(table).filter(|clock| !key.contains(&clock.name)) {
         assignments.push(format!("{} = CURRENT_TIMESTAMP", sql(&clock.name)));
     }
     if assignments.is_empty() {
         return String::new();
     }
-    let mode = merge.map(|column| format!("merge_{}", snake(&column.name)))
+    let mode = merge
+        .map(|column| format!("merge_{}", snake(&column.name)))
         .unwrap_or_else(|| "snapshot".to_string());
-    let function = format!("upsert_{}_{}_by_{}", snake(&table.name), mode, targets::suffix(key));
+    let function = format!(
+        "upsert_{}_{}_by_{}",
+        snake(&table.name),
+        mode,
+        targets::suffix(key)
+    );
     let model = pascal(&table.name);
-    let target = key.iter().map(|name| sql(name)).collect::<Vec<_>>().join(", ");
-    let conflict = format!(" ON CONFLICT ({target}) DO UPDATE SET {} RETURNING *", assignments.join(", "));
+    let target = key
+        .iter()
+        .map(|name| sql(name))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let conflict = format!(
+        " ON CONFLICT ({target}) DO UPDATE SET {} RETURNING *",
+        assignments.join(", ")
+    );
     let insert = insert::render(table);
     format!(
         "/// Atomic {mode}; e.g. `{function}(pool, input).await` returns the stored row.\n\

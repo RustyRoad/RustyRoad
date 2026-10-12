@@ -5,8 +5,7 @@ use crate::database::introspection::{Column, Table};
 /// Selects the transaction-clock column; e.g. a timestamp `updated_at` is eligible.
 pub(super) fn clock(table: &Table) -> Option<&Column> {
     table.column("updated_at").filter(|column| {
-        timestamp(column) && !column.auto_increment
-            && !table.primary_key.contains(&column.name)
+        timestamp(column) && !column.auto_increment && !table.primary_key.contains(&column.name)
     })
 }
 
@@ -18,12 +17,18 @@ fn timestamp(column: &Column) -> bool {
 /// Snapshot payload; e.g. a key plus URL/JSONB/audit columns yields only URL/JSONB.
 /// Never replace generated identities, primary/conflict keys, or audit timestamps.
 pub(super) fn payload<'a>(table: &'a Table, key: &[String]) -> Vec<&'a Column> {
-    table.columns.iter().filter(|column| {
-        !column.auto_increment && !table.primary_key.contains(&column.name)
-            && !key.contains(&column.name)
-            && column.name != "created_at" && column.name != "updated_at"
-            && !(timestamp(column) && column.default.is_some())
-    }).collect()
+    table
+        .columns
+        .iter()
+        .filter(|column| {
+            !column.auto_increment
+                && !table.primary_key.contains(&column.name)
+                && !key.contains(&column.name)
+                && column.name != "created_at"
+                && column.name != "updated_at"
+                && !(timestamp(column) && column.default.is_some())
+        })
+        .collect()
 }
 
 /// Supports latest-by-text reads; e.g. a nullable `page_url: text` remains eligible.

@@ -9,7 +9,10 @@ pub(super) fn render(table: &Table) -> String {
     let function = snake(&table.name);
     let model = pascal(&table.name);
     let columns = inputs::new_columns(table);
-    let default_query = format!("INSERT INTO {} DEFAULT VALUES RETURNING *", sql(&table.name));
+    let default_query = format!(
+        "INSERT INTO {} DEFAULT VALUES RETURNING *",
+        sql(&table.name)
+    );
     if columns.is_empty() {
         return format!(
             "/// Creates one `{table}` row and returns it.\n\

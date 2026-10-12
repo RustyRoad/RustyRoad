@@ -10,8 +10,17 @@ pub(super) fn keys(table: &Table) -> Vec<Vec<String>> {
     if table.view {
         return Vec::new();
     }
-    table.uniques.iter().map(|key| &key.columns)
-        .chain(table.indexes.iter().filter(|index| index.unique).map(|index| &index.columns))
+    table
+        .uniques
+        .iter()
+        .map(|key| &key.columns)
+        .chain(
+            table
+                .indexes
+                .iter()
+                .filter(|index| index.unique)
+                .map(|index| &index.columns),
+        )
         .filter(|key| !key.is_empty() && key.iter().all(|name| table.column(name).is_some()))
         .map(|key| {
             let mut key = key.clone();
@@ -26,5 +35,8 @@ pub(super) fn keys(table: &Table) -> Vec<Vec<String>> {
 
 /// Names a target; e.g. `suffix(&["tenant".into(), "slug".into()])` is `tenant_and_slug`.
 pub(super) fn suffix(key: &[String]) -> String {
-    key.iter().map(|name| snake(name)).collect::<Vec<_>>().join("_and_")
+    key.iter()
+        .map(|name| snake(name))
+        .collect::<Vec<_>>()
+        .join("_and_")
 }

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.8.8] - 2026-10-12
 
 ### Added
 - `rustyroad pull --language rust` now derives `utoipa::ToSchema` on every generated enum, row struct, `New*` and `Patch*` input in `models.rs`, so they can be named in an `#[openapi(components(schemas(...)))]` list. `Interval` implements `ToSchema` by hand, describing the `{months, days, microseconds}` object it serializes as, because sqlx's `PgInterval` has no schema.

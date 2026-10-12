@@ -26,8 +26,14 @@ pub(super) fn render(table: &Table, binding: &str) -> Patch {
     } else {
         inputs::present_from(&columns, binding)
     };
-    let assignments = columns.iter()
+    let assignments = columns
+        .iter()
         .map(|column| fields::assignment_from(column, binding))
-        .collect::<Vec<_>>().join("\n");
-    Patch { parameter, changed, assignments }
+        .collect::<Vec<_>>()
+        .join("\n");
+    Patch {
+        parameter,
+        changed,
+        assignments,
+    }
 }

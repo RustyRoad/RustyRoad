@@ -18,7 +18,9 @@ pub(super) fn render(table: &Table, schema: &Schema, key: &[String]) -> Selector
 
 /// Names update selectors; e.g. one text column yields `key: String`.
 pub(super) fn update(table: &Table, schema: &Schema, key: &[String]) -> Selector {
-    build(table, schema, key, |position| key_argument(position, key.len()))
+    build(table, schema, key, |position| {
+        key_argument(position, key.len())
+    })
 }
 
 /// Names a positional key; e.g. `key_argument(1, 1)` is `key`, not `key_1`.
@@ -31,13 +33,21 @@ pub(super) fn key_argument(position: usize, count: usize) -> String {
 }
 
 /// Builds typed bindings; e.g. `build(table, schema, key, |i| format!("key_{i}"))`.
-fn build(table: &Table, schema: &Schema, key: &[String], name: impl Fn(usize) -> String) -> Selector {
+fn build(
+    table: &Table,
+    schema: &Schema,
+    key: &[String],
+    name: impl Fn(usize) -> String,
+) -> Selector {
     let mut parameters = Vec::new();
     let mut predicates = Vec::new();
     let mut arguments = Vec::new();
     let mut binds = String::new();
     for (index, column_name) in key.iter().enumerate() {
-        let mut column = table.column(column_name).expect("known selector column").clone();
+        let mut column = table
+            .column(column_name)
+            .expect("known selector column")
+            .clone();
         column.nullable = false;
         let position = index + 1;
         let argument = name(position);

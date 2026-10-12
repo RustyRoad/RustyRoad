@@ -8,10 +8,22 @@ use crate::database::introspection::Table;
 /// Only supplied Patch fields update conflicts; never copies unrelated New fields.
 /// An empty conflict patch does nothing and fetch_one returns SQLx RowNotFound.
 pub(super) fn render(table: &Table, key: &[String]) -> String {
-    let function = format!("upsert_{}_patch_by_{}", snake(&table.name), targets::suffix(key));
+    let function = format!(
+        "upsert_{}_patch_by_{}",
+        snake(&table.name),
+        targets::suffix(key)
+    );
     let model = pascal(&table.name);
-    let patch::Patch { parameter, changed, assignments } = patch::render(table, "patch");
-    let target = key.iter().map(|name| sql(name)).collect::<Vec<_>>().join(", ");
+    let patch::Patch {
+        parameter,
+        changed,
+        assignments,
+    } = patch::render(table, "patch");
+    let target = key
+        .iter()
+        .map(|name| sql(name))
+        .collect::<Vec<_>>()
+        .join(", ");
     let conflict = format!(" ON CONFLICT ({target})");
     let action = if assignments.is_empty() {
         "    query.push(\" DO NOTHING\");\n".to_string()

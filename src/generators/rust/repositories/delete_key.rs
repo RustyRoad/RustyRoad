@@ -8,7 +8,12 @@ use crate::database::introspection::{Schema, Table};
 /// No preliminary read is needed: SQLx returns the affected-row count atomically.
 pub(super) fn render(table: &Table, schema: &Schema, key: &[String]) -> String {
     let function = format!("delete_{}_by_{}", snake(&table.name), targets::suffix(key));
-    let selector::Selector { parameters, predicate, binds, arguments } = selector::render(table, schema, key);
+    let selector::Selector {
+        parameters,
+        predicate,
+        binds,
+        arguments,
+    } = selector::render(table, schema, key);
     let query = format!("DELETE FROM {} WHERE {predicate}", sql(&table.name));
     format!(
         "/// Deletes matching rows; e.g. `{function}(pool, {arguments}).await` returns their count.\n\

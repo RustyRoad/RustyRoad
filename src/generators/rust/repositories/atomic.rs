@@ -36,7 +36,12 @@ pub(super) fn render(table: &Table, schema: &Schema) -> (String, bool) {
     }
     if let Some(clock) = policy::clock(table) {
         for column in table.columns.iter().filter(|column| policy::text(column)) {
-            output.push_str(&lookup::render(table, schema, &[column.name.clone()], Some(clock)));
+            output.push_str(&lookup::render(
+                table,
+                schema,
+                &[column.name.clone()],
+                Some(clock),
+            ));
         }
     }
     (output, builder)

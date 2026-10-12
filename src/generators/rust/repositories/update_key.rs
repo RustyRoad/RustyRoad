@@ -9,9 +9,21 @@ use crate::database::introspection::{Schema, Table};
 pub(super) fn render(table: &Table, schema: &Schema, key: &[String]) -> (String, bool) {
     let function = format!("update_{}_by_{}", snake(&table.name), targets::suffix(key));
     let model = pascal(&table.name);
-    let patch::Patch { parameter, changed, assignments } = patch::render(table, "input");
-    let selector::Selector { parameters, predicate, binds, arguments } = selector::update(table, schema, key);
-    let select = format!("SELECT * FROM {} WHERE {predicate} LIMIT 1", sql(&table.name));
+    let patch::Patch {
+        parameter,
+        changed,
+        assignments,
+    } = patch::render(table, "input");
+    let selector::Selector {
+        parameters,
+        predicate,
+        binds,
+        arguments,
+    } = selector::update(table, schema, key);
+    let select = format!(
+        "SELECT * FROM {} WHERE {predicate} LIMIT 1",
+        sql(&table.name)
+    );
     let lookup = format!("sqlx::query_as::<_, {model}>({select:?}){binds}.fetch_one(pool).await");
     let builder = !assignments.is_empty();
     let body = if !builder {
