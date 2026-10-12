@@ -5,11 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.8.8] - 2026-10-12
+## [Unreleased]
 
 ### Added
-- `rustyroad::database::pool`: one shared, lazily connected Postgres pool with `fetch_one`, `fetch_all`, `fetch_optional`, `execute`, `scalar_*`, `query_*`, and `begin` helpers. It connects from `DATABASE_URL`, the `DATABASE_*` variables, or the RustyRoad config file (searched via `RUSTYROAD_CONFIG_PATH`, `/vault/secrets/rustyroad.toml`, then the working and executable directories), and is sized by the `DATABASE_POOL_*` variables.
-- `rustyroad pull --models` now scaffolds `src/db_pool.rs` re-exporting that pool, so the generated `crate::db_pool::...` calls compile, and warns when the crate root does not declare `mod db_pool;`.
+- `rustyroad pull --language rust` now derives `utoipa::ToSchema` on every generated enum, row struct, `New*` and `Patch*` input in `models.rs`, so they can be named in an `#[openapi(components(schemas(...)))]` list. `Interval` implements `ToSchema` by hand, describing the `{months, days, microseconds}` object it serializes as, because sqlx's `PgInterval` has no schema.
+
+### Removed
+- The second, folder-per-table Rust generator is gone, along with `pull --models`, `--models-out`, `--actix`, and the `db_pool.rs` scaffold only it wrote. `pull --language rust` is the only Rust generator; `--out` (default `./src/db`) is where `models.rs` is written.
+
+### Fixed
+- The `ToSchema` derive and `Decimal` mapping fixes from earlier releases only reached the removed generator, which is why `--language rust` output still lacked `ToSchema`.
+
 
 ## [1.8.7] - 2026-10-14
 

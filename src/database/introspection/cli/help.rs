@@ -14,7 +14,8 @@ pub(super) fn long_about() -> &'static str {
       openapi.ts    script writing the OpenAPI document from the router\n\
       openapi/      a static OpenAPI document plus a Hey API config\n\n\
      RUST OUTPUT (--language rust, default ./src/db):\n\
-      models.rs       SQLx row models plus typed create and patch inputs\n\
+      models.rs       SQLx row models, typed create and patch inputs, and enums, all\n\
+                      deriving utoipa::ToSchema for OpenAPI\n\
       repositories.rs typed SQLx CRUD repositories with bound parameters\n\
       procedures.rs   Actix CRUD handlers and /api route registration\n\
       api.rs          composition point: generated plus your own services\n\
@@ -32,16 +33,6 @@ pub(super) fn long_about() -> &'static str {
      POSTGRES ONLY:\n\
       Introspection reads the Postgres catalog. Other backends are not\n\
       supported by this command yet.\n\n\
-     RUST MODELS (--models, default ./src/models):\n\
-      One folder per table, following the layout hand-written models use:\n\
-        mod.rs      the struct, its derives, Default, and new\n\
-        create.rs   the insert\n\
-        read.rs     the listing and the keyed lookup\n\
-        update.rs   the update\n\
-        delete.rs   the delete\n\
-      Each CRUD file adds an impl block to the struct in mod.rs. The parent\n\
-      mod.rs is written once and then left alone, so hand-written models\n\
-      declared beside the generated ones survive.\n\n\
      TETHERSCRIPT MODELS (--tether-models, default ./models):\n\
       The same folder layout in .tether files, reaching SQL through the `db`\n\
       capability. TetherScript has no structs, so a row is a map keyed by\n\
@@ -60,8 +51,7 @@ pub(super) fn long_about() -> &'static str {
       rustyroad pull --language rust\n\
       rustyroad pull --out ./src/db --casing preserve\n\
       rustyroad pull --schema-only\n\
-      rustyroad pull --models\n\
-      rustyroad pull --models --models-out ./src/models\n\
+      rustyroad pull --language rust --out ./src/db\n\
       rustyroad pull --tether-models\n\
       rustyroad pull --zod\n\
       rustyroad pull --zod --zod-out ./src/schemas\n"
