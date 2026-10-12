@@ -1,37 +1,19 @@
-//! Rust model generation from an introspected database.
+//! Rust API generation from an introspected database.
 //!
-//! The companion to the TypeScript generator: the same introspected schema, emitted
-//! as `sqlx` models instead of Drizzle tables. Generation follows the layout the
-//! hand-written models use, so generated code is indistinguishable from code written
-//! by hand — one folder per table, holding:
-//!
-//! - `mod.rs`    — the struct, its derives, `Default`, and `new`
-//! - `create.rs` — the insert
-//! - `read.rs`   — the listing and the keyed lookup
-//! - `update.rs` — the update
-//! - `delete.rs` — the delete
-//!
-//! Each CRUD file contributes an `impl` block to the struct the module root declares
-//! and reaches it through `use super::<Name>`. Splitting by verb keeps every file
-//! short enough to read whole, and means a developer looking for one statement knows
-//! which file holds it before opening anything.
+//! The one Rust generator: the same introspected schema as the TypeScript generator,
+//! emitted as a flat `src/db` folder of `sqlx` models (each deriving `ToSchema`), typed
+//! repositories, and Actix procedures.
 
-pub mod actix;
 mod api;
 pub mod casing;
-pub mod model;
 mod models;
 mod naming;
 mod procedures;
-pub mod render;
 mod repositories;
 pub mod types;
-pub mod writer;
 
 #[cfg(test)]
 mod tests;
 
 pub use api::write as write_api;
 pub use casing::{singularize, to_pascal, to_snake};
-pub use model::Model;
-pub use writer::{write, write_with, Layout, Options};

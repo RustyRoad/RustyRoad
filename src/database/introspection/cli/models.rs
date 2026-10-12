@@ -11,11 +11,8 @@ use crate::generators::{rust, tetherscript};
 use clap::ArgMatches;
 use std::path::PathBuf;
 
-/// Default canonical Rust API folder.
+/// Default Rust API folder; `models.rs` is written here with the rest of the Rust output.
 const RUST_API_OUT: &str = "./src/db";
-
-/// Default Rust model folder, matching where a project's models already live.
-const RUST_OUT: &str = "./src/models";
 
 /// Default TetherScript model folder.
 ///
@@ -37,18 +34,6 @@ pub(super) fn write(matches: &ArgMatches, schema: &Schema) {
             Err(error) => report::fail(&error.to_string()),
         }
         return;
-    }
-
-    if matches.get_flag("models") {
-        let out = folder(matches, "models-out", RUST_OUT);
-        let options = rust::Options {
-            actix: matches.get_flag("actix"),
-        };
-
-        match rust::write_with(&out, schema, options, force) {
-            Ok(layout) => report::models("Rust models", &layout),
-            Err(error) => report::fail(&error.to_string()),
-        }
     }
 
     if matches.get_flag("tether-models") {

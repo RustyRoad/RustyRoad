@@ -35,24 +35,6 @@ pub(super) fn schema() -> Schema {
     from_tables(vec![products()])
 }
 
-/// Resolves one table's model, running the naming pass the writer would.
-///
-/// Tests that build a single-table schema still go through `naming::resolve`, so they
-/// exercise the same path production does rather than a shortcut.
-pub(super) fn resolve(
-    table: &crate::database::introspection::Table,
-    schema: &Schema,
-) -> crate::generators::rust::model::Model {
-    let names = crate::generators::naming::resolve(schema);
-    let index = schema
-        .tables
-        .iter()
-        .position(|candidate| candidate.name == table.name)
-        .expect("the table should be in the schema");
-
-    crate::generators::rust::model::Model::resolve(table, schema, &names[index])
-}
-
 /// Creates a unique scratch directory.
 ///
 /// Rooted in the OS temp directory rather than `target/`, which is not guaranteed to
