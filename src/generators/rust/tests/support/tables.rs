@@ -26,27 +26,3 @@ pub(in crate::generators::rust::tests) fn products() -> Table {
         view: false,
     }
 }
-
-/// A table whose primary key spans two columns.
-pub(in crate::generators::rust::tests) fn composite() -> Table {
-    Table {
-        name: "order_items".to_string(),
-        columns: vec![
-            required("order_id", "integer"),
-            required("product_id", "integer"),
-            required("quantity", "integer"),
-        ],
-        primary_key: vec!["order_id".to_string(), "product_id".to_string()],
-        foreign_keys: vec![ForeignKey {
-            name: "order_items_product_id_fkey".to_string(),
-            columns: vec!["product_id".to_string()],
-            foreign_table: "products".to_string(),
-            foreign_columns: vec!["id".to_string()],
-            on_delete: None,
-            on_update: None,
-        }],
-        uniques: Vec::new(),
-        indexes: Vec::new(),
-        view: false,
-    }
-}

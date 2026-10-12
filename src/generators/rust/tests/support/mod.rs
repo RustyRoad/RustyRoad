@@ -5,9 +5,8 @@ mod tables;
 
 use crate::database::introspection::{Enum, Schema, Table};
 
-pub(in crate::generators::rust::tests) use columns::column;
-pub(super) use columns::{required, serial_key};
-pub(super) use tables::{composite, products};
+pub(super) use columns::required;
+pub(super) use tables::products;
 
 /// Wraps tables in a schema with no enum types.
 pub(super) fn from_tables(tables: Vec<Table>) -> Schema {
