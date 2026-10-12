@@ -1,7 +1,7 @@
 //! Fixture tables for Rust generation tests.
 
 use super::columns::{column, required, serial_key};
-use crate::database::introspection::{ForeignKey, Table};
+use crate::database::introspection::Table;
 
 /// A `products` table mirroring the hand-written reference model.
 pub(in crate::generators::rust::tests) fn products() -> Table {
