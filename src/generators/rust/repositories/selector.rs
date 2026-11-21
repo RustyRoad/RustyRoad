@@ -1,5 +1,6 @@
 //! Shared typed equality selectors for read, update and delete operations.
 
+use super::super::allocation::Names;
 use super::super::{naming::sql, types};
 use crate::database::introspection::{Schema, Table};
 
@@ -12,13 +13,15 @@ pub(super) struct Selector {
 }
 
 /// Derives read/delete arguments; e.g. `render(table, schema, &["token".into()])`.
-pub(super) fn render(table: &Table, schema: &Schema, key: &[String]) -> Selector {
-    build(table, schema, key, |position| format!("value_{position}"))
+pub(super) fn render(table: &Table, schema: &Schema, key: &[String], names: &Names) -> Selector {
+    build(table, schema, key, names, |position| {
+        format!("value_{position}")
+    })
 }
 
 /// Names update selectors; e.g. one text column yields `key: String`.
-pub(super) fn update(table: &Table, schema: &Schema, key: &[String]) -> Selector {
-    build(table, schema, key, |position| {
+pub(super) fn update(table: &Table, schema: &Schema, key: &[String], names: &Names) -> Selector {
+    build(table, schema, key, names, |position| {
         key_argument(position, key.len())
     })
 }
@@ -37,6 +40,7 @@ fn build(
     table: &Table,
     schema: &Schema,
     key: &[String],
+    names: &Names,
     name: impl Fn(usize) -> String,
 ) -> Selector {
     let mut parameters = Vec::new();
@@ -51,7 +55,10 @@ fn build(
         column.nullable = false;
         let position = index + 1;
         let argument = name(position);
-        parameters.push(format!("{argument}: {}", types::map(&column, schema).rust));
+        parameters.push(format!(
+            "{argument}: {}",
+            types::map_column(table, &column, schema, names).rust
+        ));
         predicates.push(format!("{} = ${position}", sql(column_name)));
         binds.push_str(&format!(".bind({argument})"));
         arguments.push(argument);

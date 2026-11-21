@@ -1,0 +1,31 @@
+# Proposed application configuration only; not applied to Spotless.
+# Static/local source example. Actual catalog pull and generated compilation: not-run.
+# Keep existing sms_consent_host_rows / route_snapshot_costs ordered reads unchanged.
+# Input codecs and returned codecs are independently configured below.
+
+[models.rust_projections.insert_sms_consent_projected]
+table = "sms_consent_audit"
+columns = [
+  "id", "phone_number", "email", "consented", "consent_text_version",
+  "consent_timestamp", "source_url", "source_page", "ip_address", "user_agent",
+  "customer_id", "lead_id", "created_at", "updated_at",
+]
+insert = true
+insert_input = { network_text = ["ip_address"] }
+network_host = ["ip_address"]
+database_timestamps = ["consent_timestamp"]
+# InsertSmsConsentProjectedInput; no order, join, or comparisons.
+# Leave created_at/updated_at omitted; do NOT configure them as database clocks.
+
+[models.rust_projections.insert_route_snapshot_projected]
+table = "route_optimization_snapshots"
+columns = [
+  "id", "route_id", "created_at", "osrm_params", "input_coordinates",
+  "result_geometry", "planned_distance_miles", "planned_duration_hours",
+  "planned_fuel_cost", "planned_total_cost", "capped",
+]
+insert = true
+insert_input = { numeric_float = ["planned_fuel_cost", "planned_total_cost"] }
+numeric_float = ["planned_fuel_cost", "planned_total_cost"]
+# InsertRouteSnapshotProjectedInput; no explicit database clocks or ordering.
+# Leave id/created_at omitted for defaults (identity id is not an input field).

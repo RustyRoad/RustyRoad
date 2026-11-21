@@ -1,8 +1,14 @@
-//! Scalar type lookup and type-name normalization.
-
+//! Scalar PostgreSQL types mapped to their actual SQLx codecs.
+mod normalization;
 use super::Mapping;
+pub(in crate::generators::rust) use normalization::array_element;
+pub(super) use normalization::strip_modifier;
 
-/// Maps a non-array, modifier-free Postgres type name.
+/// Map a scalar, including the generated PgInterval wrapper.
+/// # Examples
+/// ```sh
+/// rustyroad pull --language rust --out ./generated-db
+/// ```
 pub(super) fn map(base: &str) -> Mapping {
     match base {
         "smallint" | "int2" | "smallserial" => Mapping::plain("i16"),
@@ -12,11 +18,13 @@ pub(super) fn map(base: &str) -> Mapping {
         "real" | "float4" => Mapping::plain("f32"),
         "double precision" | "float8" => Mapping::plain("f64"),
         "bytea" => Mapping::plain("Vec<u8>"),
+        "interval" => Mapping::overridden("Interval", "any"),
         // `Decimal` (rust_decimal) rather than `BigDecimal`: both decode a Postgres numeric,
         // but utoipa's ToSchema derive only recognises `Decimal`, and the struct derives
         // ToSchema. BigDecimal produced a model that failed on its own derive.
         "numeric" | "decimal" | "money" => Mapping::overridden("sqlx::types::Decimal", "string"),
         "uuid" => Mapping::overridden("sqlx::types::Uuid", "string"),
+        "inet" | "cidr" => Mapping::overridden("ipnetwork::IpNetwork", "string"),
         "json" | "jsonb" => Mapping::overridden("serde_json::Value", "any"),
         "date" => Mapping::overridden("chrono::NaiveDate", "string"),
         "time" | "time without time zone" => Mapping::overridden("chrono::NaiveTime", "string"),
@@ -32,34 +40,4 @@ pub(super) fn map(base: &str) -> Mapping {
         // the rest of the struct usable instead of failing the whole run.
         _ => Mapping::plain("String"),
     }
-}
-
-/// Returns the element type of an array type, if the type is one.
-///
-/// `format_type` reports an array as `integer[]`, while the raw catalog reports `_int4`,
-/// so both spellings are accepted.
-pub(super) fn array_element(lowered: &str) -> Option<String> {
-    if let Some(element) = lowered.strip_suffix("[]") {
-        return Some(element.trim().to_string());
-    }
-    lowered
-        .strip_prefix('_')
-        .map(|element| element.trim().to_string())
-}
-
-/// Removes a parenthesized modifier wherever it appears in the type name.
-///
-/// A precision modifier sits mid-type in `timestamp(3) with time zone`, so trimming at
-/// the first parenthesis would leave the suffix behind and break matching.
-pub(super) fn strip_modifier(lowered: &str) -> String {
-    let Some(start) = lowered.find('(') else {
-        return lowered.trim().to_string();
-    };
-    let Some(end) = lowered.rfind(')') else {
-        return lowered.trim().to_string();
-    };
-
-    format!("{}{}", &lowered[..start], &lowered[end + 1..])
-        .trim()
-        .to_string()
 }

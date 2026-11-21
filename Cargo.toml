@@ -1,6 +1,6 @@
 [package]
 name = "rustyroad"
-version = "1.8.9"
+version = "1.8.10"
 edition = "2021"
 license = "MIT"
 description = "Rusty Road is a framework written in Rust that is based on Ruby on Rails. It is designed to provide the familiar conventions and ease of use of Ruby on Rails, while also taking advantage of the performance and efficiency of Rust."
@@ -35,9 +35,9 @@ tokio = { version = "1.53.1", features = ["full"] }
 tokio-postgres = "0.7.18"
 futures-util = "0.3.34"
 lazy_static = "1.5.0"
-syn = { version = "3.0.3", features = ["full"] }
+syn = { version = "3.0.3", features = ["full", "visit"] }
 quote = "1.0.47"
-proc-macro2 = "1.0.107"
+proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
 bcrypt = "0.19.3"
 chrono = { version = "0.4.45", features = ["serde"] }
 strum_macros = "0.28.0"

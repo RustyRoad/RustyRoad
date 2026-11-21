@@ -1,8 +1,4 @@
-use crate::database::{
-    create_migration, find_migration_dir, Database, DatabaseType, MySqlTypes, PostgresTypes,
-    SqliteTypes,
-};
-use crate::generators::create_file;
+use crate::database::{create_migration, find_migration_dir, Database};
 use crate::helpers::helpers::get_project_name_from_rustyroad_toml;
 use color_eyre::{eyre::Error, Result};
 use std::fs;
@@ -124,11 +120,8 @@ pub async fn create_update_model(model_name: &str) -> Result<(), Error> {
 
     // create the migration
 
-    // create the controller
-    create_file(&format!("./src/models/{}.rs", model_name)).unwrap();
-
-    // write the contents to the file
-    fs::write(format!("./src/models/{}.rs", model_name), contents)?;
+    // Use the same model destination that the auditor discovers.
+    super::destination::write(model_name, &contents)?;
 
     Ok(())
 }
@@ -206,252 +199,22 @@ pub async fn create_base_model(model_name: &str) -> Result<(), Error> {
         .unwrap()
         .database_type;
 
-    let struct_from_sql = match database_type {
-        DatabaseType::Postgres => {
-            generate_struct_from_postgres_sql(file_path, &PostgresTypes::BigInt)
-        }
-        DatabaseType::Mysql => generate_struct_from_mysql_sql(file_path, &MySqlTypes::TinyInt),
-        DatabaseType::Sqlite => generate_struct_from_sqlite_sql(file_path, &SqliteTypes::Integer),
-        DatabaseType::Mongo => todo!(),
-    };
+    let sql = fs::read_to_string(file_path)?;
+    let struct_from_sql = super::sql_model::render(&sql, &database_type)?;
 
-    //write the struct to the file
-    let struct_from_sql = struct_from_sql.unwrap();
-
-    let mut contents = String::new();
-
-    contents.push_str("use serde::{Serialize, Deserialize};\n");
-
-    contents.push_str("#[derive(Serialize, Deserialize)]\n");
-
-    contents.push_str("#[derive(Debug)]\n");
-
-    contents.push_str("#[derive(Clone)]\n");
-
-    contents.push_str("#[derive(Queryable)]\n");
-
-    contents.push_str("#[derive(Insertable)]\n");
-
-    contents.push_str("#[table_name = \"");
-
-    contents.push_str(model_name);
-
-    contents.push_str("\"]\n");
-
-    contents.push_str("pub struct ");
-
-    contents.push_str(model_name);
-
-    contents.push_str(" {\n");
-
-    contents.push_str(&struct_from_sql);
-
-    contents.push_str("}\n");
-
-    contents.push_str("impl ");
-
-    contents.push_str(model_name);
-
-    contents.push_str(" {\n");
-
-    contents.push_str("    pub fn new(");
+    // SQL generators return a complete struct, not a list of fields. Render it
+    // once and finish the constructor before touching the destination file.
+    let contents = super::render::render_base_model(model_name, &struct_from_sql)?;
 
     // parse the sql and categorize it
-    parse_and_categorize_sql(file_path).unwrap();
+    parse_and_categorize_sql(file_path)?;
 
-    // create the controller
-    create_file(&format!("./src/models/{}.rs", model_name)).unwrap();
-
-    // write the contents to the file
-    fs::write(format!("./src/models/{}.rs", model_name), &contents)?;
+    // Use the same model destination that the auditor discovers.
+    super::destination::write(model_name, &contents)?;
 
     println!("Contents: {}", contents);
 
     Ok(())
-}
-
-fn generate_struct_from_postgres_sql(
-    file_path: &Path,
-    db_type: &PostgresTypes,
-) -> Result<String, Error> {
-    // Read the SQL file
-    let sql = fs::read_to_string(file_path)?;
-
-    // Split the SQL into lines
-    let lines: Vec<&str> = sql.lines().collect();
-
-    // Initialize an empty string to hold the struct definition
-    let mut struct_def = String::new();
-
-    // Iterate over the lines of the SQL
-    for line in lines {
-        // If the line starts with "CREATE TABLE", extract the table name and start a new struct
-        if line.to_uppercase().starts_with("CREATE TABLE") {
-            let table_name = line.split_whitespace().nth(2).unwrap();
-            struct_def.push_str(&format!(
-                "\n#[derive(Debug, sqlx::FromRow)]\nstruct {} {{\n",
-                table_name
-            ));
-        }
-        // If the line starts with a word followed by a space and a word, treat it as a column definition
-        else if line.chars().next().unwrap().is_alphanumeric() && line.contains(" ") {
-            let parts: Vec<&str> = line.split_whitespace().take(2).collect();
-            let column_name = parts[0];
-            let column_type = match db_type {
-                PostgresTypes::SmallInt | PostgresTypes::Integer => "i32",
-                PostgresTypes::BigInt => "i64",
-                PostgresTypes::Decimal | PostgresTypes::Numeric => "BigDecimal",
-                PostgresTypes::Real => "f32",
-                PostgresTypes::DoublePrecision => "f64",
-                PostgresTypes::Serial | PostgresTypes::BigSerial => "u32",
-                PostgresTypes::Money => "Money",
-                PostgresTypes::Char | PostgresTypes::VarChar | PostgresTypes::Text => "String",
-                PostgresTypes::ByteA => "Vec<u8>",
-                PostgresTypes::Timestamp | PostgresTypes::TimestampWithTimeZone => "NaiveDateTime",
-                PostgresTypes::Date => "NaiveDate",
-                PostgresTypes::Time
-                | PostgresTypes::TimeWithoutTimeZone
-                | PostgresTypes::TimestampWithoutTimeZone => "NaiveTime",
-                PostgresTypes::Interval => "Interval",
-                PostgresTypes::Boolean => "bool",
-                PostgresTypes::Json | PostgresTypes::JsonB => "serde_json::Value",
-                PostgresTypes::Uuid => "Uuid",
-                _ => "String", // Default to String for unknown types
-            };
-            struct_def.push_str(&format!("    {}: {},\n", column_name, column_type));
-        }
-        // If the line is ");", close the struct
-        else if line.trim() == ");" {
-            struct_def.push_str("}\n");
-        }
-    }
-
-    Ok(struct_def)
-}
-
-fn generate_struct_from_mysql_sql(file_path: &Path, db_type: &MySqlTypes) -> Result<String, Error> {
-    // Read the SQL file
-    let sql = fs::read_to_string(file_path)?;
-
-    // Split the SQL into lines
-    let lines: Vec<&str> = sql.lines().collect();
-
-    // Initialize an empty string to hold the struct definition
-    let mut struct_def = String::new();
-
-    // Iterate over the lines of the SQL
-    for line in lines {
-        // If the line starts with "CREATE TABLE", extract the table name and start a new struct
-        if line.to_uppercase().starts_with("CREATE TABLE") {
-            let table_name = line.split_whitespace().nth(2).unwrap();
-            struct_def.push_str(&format!(
-                "\n#[derive(Debug, sqlx::FromRow)]\nstruct {} {{\n",
-                table_name
-            ));
-        }
-        // If the line starts with a word followed by a space and a word, treat it as a column definition
-        else if line.chars().next().unwrap().is_alphanumeric() && line.contains(" ") {
-            let parts: Vec<&str> = line.split_whitespace().take(2).collect();
-            let column_name = parts[0];
-            let column_type = match db_type {
-                MySqlTypes::TinyInt
-                | MySqlTypes::SmallInt
-                | MySqlTypes::MediumInt
-                | MySqlTypes::Int
-                | MySqlTypes::BigInt => "i32",
-                MySqlTypes::Float | MySqlTypes::Double | MySqlTypes::Decimal => "BigDecimal",
-                MySqlTypes::Bit => "bool",
-                MySqlTypes::Char
-                | MySqlTypes::VarChar
-                | MySqlTypes::Binary
-                | MySqlTypes::VarBinary
-                | MySqlTypes::TinyBlob
-                | MySqlTypes::Blob
-                | MySqlTypes::MediumBlob
-                | MySqlTypes::LongBlob
-                | MySqlTypes::TinyText
-                | MySqlTypes::Text
-                | MySqlTypes::MediumText
-                | MySqlTypes::LongText
-                | MySqlTypes::Enum
-                | MySqlTypes::Set => "String",
-                MySqlTypes::Date
-                | MySqlTypes::DateTime
-                | MySqlTypes::Time
-                | MySqlTypes::Timestamp
-                | MySqlTypes::Year => "NaiveDateTime",
-                MySqlTypes::Geometry
-                | MySqlTypes::Point
-                | MySqlTypes::LineString
-                | MySqlTypes::Polygon
-                | MySqlTypes::MultiPoint
-                | MySqlTypes::MultiLineString
-                | MySqlTypes::MultiPolygon
-                | MySqlTypes::GeometryCollection => "String",
-                MySqlTypes::Json | MySqlTypes::BinaryJson => "serde_json::Value",
-                MySqlTypes::BitField => "String",
-                MySqlTypes::NewDecimal => "BigDecimal",
-                MySqlTypes::Boolean => "bool",
-                MySqlTypes::NotFound => "String",
-                MySqlTypes::EnumInner => "String",
-                MySqlTypes::SetInner => "String",
-                MySqlTypes::GeometryInner => "String",
-            };
-            struct_def.push_str(&format!("    {}: {},\n", column_name, column_type));
-        }
-        // If the line is ");", close the struct
-        else if line.trim() == ");" {
-            struct_def.push_str("}\n");
-        }
-    }
-
-    Ok(struct_def)
-}
-
-fn generate_struct_from_sqlite_sql(
-    file_path: &Path,
-    db_type: &SqliteTypes,
-) -> Result<String, Error> {
-    // Read the SQL file
-    let sql = fs::read_to_string(file_path)?;
-
-    // Split the SQL into lines
-    let lines: Vec<&str> = sql.lines().collect();
-
-    // Initialize an empty string to hold the struct definition
-    let mut struct_def = String::new();
-
-    // Iterate over the lines of the SQL
-    for line in lines {
-        // If the line starts with "CREATE TABLE", extract the table name and start a new struct
-        if line.to_uppercase().starts_with("CREATE TABLE") {
-            let table_name = line.split_whitespace().nth(2).unwrap();
-            struct_def.push_str(&format!(
-                "\n#[derive(Debug, sqlx::FromRow)]\nstruct {} {{\n",
-                table_name
-            ));
-        }
-        // If the line starts with a word followed by a space and a word, treat it as a column definition
-        else if line.chars().next().unwrap().is_alphanumeric() && line.contains(" ") {
-            let parts: Vec<&str> = line.split_whitespace().take(2).collect();
-            let column_name = parts[0];
-            let column_type = match db_type {
-                SqliteTypes::Integer | SqliteTypes::Real | SqliteTypes::Numeric => "BigDecimal",
-                SqliteTypes::Date | SqliteTypes::Time | SqliteTypes::DateTime => "NaiveDateTime",
-                SqliteTypes::Text => "String",
-                SqliteTypes::Blob => "Vec<u8>",
-                SqliteTypes::Boolean => "bool",
-                SqliteTypes::Null => "String",
-            };
-            struct_def.push_str(&format!("    {}: {},\n", column_name, column_type));
-        }
-        // If the line is ");", close the struct
-        else if line.trim() == ");" {
-            struct_def.push_str("}\n");
-        }
-    }
-
-    Ok(struct_def)
 }
 
 use regex::Regex;

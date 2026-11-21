@@ -1,3 +1,6 @@
+mod catalog;
+mod interactive;
+
 use crate::database::migrations::CustomMigrationError;
 use crate::database::render;
 use crate::database::statement::is_multi_statement;
@@ -35,16 +38,64 @@ struct SchemaOutput {
     tables: Vec<SchemaTable>,
 }
 
+/// Lists table names without reading rows or prompting.
+pub async fn inspect_tables(
+    format: &str,
+    prefix: Option<&str>,
+) -> Result<(), CustomMigrationError> {
+    let database = Database::get_database_from_rustyroad_toml()?;
+    let connection = catalog::connect(&database).await?;
+    let tables: Vec<_> = catalog::table_names(&connection)
+        .await?
+        .into_iter()
+        .filter(|name| name.starts_with(prefix.unwrap_or("")))
+        .collect();
+    if format == "json" {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&json!({
+                "database_type": database.database_type.to_string().to_ascii_lowercase(),
+                "config_file": get_config_file_name(),
+                "tables": tables,
+            }))?
+        );
+    } else {
+        for table in tables {
+            println!("{}", table);
+        }
+    }
+    Ok(())
+}
+
 /// Inspects and prints the database schema
 pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
-    let database = Database::get_database_from_rustyroad_toml()
-        .expect("Couldn't parse the rustyroad.toml file");
+    inspect_schema_options(format, None, false).await
+}
+
+/// Inspects one table, all tables, or a table chosen using live suggestions.
+pub async fn inspect_schema_options(
+    format: &str,
+    table: Option<&str>,
+    interactive: bool,
+) -> Result<(), CustomMigrationError> {
+    if interactive {
+        interactive::check_terminal(format)?;
+    }
+    let database = Database::get_database_from_rustyroad_toml()?;
 
     let config_file = get_config_file_name();
 
-    let connection = Database::create_database_connection(&database)
-        .await
-        .map_err(CustomMigrationError::SendError)?;
+    let connection = catalog::connect(&database).await?;
+    let selected = if interactive {
+        let names = catalog::table_names(&connection).await?;
+        let Some(name) = interactive::select(names)? else {
+            return Ok(());
+        };
+        Some(name)
+    } else {
+        table.map(str::to_owned)
+    };
+    let table = selected.as_deref();
 
     let mut all_tables: Vec<SchemaTable> = Vec::new();
     let db_type = database.database_type.to_string().to_ascii_lowercase();
@@ -53,7 +104,7 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
         DatabaseConnection::Pg(conn) => {
             let tables = sqlx::query(
                 "SELECT table_name FROM information_schema.tables 
-                 WHERE table_schema = 'public'",
+                 WHERE table_schema = 'public' ORDER BY table_name",
             )
             .fetch_all(&*conn)
             .await?;
@@ -61,10 +112,15 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
             for table in tables {
                 let table_name: String = table.get("table_name");
 
+                if selected.as_ref().is_some_and(|name| name != &table_name) {
+                    continue;
+                }
+
                 let columns = sqlx::query(
                     "SELECT column_name, data_type, is_nullable
                      FROM information_schema.columns 
-                     WHERE table_name = $1",
+                     WHERE table_schema = 'public' AND table_name = $1
+                     ORDER BY ordinal_position",
                 )
                 .bind(&table_name)
                 .fetch_all(&*conn)
@@ -111,7 +167,7 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
         DatabaseConnection::MySql(conn) => {
             let tables = sqlx::query(
                 "SELECT table_name FROM information_schema.tables 
-                 WHERE table_schema = DATABASE()",
+                 WHERE table_schema = DATABASE() ORDER BY table_name",
             )
             .fetch_all(&*conn)
             .await?;
@@ -119,10 +175,15 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
             for table in tables {
                 let table_name: String = table.get("table_name");
 
+                if selected.as_ref().is_some_and(|name| name != &table_name) {
+                    continue;
+                }
+
                 let columns = sqlx::query(
                     "SELECT column_name, data_type, is_nullable
                      FROM information_schema.columns 
-                     WHERE table_name = ?",
+                     WHERE table_schema = DATABASE() AND table_name = ?
+                     ORDER BY ordinal_position",
                 )
                 .bind(&table_name)
                 .fetch_all(&*conn)
@@ -149,7 +210,7 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
         DatabaseConnection::Sqlite(conn) => {
             let tables = sqlx::query(
                 "SELECT name FROM sqlite_master 
-                 WHERE type='table'",
+                 WHERE type='table' ORDER BY name",
             )
             .fetch_all(&*conn)
             .await?;
@@ -157,10 +218,13 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
             for table in tables {
                 let table_name: String = table.get("name");
 
-                let columns = sqlx::query(sqlx::AssertSqlSafe(format!(
-                    "PRAGMA table_info({})",
-                    table_name
-                )))
+                if selected.as_ref().is_some_and(|name| name != &table_name) {
+                    continue;
+                }
+                let columns = sqlx::query(
+                    "SELECT name, type, \"notnull\" FROM pragma_table_info(?, 'main') ORDER BY cid",
+                )
+                .bind(&table_name)
                 .fetch_all(&*conn)
                 .await?;
 
@@ -184,6 +248,15 @@ pub async fn inspect_schema(format: &str) -> Result<(), CustomMigrationError> {
         }
     }
 
+    if let Some(name) = table {
+        if all_tables.is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("Table {name:?} not found. Use 'db tables' to list available tables."),
+            )
+            .into());
+        }
+    }
     if format == "json" {
         let output = SchemaOutput {
             database_type: db_type,

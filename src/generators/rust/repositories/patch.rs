@@ -1,6 +1,6 @@
 //! Shared selective Patch fragments; absent fields never become assignments.
 
-use super::super::naming::pascal;
+use super::super::allocation::Names;
 use super::{fields, inputs};
 use crate::database::introspection::Table;
 
@@ -13,22 +13,22 @@ pub(super) struct Patch {
 
 /// Reads generated Patch fields; e.g. `render(table, "patch")` preserves insert inputs.
 /// Primary keys stay excluded. No clocks, defaults or EXCLUDED values are added.
-pub(super) fn render(table: &Table, binding: &str) -> Patch {
+pub(super) fn render(table: &Table, binding: &str, names: &Names) -> Patch {
     let columns = inputs::patch_columns(table);
-    let model = pascal(&table.name);
+    let patch = names.patch(table);
     let parameter = if columns.is_empty() {
-        format!("Patch{model} {{}}: Patch{model}")
+        format!("{patch} {{}}: {patch}")
     } else {
-        format!("{binding}: Patch{model}")
+        format!("{binding}: {patch}")
     };
     let changed = if columns.is_empty() {
         "false".to_string()
     } else {
-        inputs::present_from(&columns, binding)
+        inputs::present_from(table, &columns, binding, names)
     };
     let assignments = columns
         .iter()
-        .map(|column| fields::assignment_from(column, binding))
+        .map(|column| fields::assignment_from(table, column, binding, names))
         .collect::<Vec<_>>()
         .join("\n");
     Patch {

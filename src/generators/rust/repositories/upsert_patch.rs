@@ -1,24 +1,44 @@
 //! Insert defaults plus an independent, selective conflict Patch.
 
-use super::super::naming::{pascal, snake, sql};
-use super::{insert, patch, targets};
-use crate::database::introspection::Table;
+use super::super::allocation::Names;
+use super::super::naming::sql;
+use super::{insert, patch};
+use crate::database::introspection::{Column, Table};
 
 /// Emits `upsert_sessions_patch_by_session_token(pool, input, patch)` atomically.
 /// Only supplied Patch fields update conflicts; never copies unrelated New fields.
 /// An empty conflict patch does nothing and fetch_one returns SQLx RowNotFound.
-pub(super) fn render(table: &Table, key: &[String]) -> String {
-    let function = format!(
-        "upsert_{}_patch_by_{}",
-        snake(&table.name),
-        targets::suffix(key)
-    );
-    let model = pascal(&table.name);
+/// A clock opt-in touches transaction time only if its Patch field is omitted.
+/// # Examples
+/// ```sh
+/// rustyroad pull --language rust --out ./generated-db
+/// ```
+pub(super) fn render(
+    table: &Table,
+    key: &[String],
+    names: &Names,
+    clock: Option<&Column>,
+) -> String {
+    let mode = if clock.is_some() {
+        "upsert_patch_touch"
+    } else {
+        "upsert_patch"
+    };
+    let function = names.selector(table, mode, key);
+    let model = names.row(table);
+    let create = names.create(table);
     let patch::Patch {
         parameter,
         changed,
-        assignments,
-    } = patch::render(table, "patch");
+        mut assignments,
+    } = patch::render(table, "patch", names);
+    if let Some(clock) = clock {
+        let field = names.field(table, &clock.name);
+        let touch = format!("{} = CURRENT_TIMESTAMP", sql(&clock.name));
+        assignments.push_str(&format!(
+            "\n        if patch.{field}.is_none() {{ set.push({touch:?}); }}"
+        ));
+    }
     let target = key
         .iter()
         .map(|name| sql(name))
@@ -40,11 +60,17 @@ pub(super) fn render(table: &Table, key: &[String]) -> String {
                  }}\n"
         )
     };
-    let insert = insert::render(table);
+    let insert = insert::render(table, names);
+    let clock_doc = if clock.is_some() {
+        "/// Omitted update timestamps use transaction time; explicit Patch values are preserved.\n"
+    } else {
+        ""
+    };
     format!(
         "/// Selective conflict patch; e.g. `{function}(pool, input, patch).await`.\n\
          /// An empty patch on conflict returns SQLx RowNotFound without a synthetic update.\n\
-         pub async fn {function}(pool: &PgPool, input: New{model}, {parameter}) -> Result<{model}, sqlx::Error> {{\n\
+         {clock_doc}\
+         pub async fn {function}(pool: &PgPool, input: {create}, {parameter}) -> Result<{model}, sqlx::Error> {{\n\
          {insert}\
              query.push({conflict:?});\n\
          {action}\

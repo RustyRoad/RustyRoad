@@ -1,19 +1,20 @@
 //! Shared dynamic INSERT prefix for atomic writes; uses the existing New input rules.
 
+use super::super::allocation::Names;
 use super::super::naming::sql;
 use super::{fields, inputs};
 use crate::database::introspection::Table;
 
 /// Emits insert construction; e.g. omitted timestamp fields use database defaults.
 /// Call only with a nonempty New shape; `atomic::render(table, schema)` enforces this.
-pub(super) fn render(table: &Table) -> String {
+pub(super) fn render(table: &Table, names: &Names) -> String {
     let columns = inputs::new_columns(table);
     let has_values = if columns.iter().any(|column| !inputs::optional(column)) {
         "true".to_string()
     } else {
-        inputs::present(&columns)
+        inputs::present(table, &columns, names)
     };
-    let (column_pushes, value_pushes) = fields::insert(&columns);
+    let (column_pushes, value_pushes) = fields::insert(table, &columns, names);
     let prefix = format!("INSERT INTO {} AS {} ", sql(&table.name), sql("existing"));
     format!(
         "    let mut query = QueryBuilder::<Postgres>::new({prefix:?});\n\

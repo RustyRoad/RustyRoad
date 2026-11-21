@@ -7,8 +7,10 @@
 mod assemble;
 pub mod cli;
 pub mod model;
+mod partial;
 pub mod postgres;
 pub(crate) mod queries;
 
 pub use model::{Column, Enum, ForeignKey, Index, Schema, Table, Unique};
-pub use postgres::read;
+pub use partial::{read_partial_unique_indexes, PartialUniqueIndex};
+pub use postgres::{read, read_for_rust};

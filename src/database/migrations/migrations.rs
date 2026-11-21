@@ -308,12 +308,8 @@ pub async fn create_migration(name: &str, columns: Vec<String>) -> Result<(), io
             // Append foreign key constraints to column definitions
             column_definitions_sql.extend(foreign_key_constraints);
 
-            let up_sql = format!(
-                "CREATE TABLE IF NOT EXISTS {} (\n    {}\n);",
-                table_name,
-                column_definitions_sql.join(",\n    ")
-            );
-            let down_sql = format!("DROP TABLE IF EXISTS {};", table_name);
+            let (up_sql, down_sql) =
+                super::ddl::create_table(&table_name, &column_definitions_sql, true);
             let folder_name = super::folder::folder_for(MIGRATIONS_DIR, &table_name);
 
             (up_sql, down_sql, folder_name)

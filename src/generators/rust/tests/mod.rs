@@ -3,6 +3,7 @@
 mod api_schema_test;
 mod api_test;
 mod casing_test;
+mod collisions_test;
 mod enums_test;
 mod key_order_test;
 mod schema_test;

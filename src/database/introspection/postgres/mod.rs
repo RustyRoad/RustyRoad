@@ -3,6 +3,8 @@
 mod constraints;
 mod group;
 mod rows;
+mod rust_targets;
+pub use rust_targets::read_for_rust;
 
 use super::assemble;
 use super::model::Schema;

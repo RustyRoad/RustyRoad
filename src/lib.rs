@@ -62,6 +62,7 @@ use tokio::io;
 pub mod database;
 pub mod features;
 pub mod generators;
+mod model_audit;
 
 use crate::features::add_feature;
 use database::*;
@@ -850,8 +851,9 @@ static/styles.css
                                 PREREQUISITES:\n\
                                   - Must be run from your RustyRoad project root\n\n\
                                 FILES CREATED:\n\
-                                  - src/models/<name>.rs\n\
-                                  - Updates src/models/mod.rs\n\n\
+                                  - [models].source/<name>.rs when configured in rustyroad.toml\n\
+                                  - Otherwise crates/models/src/<name>.rs when present, or src/models/<name>.rs\n\
+                                  - Register the model module in its owning crate as needed\n\n\
                                 EXAMPLE:\n\
                                   rustyroad generate model user\n\
                                   rustyroad generate model blog_post\n"
@@ -1148,6 +1150,7 @@ Example:\n\
             )
             .subcommand(database::cli::db_command())
             .subcommand(database::introspection::cli::pull_command())
+            .subcommand(model_audit::command())
             .subcommand(
                 Command::new("query")
                     .about("Execute SQL query")
@@ -1175,6 +1178,7 @@ Example:\n\
         let matches = Self::cli().get_matches();
         let format = matches.get_one::<String>("format").unwrap().as_str();
         match matches.subcommand() {
+            Some(("model", matches)) => model_audit::run(matches, format),
             // New Project Case
             Some(("new", matches)) => {
                 let name = matches.get_one::<String>("name").unwrap().to_string();
@@ -1571,10 +1575,26 @@ Example:\n\
                 }
             }
             Some(("db", matches)) => match matches.subcommand() {
-                Some(("schema", _)) => {
-                    inspect_schema(format)
-                        .await
-                        .unwrap_or_else(|e| println!("Error inspecting schema: {}", e));
+                Some(("schema", args)) => {
+                    if let Err(error) = inspect_schema_options(
+                        format,
+                        args.get_one::<String>("table").map(String::as_str),
+                        args.get_flag("interactive"),
+                    )
+                    .await
+                    {
+                        eprintln!("Error inspecting schema: {}", error);
+                        std::process::exit(1);
+                    }
+                }
+                Some(("tables", args)) => {
+                    if let Err(error) =
+                        inspect_tables(format, args.get_one::<String>("prefix").map(String::as_str))
+                            .await
+                    {
+                        eprintln!("Error listing tables: {}", error);
+                        std::process::exit(1);
+                    }
                 }
                 Some(("enums", _)) => {
                     inspect_enums(format)

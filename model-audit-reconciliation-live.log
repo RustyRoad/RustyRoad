@@ -1,0 +1,7 @@
+error: unexpected argument '--generate-migrations' found
+
+  tip: a similar argument exists: '--generated'
+
+Usage: rustyroad model audit --generated <generated>
+
+For more information, try '--help'.

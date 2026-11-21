@@ -5,6 +5,7 @@ pub mod breaking_change;
 pub(crate) mod cli;
 pub mod column_loop;
 pub mod column_loop_test;
+pub(crate) mod ddl;
 pub mod folder;
 #[cfg(test)]
 mod folder_test;
@@ -12,6 +13,7 @@ pub mod ledger;
 #[cfg(test)]
 mod ledger_test;
 pub mod migrations;
+pub mod repair_down;
 pub mod run_all_migrations;
 pub mod sql_migration_converter;
 pub mod validate_migrations;

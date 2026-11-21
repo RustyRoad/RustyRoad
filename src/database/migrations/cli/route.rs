@@ -1,6 +1,6 @@
 //! Routing one migration subcommand to its handler.
 
-use super::{apply, baseline, convert, generate, inspect, repair, rollback, version};
+use super::{apply, baseline, convert, generate, inspect, repair, repair_down, rollback, version};
 use clap::ArgMatches;
 
 /// Routes one migration subcommand.
@@ -11,6 +11,7 @@ pub(super) async fn run(name: &str, args: &ArgMatches, format: &str) {
         "run" => apply::one(args).await,
         "baseline" => baseline::run(args).await,
         "repair-ledger" => repair::run(args).await,
+        "repair-down" => repair_down::run(args),
         "start" => version::start(args).await,
         "complete" => version::complete(args).await,
         "rollback-version" => version::rollback(args).await,

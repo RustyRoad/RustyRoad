@@ -1,0 +1,34 @@
+pub mod db;
+
+#[cfg(test)]
+mod tests {
+    use super::db::models::{NewProposal2, NewServiceAreas2, PatchProposal2, PatchServiceAreas2};
+    use serde_json::json;
+
+    #[test]
+    fn renamed_fields_round_trip_using_original_json_keys() {
+        let input = json!({
+            "type": "first", "type_": "second", "type__2": "third",
+            "updated_at": "2026-01-01T00:00:00", "state": "active",
+            "data": {}, "data_": {}
+        });
+        let model: NewServiceAreas2 = serde_json::from_value(input.clone()).unwrap();
+        assert_eq!(model.type_, "first");
+        assert_eq!(model.type_3, "second");
+        assert_eq!(serde_json::to_value(model).unwrap(), input);
+        let patch: PatchServiceAreas2 = serde_json::from_value(json!({"type_": "patched"})).unwrap();
+        assert_eq!(patch.type_, None);
+        assert_eq!(patch.type_3.as_deref(), Some("patched"));
+        assert_eq!(serde_json::to_value(patch).unwrap(), json!({"type_": "patched"}));
+    }
+
+    #[test]
+    fn colliding_create_and_patch_types_are_usable() {
+        let _: PatchProposal2 = serde_json::from_value(json!({})).unwrap();
+        let _: NewProposal2 = serde_json::from_value(json!({
+            "type": "first", "type_": "second", "type__2": "third",
+            "updated_at": "2026-01-01T00:00:00", "state": "active",
+            "data": {}, "data_": {}
+        })).unwrap();
+    }
+}

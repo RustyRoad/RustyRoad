@@ -44,10 +44,10 @@ pub(crate) fn indexes(schema: &mut Schema, grouped: BTreeMap<String, IndexParts>
     }
 }
 
-/// Attaches foreign keys, grouped by constraint name.
-pub(crate) fn foreign_keys(schema: &mut Schema, grouped: BTreeMap<String, FkParts>) {
-    for (name, parts) in grouped {
-        if let Some(table) = schema.tables.iter_mut().find(|t| t.name == parts.table) {
+/// Attaches each foreign key to the owning table from its composite group key.
+pub(crate) fn foreign_keys(schema: &mut Schema, grouped: BTreeMap<(String, String), FkParts>) {
+    for ((table_name, name), parts) in grouped {
+        if let Some(table) = schema.tables.iter_mut().find(|t| t.name == table_name) {
             table.foreign_keys.push(ForeignKey {
                 name,
                 columns: parts.columns,

@@ -1,13 +1,19 @@
 //! Insert emission; e.g. `create_users(pool, NewUsers {})` uses defaults for an auto-ID-only table.
 
-use super::super::naming::{pascal, snake, sql};
+use super::super::allocation::Names;
+use super::super::naming::sql;
 use super::{fields, inputs};
 use crate::database::introspection::Table;
 
-/// Emits create; e.g. `render(table)` destructures empty New inputs without a builder.
-pub(super) fn render(table: &Table) -> String {
-    let function = snake(&table.name);
-    let model = pascal(&table.name);
+/// Emits creation accepting a pool or a caller-owned connection without committing.
+/// # Examples
+/// ```sh
+/// rustyroad pull --language rust --out ./generated-db
+/// ```
+pub(super) fn render(table: &Table, names: &Names) -> String {
+    let function = names.function(table, "create");
+    let model = names.row(table);
+    let create = names.create(table);
     let columns = inputs::new_columns(table);
     let default_query = format!(
         "INSERT INTO {} DEFAULT VALUES RETURNING *",
@@ -15,9 +21,10 @@ pub(super) fn render(table: &Table) -> String {
     );
     if columns.is_empty() {
         return format!(
-            "/// Creates one `{table}` row and returns it.\n\
-             pub async fn create_{function}(pool: &PgPool, New{model} {{}}: New{model}) -> Result<{model}, sqlx::Error> {{\n\
-                 sqlx::query_as::<_, {model}>({default_query:?}).fetch_one(pool).await\n\
+            "/// Creates one `{table}` row on the supplied executor without committing.\n\
+             /// Example: `{function}(&mut *transaction, input).await?`.\n\
+             pub async fn {function}<'e>(executor: impl sqlx::Executor<'e, Database = sqlx::Postgres>, {create} {{}}: {create}) -> Result<{model}, sqlx::Error> {{\n\
+                 sqlx::query_as::<_, {model}>({default_query:?}).fetch_one(executor).await\n\
              }}",
             table = table.name,
         );
@@ -25,15 +32,16 @@ pub(super) fn render(table: &Table) -> String {
     let has_values = if columns.iter().any(|column| !inputs::optional(column)) {
         "true".to_string()
     } else {
-        inputs::present(&columns)
+        inputs::present(table, &columns, names)
     };
-    let (column_pushes, value_pushes) = fields::insert(&columns);
+    let (column_pushes, value_pushes) = fields::insert(table, &columns, names);
 
     format!(
-        "/// Creates one `{table}` row and returns it.\n\
-         pub async fn create_{function}(pool: &PgPool, input: New{model}) -> Result<{model}, sqlx::Error> {{\n\
+        "/// Creates one `{table}` row on the supplied executor without committing.\n\
+             /// Example: `{function}(&mut *transaction, input).await?`.\n\
+         pub async fn {function}<'e>(executor: impl sqlx::Executor<'e, Database = sqlx::Postgres>, input: {create}) -> Result<{model}, sqlx::Error> {{\n\
              if !({has_values}) {{\n\
-                 return sqlx::query_as::<_, {model}>({default_query:?}).fetch_one(pool).await;\n\
+                 return sqlx::query_as::<_, {model}>({default_query:?}).fetch_one(executor).await;\n\
              }}\n\n\
              let mut query = QueryBuilder::<Postgres>::new({insert_prefix:?});\n\
              {{\n\
@@ -46,7 +54,7 @@ pub(super) fn render(table: &Table) -> String {
          {value_pushes}\n\
              }}\n\
              query.push(\") RETURNING *\");\n\
-             query.build_query_as::<{model}>().fetch_one(pool).await\n\
+             query.build_query_as::<{model}>().fetch_one(executor).await\n\
          }}",
         table = table.name,
         insert_prefix = format!("INSERT INTO {} (", sql(&table.name)),

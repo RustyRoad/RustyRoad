@@ -1,26 +1,30 @@
 //! Bound equality lookups using generated rows rather than application projections.
 
-use super::super::naming::{pascal, snake, sql};
-use super::{selector, targets};
+use super::super::allocation::Names;
+use super::super::naming::sql;
+use super::selector;
 use crate::database::introspection::{Column, Schema, Table};
 
 /// Emits optional reads; e.g. key `page_id` yields `find_heatmaps_by_page_id(pool, value_1)`.
 /// A latest lookup, e.g. by URL, explicitly retains PostgreSQL DESC NULLS FIRST.
+/// # Examples
+/// ```sh
+/// rustyroad pull --language rust --out crates/db/src
+/// ```
 pub(super) fn render(
     table: &Table,
     schema: &Schema,
     key: &[String],
     clock: Option<&Column>,
+    names: &Names,
 ) -> String {
-    let model = pascal(&table.name);
-    let function = snake(&table.name);
-    let suffix = targets::suffix(key);
+    let model = names.row(table);
     let selector::Selector {
         parameters,
         predicate,
         binds,
         arguments,
-    } = selector::render(table, schema, key);
+    } = selector::render(table, schema, key, names);
     let (verb, order) = match clock {
         Some(column) => (
             "latest",
@@ -32,10 +36,11 @@ pub(super) fn render(
         "SELECT * FROM {} WHERE {predicate}{order} LIMIT 1",
         sql(&table.name)
     );
+    let function = names.selector(table, verb, key);
     format!(
-        "/// Optional row lookup; e.g. `{verb}_{function}_by_{suffix}(pool, {arguments}).await`.\n\
-         pub async fn {verb}_{function}_by_{suffix}(pool: &PgPool, {parameters}) -> Result<Option<{model}>, sqlx::Error> {{\n\
-             sqlx::query_as::<_, {model}>({query:?}){binds}.fetch_optional(pool).await\n\
+        "/// Optional row lookup; e.g. `{function}(pool, {arguments}).await`.\n\
+         pub async fn {function}<'e>(executor: impl sqlx::Executor<'e, Database = sqlx::Postgres>, {parameters}) -> Result<Option<{model}>, sqlx::Error> {{\n\
+             sqlx::query_as::<_, {model}>({query:?}){binds}.fetch_optional(executor).await\n\
          }}\n\n"
     )
 }

@@ -5,6 +5,9 @@ use super::rows::{action, text};
 use sqlx::postgres::PgRow;
 use std::collections::BTreeMap;
 
+#[cfg(test)]
+mod foreign_keys_test;
+
 /// Groups enum rows into their types, preserving declaration order.
 pub(super) fn enums(rows: Vec<PgRow>) -> Vec<crate::database::introspection::Enum> {
     let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
@@ -45,11 +48,14 @@ pub(super) fn indexes(rows: Vec<PgRow>) -> BTreeMap<String, IndexParts> {
     grouped
 }
 
-/// Groups foreign key rows by constraint name.
-pub(super) fn foreign_keys(rows: Vec<PgRow>) -> BTreeMap<String, FkParts> {
-    let mut grouped: BTreeMap<String, FkParts> = BTreeMap::new();
+/// Groups foreign keys by owning table and constraint name within one schema.
+/// Rows arrive in key-position order, preserving local/referenced column pairs.
+pub(super) fn foreign_keys(rows: Vec<PgRow>) -> BTreeMap<(String, String), FkParts> {
+    let mut grouped: BTreeMap<(String, String), FkParts> = BTreeMap::new();
     for row in rows {
-        let entry = grouped.entry(text(&row, "name")).or_default();
+        let entry = grouped
+            .entry((text(&row, "table_name"), text(&row, "name")))
+            .or_default();
         entry.table = text(&row, "table_name");
         entry.foreign_table = text(&row, "foreign_table");
         entry.columns.push(text(&row, "column_name"));

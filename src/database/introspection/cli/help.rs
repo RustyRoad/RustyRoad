@@ -1,6 +1,10 @@
 //! Long-form help for `rustyroad pull`.
 
 /// Returns the command's detailed description.
+/// # Examples
+/// ```sh
+/// rustyroad pull --help
+/// ```
 pub(super) fn long_about() -> &'static str {
     "Reads the live database schema and writes a generated TypeScript or Rust API.\n\n\
      TYPESCRIPT OUTPUT (default ./db):\n\
@@ -45,7 +49,13 @@ pub(super) fn long_about() -> &'static str {
       validation types in lockstep with the database. Use --zod-out to choose a\n\
       different folder.\n\n\
      CONFIG:\n\
-      Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\n\
+      Database connection from ./rustyroad.toml (or ./rustyroad.<ENVIRONMENT>.toml).\n\
+      Rust output uses --out, then [models].generated's parent in the base config,\n\
+      then the existing crates/db/src or src/db layout. These paths are shared\n\
+      with model audit; a fresh project defaults to src/db.\n\n\
+      Set [models].rust_relationship_reads = false to omit automatic foreign-key\n\
+      relationship reads from Rust repositories. The default is true; table\n\
+      models, ordinary operations and configured projections are unchanged.\n\n\
      EXAMPLES:\n\
       rustyroad pull\n\
       rustyroad pull --language rust\n\

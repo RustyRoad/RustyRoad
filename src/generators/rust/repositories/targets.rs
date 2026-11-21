@@ -10,7 +10,7 @@ use std::collections::BTreeSet;
 /// Equivalence ignores column order, but the emitted key keeps the catalog's order, so
 /// `UNIQUE (tenant_id, slug)` yields `tenant_id_and_slug` with arguments in that order
 /// rather than a re-sorted `slug_and_tenant_id` that is easy to call with swapped values.
-pub(super) fn keys(table: &Table) -> Vec<Vec<String>> {
+pub(in crate::generators::rust) fn keys(table: &Table) -> Vec<Vec<String>> {
     if table.view {
         return Vec::new();
     }
@@ -52,7 +52,7 @@ pub(super) fn keys(table: &Table) -> Vec<Vec<String>> {
 }
 
 /// Names a target; e.g. `suffix(&["tenant".into(), "slug".into()])` is `tenant_and_slug`.
-pub(super) fn suffix(key: &[String]) -> String {
+pub(in crate::generators::rust) fn suffix(key: &[String]) -> String {
     key.iter()
         .map(|name| snake(name))
         .collect::<Vec<_>>()

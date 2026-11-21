@@ -5,14 +5,11 @@
 //! near-identical blocks.
 
 use super::report;
-use crate::database::introspection::Schema;
+use crate::database::introspection::{PartialUniqueIndex, Schema};
+use crate::generators::tetherscript;
 use crate::generators::typescript::{self, Casing, Outputs};
-use crate::generators::{rust, tetherscript};
 use clap::ArgMatches;
 use std::path::PathBuf;
-
-/// Default Rust API folder; `models.rs` is written here with the rest of the Rust output.
-const RUST_API_OUT: &str = "./src/db";
 
 /// Default TetherScript model folder.
 ///
@@ -23,16 +20,16 @@ const TETHER_OUT: &str = "./models";
 /// Default folder for standalone TypeScript validation schemas.
 const ZOD_OUT: &str = "./src/schemas";
 
-/// Writes whichever model languages were asked for.
-pub(super) fn write(matches: &ArgMatches, schema: &Schema) {
+/// Writes the requested model languages, preserving their output settings.
+/// # Examples
+/// ```sh
+/// rustyroad pull --language rust --out crates/db/src
+/// ```
+pub(super) fn write(matches: &ArgMatches, schema: &Schema, partial_keys: &[PartialUniqueIndex]) {
     let force = matches.get_flag("force");
 
     if matches.get_one::<String>("language").map(String::as_str) == Some("rust") {
-        let out = folder(matches, "out", RUST_API_OUT);
-        match rust::write_api(&out, schema, force) {
-            Ok(outcomes) => report::artifacts("Rust API", &outcomes),
-            Err(error) => report::fail(&error.to_string()),
-        }
+        super::rust_models::write(matches, schema, force, partial_keys);
         return;
     }
 
@@ -56,6 +53,10 @@ pub(super) fn write(matches: &ArgMatches, schema: &Schema) {
 }
 
 /// Returns the output folder for one generator, falling back to its default.
+/// # Examples
+/// ```sh
+/// rustyroad pull --zod
+/// ```
 fn folder(matches: &ArgMatches, flag: &str, default: &str) -> PathBuf {
     PathBuf::from(
         matches

@@ -10,11 +10,18 @@
 //! `chrono::NaiveDateTime` in a field is clearer than an import that has to be kept in
 //! step with the columns that need it.
 
+mod base;
+mod column_override;
+pub(super) mod column_validation;
 mod mapping;
 mod scalar;
+pub use column_override::ColumnOverride;
+pub(super) mod overrides;
+pub use overrides::Override;
+pub(super) use scalar::array_element;
 
-use super::casing;
-use crate::database::introspection::{Column, Schema};
+use super::allocation::Names;
+use crate::database::introspection::{Column, Schema, Table};
 
 pub use mapping::Mapping;
 
@@ -22,34 +29,37 @@ pub use mapping::Mapping;
 ///
 /// A nullable column decoded as a bare `T` errors on the first `NULL` row, so
 /// nullability belongs in the type rather than in a comment.
+/// # Examples
+/// ```sh
+/// rustyroad pull --language rust --out crates/db/src
+/// ```
 pub fn map(column: &Column, schema: &Schema) -> Mapping {
-    let mapped = base(column, schema);
+    let mapped = base::map(column, schema, &Names::new(schema));
+    if column.nullable {
+        mapped.optional()
+    } else {
+        mapped
+    }
+}
+
+/// Reuses the API allocation and configured codecs, retaining column nullability.
+/// # Examples
+/// ```sh
+/// rustyroad pull --language rust --out crates/db/src
+/// ```
+pub(super) fn map_column(
+    table: &Table,
+    column: &Column,
+    schema: &Schema,
+    names: &Names,
+) -> Mapping {
+    let mapped = names
+        .column_codec(table, column)
+        .map(|codec| Mapping::plain(&codec.rust))
+        .unwrap_or_else(|| base::map(column, schema, names));
 
     if column.nullable {
         return mapped.optional();
     }
     mapped
-}
-
-/// Maps the column's type, ignoring nullability.
-fn base(column: &Column, schema: &Schema) -> Mapping {
-    let declared = column.sql_type.trim();
-
-    // A user-defined enum arrives as its bare type name, so it is matched before the
-    // scalar table, where it would fall through to text and lose its variants.
-    if schema
-        .enums
-        .iter()
-        .any(|item| item.name == declared.trim_matches('"'))
-    {
-        return Mapping::plain(casing::to_pascal(declared.trim_matches('"')));
-    }
-
-    let lowered = declared.to_lowercase();
-
-    if let Some(element) = scalar::array_element(&lowered) {
-        return scalar::map(&scalar::strip_modifier(&element)).collected();
-    }
-
-    scalar::map(&scalar::strip_modifier(&lowered))
 }
