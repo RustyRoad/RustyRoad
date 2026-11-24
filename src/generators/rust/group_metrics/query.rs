@@ -31,7 +31,7 @@ pub(super) fn render(
         let (expression, result) =
             expressions::render(schema, table, names, metric, global, separator);
         metrics.push_str(&expression);
-        result_types.push(result.into());
+        result_types.push(result);
     }
     let tuple = format!("({},)", result_types.join(", "));
     let start = group

@@ -6,7 +6,16 @@ use std::fs;
 fn partial_source_audit_keeps_independent_eligible_group() {
     let dir = project("pub struct Bookmark {pub id:i64}");
     fs::write(dir.path().join("src/broken.rs"), "struct Broken {").unwrap();
-    let (report, code) = audit(dir.path(), &["--generate-migrations", "--source", "src"]);
+    let (report, code) = audit(
+        dir.path(),
+        &[
+            "--generate-migrations",
+            "--source",
+            "src",
+            "--table",
+            "Bookmark=bookmark",
+        ],
+    );
     assert_eq!(code, 2, "{report:#}");
     assert!(report["diagnostics"]
         .as_array()
@@ -38,6 +47,28 @@ fn existing_output_report_is_preserved_without_generation() {
 }
 
 #[test]
+fn missing_table_requires_ownership_even_with_a_primary_key_contract() {
+    for args in [
+        vec!["--generate-migrations"],
+        vec!["--generate-migrations", "--primary-key", "bookmark=id"],
+    ] {
+        let dir = project("pub struct Bookmark {pub id:i64}");
+        let (report, code) = audit(dir.path(), &args);
+        assert_eq!(code, 2, "{report:#}");
+        assert_eq!(
+            report["candidates"][0]["table_audit"]["mapping"],
+            "unresolved_persistence_contract"
+        );
+        assert!(report["migration_files"].as_array().unwrap().is_empty());
+        assert!(!dir.path().join("config").exists());
+        assert_eq!(
+            report["declaration_coverage"][0]["outcome"],
+            "unresolved_contract"
+        );
+    }
+}
+
+#[test]
 fn incomplete_catalog_cannot_prove_table_absence() {
     let dir = project("pub struct Bookmark {pub id:i64}");
     fs::write(
@@ -45,7 +76,10 @@ fn incomplete_catalog_cannot_prove_table_absence() {
         r#"{"version":1,"schema":"public","complete":false,"tables":[],"reserved_names":[]}"#,
     )
     .unwrap();
-    let (report, code) = audit(dir.path(), &["--generate-migrations"]);
+    let (report, code) = audit(
+        dir.path(),
+        &["--generate-migrations", "--table", "Bookmark=bookmark"],
+    );
     assert_eq!(code, 2, "{report:#}");
     assert!(report["migration_files"].as_array().unwrap().is_empty());
     assert!(!dir.path().join("config").exists());

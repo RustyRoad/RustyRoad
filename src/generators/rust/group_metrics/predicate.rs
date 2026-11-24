@@ -34,7 +34,7 @@ pub(super) fn cast(schema: &Schema, column: &Column) -> Option<String> {
 pub(super) fn valid_label(schema: &Schema, column: &Column, label: &str) -> bool {
     schema
         .enum_type(column.sql_type.trim().trim_matches('"'))
-        .map_or(true, |item| item.values.iter().any(|value| value == label))
+        .is_none_or(|item| item.values.iter().any(|value| value == label))
 }
 
 /// Accepts scalar PostgreSQL timestamp codecs for nullable MAX projections.

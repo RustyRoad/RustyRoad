@@ -8,6 +8,25 @@ use std::{
     io,
 };
 
+/// Named inputs for validating and rendering configured operations as one unit.
+/// Public writers keep their existing signatures; this bundle is internal only.
+/// # Examples
+/// ```sh
+/// rustyroad pull --language rust --out crates/db/src
+/// ```
+pub(super) struct Operations<'a> {
+    pub reports: &'a BTreeMap<String, aggregates::GroupStats>,
+    pub spatial: &'a BTreeMap<String, spatial_reports::SpatialReport>,
+    pub metrics: &'a BTreeMap<String, group_metrics::GroupMetrics>,
+    pub inserts: &'a BTreeMap<String, relation_inserts::RelationInsert>,
+    pub related_writes: &'a BTreeMap<String, related_writes::RelatedWrite>,
+    pub projections: &'a BTreeMap<String, projections::Projection>,
+    pub balances: &'a BTreeMap<String, balances::Balance>,
+    pub url_stats: &'a BTreeMap<String, url_stats::UrlStats>,
+    pub json_inserts: &'a BTreeMap<String, json_inserts::JsonInsert>,
+    pub partial_keys: &'a [PartialUniqueIndex],
+}
+
 /// Validates all configured operation names before rendering any output artifact.
 /// # Examples
 /// ```sh
@@ -16,17 +35,20 @@ use std::{
 pub(super) fn render(
     schema: &Schema,
     names: &Names,
-    reports: &BTreeMap<String, aggregates::GroupStats>,
-    spatial: &BTreeMap<String, spatial_reports::SpatialReport>,
-    metrics: &BTreeMap<String, group_metrics::GroupMetrics>,
-    inserts: &BTreeMap<String, relation_inserts::RelationInsert>,
-    related_writes: &BTreeMap<String, related_writes::RelatedWrite>,
-    projections: &BTreeMap<String, projections::Projection>,
-    balances: &BTreeMap<String, balances::Balance>,
-    url_stats: &BTreeMap<String, url_stats::UrlStats>,
-    json_inserts: &BTreeMap<String, json_inserts::JsonInsert>,
-    partial_keys: &[PartialUniqueIndex],
+    operations: Operations<'_>,
 ) -> io::Result<String> {
+    let Operations {
+        reports,
+        spatial,
+        metrics,
+        inserts,
+        related_writes,
+        projections,
+        balances,
+        url_stats,
+        json_inserts,
+        partial_keys,
+    } = operations;
     let mut configured_names = BTreeSet::new();
     for name in reports
         .keys()

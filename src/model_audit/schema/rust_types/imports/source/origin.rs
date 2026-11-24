@@ -9,7 +9,7 @@ use crate::model_audit::types::Model;
 /// rustyroad model audit --source src/models --offline --report-only
 /// ```
 impl Context {
-    /// Follow ordinary and literal-path module declarations, then inline scopes.
+    /// Follow ordinary module declarations, then inline scopes.
     /// Duplicate ownership and bounded-search failures remain unresolved.
     /// # Examples
     /// ```sh

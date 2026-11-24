@@ -33,11 +33,10 @@ pub(in crate::model_audit::schema::rust_types::imports) fn collect(
             None
         };
         let key = name.to_string();
-        if result.contains_key(&key) {
-            result.insert(key, None);
-        } else {
-            result.insert(key, value);
-        }
+        result
+            .entry(key)
+            .and_modify(|existing| *existing = None)
+            .or_insert(value);
     }
     result
 }

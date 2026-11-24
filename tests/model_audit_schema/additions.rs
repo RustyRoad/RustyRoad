@@ -21,7 +21,10 @@ fn unsupported_contract_does_not_suppress_independent_table() {
         "pub struct Row {pub id:i32,pub value:UnknownCodec}\n\
         pub struct Bookmark {pub id:i64}",
     );
-    let (report, code) = audit(dir.path(), &["--generate-migrations"]);
+    let (report, code) = audit(
+        dir.path(),
+        &["--generate-migrations", "--table", "Bookmark=bookmark"],
+    );
     assert_eq!(code, 2, "{report:#}");
     let files = report["migration_files"].as_array().unwrap();
     assert_eq!(files.len(), 1);

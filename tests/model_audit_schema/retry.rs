@@ -5,9 +5,10 @@ use std::{fs, path::Path};
 #[test]
 fn creates_new_table_once_and_rejects_edited_retry() {
     let dir = project("pub struct Bookmark {pub id:i64}");
-    let (first, code) = audit(dir.path(), &["--generate-migrations"]);
+    let args = ["--generate-migrations", "--table", "Bookmark=bookmark"];
+    let (first, code) = audit(dir.path(), &args);
     assert_eq!(code, 0, "{first:#}");
-    let (second, code) = audit(dir.path(), &["--generate-migrations"]);
+    let (second, code) = audit(dir.path(), &args);
     assert_eq!(code, 0, "{second:#}");
     assert_eq!(second["migration_files"][0]["state"], "already_generated");
     assert_eq!(
@@ -16,7 +17,7 @@ fn creates_new_table_once_and_rejects_edited_retry() {
     );
     let path = Path::new(first["migration_files"][0]["directory"].as_str().unwrap());
     fs::write(path.join("up.sql"), "-- user edit\n").unwrap();
-    let (retry, code) = audit(dir.path(), &["--generate-migrations"]);
+    let (retry, code) = audit(dir.path(), &args);
     assert_eq!(code, 2, "{retry:#}");
     assert!(
         retry.to_string().contains("edited or incomplete"),
@@ -37,7 +38,10 @@ fn quoted_unowned_history_blocks_only_the_affected_table() {
     let up = "ALTER TABLE \"public\".\"rows\" ADD COLUMN \"note\" TEXT;\n";
     fs::write(history.join("up.sql"), up).unwrap();
     fs::write(history.join("down.sql"), "-- retained\n").unwrap();
-    let (report, code) = audit(dir.path(), &["--generate-migrations"]);
+    let (report, code) = audit(
+        dir.path(),
+        &["--generate-migrations", "--table", "Bookmark=bookmark"],
+    );
     assert_eq!(code, 2, "{report:#}");
     assert!(report.to_string().contains("overlapping DDL"), "{report:#}");
     let files = report["migration_files"].as_array().unwrap();

@@ -27,6 +27,10 @@ use std::{collections::BTreeMap, io, path::Path};
 ///     &Default::default(), &Default::default(), &[], "public", &columns)?;
 /// # Ok(()) }
 /// ```
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserve the published positional writer API"
+)]
 pub fn write(
     out: &Path,
     schema: &Schema,
@@ -81,6 +85,10 @@ pub fn write(
 ///     &Default::default(), &Default::default(), &[], "public", &[], false)?;
 /// # Ok(()) }
 /// ```
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserve the published positional writer API"
+)]
 pub fn write_with_generation(
     out: &Path,
     schema: &Schema,
@@ -105,16 +113,18 @@ pub fn write_with_generation(
     let configured = super::configured::render(
         schema,
         &names,
-        reports,
-        spatial,
-        metrics,
-        inserts,
-        related_writes,
-        projections,
-        balances,
-        url_stats,
-        json_inserts,
-        partial_keys,
+        super::configured::Operations {
+            reports,
+            spatial,
+            metrics,
+            inserts,
+            related_writes,
+            projections,
+            balances,
+            url_stats,
+            json_inserts,
+            partial_keys,
+        },
     )?;
     super::output::write(out, schema, &names, force, &configured, relationship_reads)
 }

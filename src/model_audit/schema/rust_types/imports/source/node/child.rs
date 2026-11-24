@@ -1,4 +1,4 @@
-//! Resolve declared module edges, including literal path attributes.
+//! Resolve ordinary module edges without inferring path overrides.
 use super::{plain, unconditional, Item, Node};
 
 /// Follow source declarations without guessing module names from filenames.
@@ -8,7 +8,7 @@ use super::{plain, unconditional, Item, Node};
 /// ```
 impl Node {
     /// Reject conditional, duplicate and ambiguous declarations before traversal.
-    /// Literal relative path attributes resolve within the owning package only.
+    /// Path overrides remain outside the auditor's supported ownership contract.
     /// # Examples
     /// ```sh
     /// rustyroad model audit --source src/models --offline --report-only
@@ -32,7 +32,12 @@ impl Node {
             return None;
         }
         let module = declarations[0];
-        if !unconditional(&module.attrs) {
+        if !unconditional(&module.attrs)
+            || module
+                .attrs
+                .iter()
+                .any(|attribute| attribute.path().is_ident("path"))
+        {
             return None;
         }
         let attributes: Vec<_> = module

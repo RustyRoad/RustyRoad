@@ -4,7 +4,10 @@ use super::fixture::{audit, project, sql};
 #[test]
 fn new_table_omits_unspecified_primary_key() {
     let dir = project("pub struct Bookmark {pub id:i64}");
-    let (report, code) = audit(dir.path(), &["--generate-migrations"]);
+    let (report, code) = audit(
+        dir.path(),
+        &["--generate-migrations", "--table", "Bookmark=bookmark"],
+    );
     assert_eq!(code, 0, "{report:#}");
     assert!(!sql(&report, "up.sql").contains("PRIMARY KEY"));
 }
@@ -14,7 +17,13 @@ fn explicit_new_table_primary_key_is_rendered() {
     let dir = project("pub struct Bookmark {pub id:i64}");
     let (report, code) = audit(
         dir.path(),
-        &["--generate-migrations", "--primary-key", "bookmark=id"],
+        &[
+            "--generate-migrations",
+            "--table",
+            "Bookmark=bookmark",
+            "--primary-key",
+            "bookmark=id",
+        ],
     );
     assert_eq!(code, 0, "{report:#}");
     assert!(sql(&report, "up.sql").contains("PRIMARY KEY"));

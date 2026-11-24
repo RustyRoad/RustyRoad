@@ -61,5 +61,5 @@ fn character_storage(sql: &str) -> bool {
     matches!(
         base,
         "character varying" | "varchar" | "character" | "char" | "bpchar"
-    ) && length.map_or(true, |length| length > 0)
+    ) && length.is_none_or(|length| length > 0)
 }

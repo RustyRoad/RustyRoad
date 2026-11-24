@@ -72,7 +72,7 @@ fn numeric_storage(sql: &str) -> bool {
     if !(1..=1000).contains(&precision) {
         return false;
     }
-    let scale_valid = parts.next().map_or(true, |part| {
+    let scale_valid = parts.next().is_none_or(|part| {
         part.trim()
             .parse::<i16>()
             .is_ok_and(|scale| (-1000..=1000).contains(&scale))

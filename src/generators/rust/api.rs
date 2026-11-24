@@ -66,6 +66,10 @@ pub fn write_with_codecs(
 ///     &Default::default(), &Default::default(), &Default::default(), &Default::default(), &Default::default(), &Default::default(), &Default::default(), &Default::default(), &Default::default(), &Default::default(), &[])?;
 /// # Ok(()) }
 /// ```
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Preserve the published positional writer API"
+)]
 pub fn write_with_reports(
     out: &Path,
     schema: &Schema,
